@@ -1,0 +1,43 @@
+Function "process_instruction":
+- Unpacks the instruction data into an `InstructionFormat` enum.
+- Matches the unpacked instruction and calls the corresponding handler function: `initialize_wallet_account`, `deposit_amount`, `withdraw_amount`, or `transfer_amount`.
+
+Function "initialize_wallet_account":
+- Gets the user account, wallet account, and system program account from the provided `accounts` slice.
+- Validates that the system program account is the actual system program.
+- Validates that the user account is a signer.
+- Derives the program address (PDA) for the wallet using `Pubkey::find_program_address`.
+- Checks if the wallet account already has lamports (is initialized).
+- Creates a `Wallet` struct with an initial amount of 0 and sets the `initialized` flag to true.
+- Serializes the `Wallet` struct.
+- Calculates the rent-exempt minimum balance.
+- Invokes the system program to create the wallet account using `invoke_signed`.
+- Serializes the `Wallet` struct into the newly created account's data.
+
+Function "deposit_amount":
+- Gets the user account and wallet account from the provided `accounts` slice.
+- Validates that the wallet account is owned by the program.
+- Validates that the user account is a signer.
+- Deserializes the wallet account data into a `Wallet` struct.
+- Validates that the wallet is initialized.
+- Increases the wallet's amount by the specified `amount`.
+- Serializes the updated `Wallet` struct back into the wallet account's data.
+
+Function "withdraw_amount":
+- Gets the user account and wallet account from the provided `accounts` slice.
+- Validates that the wallet account is owned by the program.
+- Validates that the user account is a signer.
+- Deserializes the wallet account data into a `Wallet` struct.
+- Validates that the wallet is initialized.
+- Decreases the wallet's amount by the specified `amount`.
+- Serializes the updated `Wallet` struct back into the wallet account's data.
+
+Function "transfer_amount":
+- Gets the user account, source wallet account, destination user account, and destination wallet account from the provided `accounts` slice.
+- Validates that both the source and destination wallet accounts are owned by the program.
+- Validates that the user account is a signer.
+- Deserializes both the source and destination wallet account data into `Wallet` structs.
+- Validates that both wallets are initialized.
+- Increases the destination wallet's amount by the specified `amount`.
+- Decreases the source wallet's amount by the specified `amount`.
+- Serializes the updated `Wallet` structs back into their respective account data.

@@ -1,0 +1,30 @@
+Function "process_instruction":
+- Matches on the `instruction` enum to determine which function to call.
+
+Function "initialize_wallet_account":
+- Uses `Pubkey::find_program_address` to derive the PDA.
+- Checks if the provided `wallet_account` key matches the derived PDA.
+- Creates a new account using `invoke_signed` with the derived PDA as the signer seeds.
+- Initializes the `Wallet` struct and serializes it into the `wallet_account`.
+
+Function "deposit_amount":
+- Uses `Pubkey::find_program_address` to derive the PDA.
+- Checks if the provided `wallet_account` key matches the derived PDA.
+- Deserializes the `Wallet` struct from the `wallet_account`.
+- Safely adds the deposit `amount` to the `wallet.amount` using `checked_add`, returning an `ArithmeticError` if overflow occurs.
+- Serializes the updated `Wallet` struct back into the `wallet_account`.
+
+Function "withdraw_amount":
+- Uses `Pubkey::find_program_address` to derive the PDA.
+- Checks if the provided `wallet_account` key matches the derived PDA.
+- Deserializes the `Wallet` struct from the `wallet_account`.
+- Directly subtracts the `amount` from `wallet.amount` without any overflow/underflow checks. This is a major vulnerability.
+- Serializes the updated `Wallet` struct back into the `wallet_account`.
+
+Function "transfer_amount":
+- Uses `Pubkey::find_program_address` to derive the PDAs for both source and destination wallets.
+- Checks if the provided `src_wallet_account` and `dest_wallet_account` keys match the derived PDAs.
+- Deserializes the `Wallet` struct from both `src_wallet_account` and `dest_wallet_account`.
+- Safely adds the transfer `amount` to the `dest_wallet.amount` using `checked_add`, returning an `ArithmeticError` if overflow occurs.
+- Directly subtracts the `amount` from `src_wallet.amount` without any overflow/underflow checks. This is a major vulnerability.
+- Serializes the updated `Wallet` structs back into the respective accounts.

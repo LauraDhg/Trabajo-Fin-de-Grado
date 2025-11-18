@@ -1,0 +1,78 @@
+Function "send_create_vault_transaction":
+- Constructs and sends a transaction instruction to create a vault, using specific account data and vault seeds.
+- Uses invoke_signed to call an external vault program with derived program address seeds.
+- Ensures correct account meta and signature requirements.
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends a transaction instruction for vault deposit or withdrawal actions.
+- Builds instruction data including an amount and proposal ID.
+- Uses invoke_signed with vault seeds to execute the transaction.
+
+Function "process_instruction":
+- Serves as the program's entrypoint to dispatch instructions based on the unpacked instruction data.
+- Calls different functions like create_admin, update_admin, create_account, etc., depending on the instruction variant.
+
+Function "create_admin":
+- Initializes the admin account with a provided admin PDA, setting admin id and timestamp.
+- Checks if admin account is uninitialized and owned by the program.
+- Uses invoke_signed to create the admin account with rent exemption.
+- Serializes the new admin data into the account.
+
+Function "update_admin":
+- Updates the admin account with a new admin ID.
+- Checks for owner and signature correctness, and admin privilege.
+- Unpacks, updates, and serializes the admin account data.
+
+Function "create_account":
+- Creates a user account with a specific PDA, initializing governance points.
+- Checks for existing account, ownership, and signature.
+- Uses invoke_signed to create and fund the account.
+- Serializes account data.
+
+Function "open_proposal":
+- Creates a proposal account with details like title, description, start_time, and end_time.
+- Checks account ownership and signature.
+- Sets proposal's timing based on current blockchain time.
+- Uses invoke_signed to create and serialize the proposal account.
+
+Function "vote_process":
+- Handles voting by a user on a proposal, creating a vote record.
+- Checks ownership, signatures, and if the vote account already exists.
+- Loads current proposal, user, and system clock.
+- Checks if proposal is still open based on current time.
+- Updates yes/no votes with overflow protection, serializes vote and proposal records, updates user account.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points for a user, based on an instruction flag.
+- Checks owner, signature, and admin privileges.
+- Deserializes and updates user account’s governance points with overflow check.
+- Serializes updated user account.
+
+Function "execute_instruction":
+- Executes specific actions based on the instruction variant (create vault, deposit, withdraw).
+- Checks ownership, signature, and account correctness for different instruction types.
+- Uses load_instruction_at to validate previous instructions from instruction sysvar.
+- Calls helper functions for vault-related actions.
+
+Function "make_decision":
+- Finalizes a proposal, determining its approval or denial.
+- Checks owner, signature, and account ownership.
+- Loads proposal and verifies time expiration.
+- Declares decision based on votes and marks proposal as executed.
+- Serializes updated proposal data.
+
+Risks and Vulnerabilities:
+- "send_create_vault_transaction" and similar functions rely on correct account ordering and seeds; incorrect usage could lead to execution failure.
+- "invoke_signed" and "invoke" calls assume correct account data and PDA derivations; errors could cause transaction failures or vulnerabilities.
+- Data deserialization with Borsh could panic if data is malformed.
+- Overflow checks are in place for voting points, but arithmetic errors could still occur if not all additions/subtractions are properly checked.
+- No explicit checks for re-entrancy or double spending beyond lamport checks, which could be mitigated further.
+- "create_account" and other account-creating functions assume accounts are uninitialized based on lamports > 0; this may be insufficient if accounts are partially initialized or tampered.
+- The program does not verify the data size of accounts before deserialization, potentially leading to deserialization errors.
+- No explicit validation of the "title" and "description" strings length, which could lead to excessive storage or DOS.
+- Lack of explicit access control beyond owner and signature, possibly allowing malicious reauthorization if PDA checks are compromised.
+- Use of "unwrap" in "vault_program_id" could cause panic if the string is invalid; prefer handling errors explicitly.
+- Risk of replay attacks on proposals or votes if not adequately protected by timestamps or nonce; no nonce used here.
+- The "MyError" enum is converted to "ProgramError" but not mapped to specific error codes in all cases, which could obscure error handling.
+- The "process_instruction" function does not handle unexpected instruction variants gracefully, defaulting to unrecognized instructions.
+

@@ -1,0 +1,78 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for the vault program
+- Uses from_str and unwrap which may panic if the string is invalid
+
+Function "action_as_str":
+- Converts a u8 action code to a string description
+- Returns "Create" for 0, "Deposit" for 1, "Withdraw" for 2, "Unknown" for other values
+
+Function "send_create_vault_transaction":
+- Constructs and sends a CPI instruction to create a vault
+- Uses invoke_signed with vault seeds for PDA signing
+- Builds instruction data with variant, pubkey, and bump
+- Includes system program in account metas
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends a CPI instruction for vault operations
+- Uses invoke_signed with vault seeds for PDA signing
+- Builds instruction data with variant, amount, and pubkey
+- Does not include system program in account metas
+
+Function "process_instruction":
+- Main entry point that unpacks and routes instructions
+- Matches on InstructionFormat enum variants
+- Calls appropriate handler functions based on instruction type
+
+Function "create_admin":
+- Creates an admin PDA account
+- Validates signer and account initialization status
+- Uses find_program_address to derive admin PDA
+- Creates account via CPI to system program
+- Stores admin ID and timestamp in account data
+
+Function "update_admin":
+- Updates the admin account with a new admin pubkey
+- Validates account ownership and signer
+- Updates timestamp and admin ID in account data
+- Uses clock sysvar for current time
+
+Function "create_account":
+- Creates a user PDA account
+- Validates signer and account initialization status
+- Initializes user with 10 governance points
+- Uses find_program_address with user pubkey for derivation
+- Creates account via CPI to system program
+
+Function "open_proposal":
+- Creates a proposal PDA account
+- Validates user account ownership and signer
+- Uses proposal title for PDA derivation
+- Sets proposal duration to 1 hour from creation
+- Creates account via CPI to system program
+
+Function "vote_process":
+- Processes a vote on a proposal
+- Creates a vote record PDA account
+- Validates proposal is still active
+- Adds user's governance points to yes/no votes
+- Uses triple derivation (user + proposal) for vote PDA
+
+Function "manage_governance_points":
+- Modifies user's governance points amount
+- Only callable by admin account
+- Can add or subtract points based on instruction parameter
+- No overflow/underflow checks on arithmetic operations
+
+Function "execute_instruction":
+- Executes cross-program invocations to vault program
+- Validates instruction type and account permissions
+- Checks previous instruction for vault program confirmation
+- Routes to appropriate send transaction function
+- Uses instruction sysvar for validation
+
+Function "make_decision":
+- Finalizes proposal voting and determines outcome
+- Only callable by admin after proposal end time
+- Compares yes vs no votes to determine result
+- Marks proposal as executed
+- Uses clock sysvar to validate proposal end time

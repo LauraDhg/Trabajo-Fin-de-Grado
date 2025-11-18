@@ -1,0 +1,70 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for the vault program
+- Uses from_str and unwrap which could panic if the string is invalid
+
+Function "action_as_str":
+- Converts a u8 action code to a string representation
+- Handles unknown actions by returning "Unknown"
+
+Function "send_create_vault_transaction":
+- Constructs an instruction for creating a vault
+- Uses invoke_signed to call the vault program
+- Includes system program in accounts but not in instruction data validation
+- Potential vulnerability: No validation of vault_program ownership
+
+Function "send_instr_to_vault_transaction":
+- Constructs instructions for deposit/withdraw operations
+- Uses invoke_signed to call the vault program
+- Missing system program account in instruction construction
+- Potential vulnerability: No validation of vault_program ownership
+
+Function "process_instruction":
+- Main entry point that routes to different instruction handlers
+- Uses InstructionFormat unpacking which could fail on malformed data
+
+Function "create_admin":
+- Creates admin account with PDA derivation
+- Validates signer and account initialization state
+- Uses clock sysvar for timestamp
+- Potential vulnerability: No rent exemption validation for created account
+
+Function "update_admin":
+- Updates admin account with new admin pubkey
+- Validates current admin privileges
+- Updates timestamp using clock sysvar
+- Potential vulnerability: No access control beyond signature check
+
+Function "create_account":
+- Creates user account with PDA derivation
+- Initializes with fixed 10 governance points
+- Potential vulnerability: Fixed initial points could be exploited
+
+Function "open_proposal":
+- Creates proposal account with title-based PDA
+- Sets fixed 1-hour voting period
+- Potential vulnerability: Title-based PDA could cause collisions
+- Potential vulnerability: Fixed time period without configurability
+
+Function "vote_process":
+- Processes user votes on proposals
+- Adds user's governance points to vote tally
+- Checks voting period validity
+- Potential vulnerability: Arithmetic overflow in vote counting
+- Potential vulnerability: No prevention of double voting
+
+Function "manage_governance_points":
+- Admin function to add/subtract governance points
+- Uses checked_sub to prevent underflow
+- Potential vulnerability: Admin can arbitrarily manipulate voting power
+
+Function "execute_instruction":
+- Executes vault-related instructions via CPI
+- Validates instruction sysvar and previous instruction
+- Potential vulnerability: Instruction sysvar validation can be bypassed
+- Potential vulnerability: No proper access control for different instruction types
+
+Function "make_decision":
+- Finalizes proposal voting and determines outcome
+- Checks if voting period has ended
+- Sets proposal as executed
+- Potential vulnerability: No mechanism to prevent re-execution

@@ -1,0 +1,99 @@
+```
+Function "vault_program_id":
+- Returns a Pubkey representing the vault program ID.
+- The Pubkey is hardcoded as "6dVLkpmd5BvVQF7oXpipnQFtKwba2uQkMMwzHnaqf8Gr".
+
+Function "action_as_str":
+- Takes a u8 representing an action and returns a string slice.
+- Matches the input to a string representation of the action (Create, Deposit, Withdraw).
+- Returns "Unknown" for any other input.
+
+Function "send_create_vault_transaction":
+- Sends a transaction to create a vault account using CPI (Cross-Program Invocation).
+- Takes several account infos, the variant instruction, the ID pubkey, and vault bump as input.
+- Creates an instruction with the provided data.
+- Invokes the vault program with the create instruction using `invoke_signed`.
+
+Function "send_instr_to_vault_transaction":
+- Sends a transaction to the vault program to perform actions like deposit or withdraw.
+- Takes account infos, variant instruction, ID pubkey, amount, and vault bump as input.
+- Creates an instruction with provided data
+- Invokes the vault program with the deposit/withdraw instruction using `invoke_signed`.
+
+Function "process_instruction":
+- The main entrypoint of the Solana program.
+- Deserializes the instruction data into an `InstructionFormat` enum.
+- Matches the instruction and calls the corresponding function.
+
+Function "create_admin":
+- Creates a new admin account.
+- Checks if the admin payer is a signer.
+- Checks if the admin account has already been initialized.
+- Derives the admin PDA (Program Derived Address) using `find_program_address`.
+- Creates the admin account using `invoke_signed`.
+- Serializes the `Admin_Account` struct into the newly created account.
+
+Function "update_admin":
+- Updates the admin of the DAO.
+- Checks if the provided account owner is the program id and if the admin payer is a signer.
+- Deserializes the admin account data.
+- Derives the admin PDA.
+- Updates the admin ID and last update timestamp.
+- Serializes the updated `Admin_Account` struct back into the account.
+
+Function "create_account":
+- Creates a new user account.
+- Checks if the user payer is a signer.
+- Checks if the user account has already been initialized.
+- Derives the user PDA using `find_program_address`.
+- Creates the user account using `invoke_signed`.
+- Serializes the `User_Account` struct into the newly created account.
+- Assigns initial governance points (10) to the user.
+
+Function "open_proposal":
+- Allows a user to open a new proposal.
+- Checks if the user account belongs to the program, and if the user is a signer.
+- Checks if the proposal account has already been initialized.
+- Derives the proposal PDA using `find_program_address`.
+- Creates the proposal account using `invoke_signed`.
+- Sets the start and end times for the proposal.
+- Serializes the `Proposal` struct into the newly created account.
+
+Function "vote_process":
+- Processes a user's vote on a proposal.
+- Checks if the user and proposal accounts belong to the program, and if the user is a signer.
+- Checks if the vote record account has already been initialized.
+- Derives the vote PDA using `find_program_address`.
+- Deserializes the proposal and user account data.
+- Creates a vote record.
+- Checks if the voting period is still active.
+- Updates the yes/no vote count based on the user's vote.
+- Creates and serializes the vote record.
+
+Function "manage_governance_points":
+- Allows the admin to add or subtract governance points from a user.
+- Checks if the admin and user accounts belong to the program, and if the admin is a signer.
+- Derives the admin PDA.
+- Deserializes the user account data.
+- Adds or subtracts the specified amount of governance points from the user.
+- Serializes the updated `User_Account` struct back into the account.
+
+Function "execute_instruction":
+- Executes an instruction related to the vault program.
+- Checks account ownership and signer status.
+- Performs different actions based on the `variant_instr`:
+  - 0: Validation, check admin account
+  - 1: Validation, check user account
+  - 2: Validation, check admin account
+- Checks the previous instruction to see if it was a vault program confirmation.
+- Calls `send_create_vault_transaction` or `send_instr_to_vault_transaction` to perform the action via CPI.
+
+Function "make_decision":
+- Allows the admin to finalize a proposal and mark it as executed.
+- Checks if the admin and proposal accounts belong to the program, and if the admin is a signer.
+- Derives the admin PDA.
+- Deserializes the proposal account data.
+- Checks if the voting period is over.
+- Determines if the proposal is approved based on yes/no vote counts.
+- Sets the `executed` flag to true and serializes the updated proposal.
+```

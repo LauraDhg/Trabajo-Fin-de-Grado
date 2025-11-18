@@ -1,0 +1,72 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey value for the vault program
+- Uses unwrap which may panic if the string is invalid
+
+Function "action_as_str":
+- Converts a u8 action code to a string description
+- Returns "Create" for 0, "Deposit" for 1, "Withdraw" for 2, "Unknown" for other values
+
+Function "send_create_vault_transaction":
+- Constructs instruction data with variant, pubkey, and bump
+- Creates a cross-program instruction to the vault program
+- Uses invoke_signed with vault seeds for PDA signing
+- Handles account cloning and instruction building
+
+Function "send_instr_to_vault_transaction":
+- Constructs instruction data with variant, amount, and pubkey
+- Creates a cross-program instruction to the vault program
+- Uses invoke_signed with vault seeds for PDA signing
+- Handles account cloning and instruction building
+
+Function "process_instruction":
+- Entry point that unpacks instruction data
+- Routes to appropriate function based on instruction variant
+- Handles CreateAdmin, UpdateAdmin, CreateAccount, OpenProposal, Vote, ManagePoints, ExecuteIntrs, and MakeDecision instructions
+
+Function "create_admin":
+- Creates admin PDA account with program-derived address
+- Checks signer permission and account initialization status
+- Stores admin ID and timestamp in account data
+- Uses invoke_signed for account creation with admin seeds
+
+Function "update_admin":
+- Updates admin account with new admin pubkey
+- Verifies current admin privileges and account ownership
+- Updates timestamp when changing admin
+- Validates PDA address matches expected admin account
+
+Function "create_account":
+- Creates user PDA account with program-derived address
+- Initializes user account with 10 governance points
+- Uses invoke_signed for account creation with user-specific seeds
+- Validates PDA address matches expected user account
+
+Function "open_proposal":
+- Creates proposal PDA account using title as seed
+- Sets proposal start and end times (1 hour duration)
+- Stores proposal metadata and voting counters
+- Uses invoke_signed for account creation with proposal seeds
+
+Function "vote_process":
+- Creates vote record PDA account for user-proposal combination
+- Adds user's governance points to yes/no vote counts
+- Checks proposal is still active before voting
+- Uses invoke_signed for vote record account creation
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from user accounts
+- Requires admin privileges to execute
+- Uses checked arithmetic to prevent underflow
+- Updates user account data with new point balance
+
+Function "execute_instruction":
+- Routes to vault program operations (create, deposit, withdraw)
+- Validates account types and privileges based on operation
+- Checks previous instruction was from vault program
+- Calls appropriate vault transaction function
+
+Function "make_decision":
+- Finalizes proposal voting after end time
+- Compares yes vs no votes to determine outcome
+- Marks proposal as executed
+- Requires admin privileges to execute

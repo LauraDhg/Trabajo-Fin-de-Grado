@@ -1,0 +1,59 @@
+Function "action_as_str":
+- Converts an action byte value to a corresponding string description.
+
+Function "send_create_vault_transaction":
+- Constructs and sends a transaction to create a new vault by invoking an external vault program.
+- Uses program-derived addresses (PDAs) and invoke_signed for secure CPI.
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends a transaction to perform operations on a vault (deposit or withdraw).
+- Uses program-derived addresses (PDAs) and invoke_signed for secure CPI.
+
+Function "process_instruction":
+- Entry point for the program to process different instructions based on the instruction data.
+- Deserializes instruction data into specific instruction variants and routes to respective handlers.
+
+Function "create_admin":
+- Creates and initializes an admin account as a PDA.
+- Checks signatures and account ownership.
+- Stores admin info with timestamp in the account data.
+
+Function "update_admin":
+- Updates the admin account with a new admin Pubkey.
+- Ensures signer is the current admin.
+- Checks account ownership and serializes the updated data.
+
+Function "create_account":
+- Creates a user account as a PDA with initial governance points.
+- Checks signatures and account ownership.
+- Serializes user data into account.
+
+Function "open_proposal":
+- Creates a proposal account as a PDA with proposal details.
+- Sets the current timestamp as start time and calculates end time.
+- Checks account ownership, signatures, and serializes proposal data.
+
+Function "vote_process":
+- Records a user's vote on a proposal.
+- Checks account signatures, ownership, and that the vote record doesn't exist.
+- Updates proposal votes based on vote answer.
+- Creates and serializes a Vote_Record account.
+- Serializes updated proposal and user accounts.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points to/from a user account.
+- Ensures caller is the admin and owns the admin account.
+- Checks signatures and account ownership.
+- Handles arithmetic with overflow checks and serializes accounts.
+
+Function "execute_instruction":
+- Executes different instructions (create vault, deposit, withdraw) based on variant.
+- Checks owner signatures, account ownership, and validity.
+- Calls CPI functions to interact with vault program.
+- Tracks previous instruction for validation.
+
+Function "make_decision":
+- Finalizes a proposal by checking votes and timestamps.
+- Validates admin authority and account ownership.
+- Deserializes and updates proposal, marking as executed.
+- Determines and logs whether the proposal is approved or denied.

@@ -1,0 +1,102 @@
+```text
+Function "vault_program_id":
+- Returns a hardcoded Pubkey.
+
+Function "action_as_str":
+- Converts a u8 representing an action into a string slice.
+- Returns "Create" for 0, "Deposit" for 1, "Withdraw" for 2, and "Unknown" for any other value.
+
+Function "send_create_vault_transaction":
+- Constructs and sends a CPI (Cross-Program Invocation) to a vault program.
+- The CPI creates a vault account.
+- It takes the variant instruction, id pubkey, vault bump, admin payer, admin account DAO, vault account, vault program, and system program as input.
+- It uses `invoke_signed` to execute the CPI, signing with the vault's seeds.
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends a CPI to a vault program for deposit or withdraw actions.
+- It takes the variant instruction, id pubkey, amount, vault bump, user payer, user account DAO, and vault account as input.
+- It uses `invoke_signed` to execute the CPI, signing with the vault's seeds.
+
+Function "process_instruction":
+- Entrypoint of the program.
+- Deserializes the instruction data into an `InstructionFormat` enum.
+- Matches on the enum variant and calls the appropriate handler function.
+
+Function "create_admin":
+- Creates an admin account.
+- Takes the program ID, accounts, and admin bump as input.
+- Checks if the admin payer is a signer and the account is not already initialized.
+- Derives the admin PDA (Program Derived Address) and checks if it matches the provided admin account.
+- Creates the admin account using `invoke_signed` with the admin PDA as the signer.
+- Serializes the `Admin_Account` struct into the newly created account.
+
+Function "update_admin":
+- Updates the admin account.
+- Takes the program ID, accounts, new admin Pubkey, and admin bump as input.
+- Checks if the admin payer is a signer and the admin account's owner is the program ID.
+- Deserializes the `Admin_Account` struct from the account data.
+- Derives the admin PDA and checks if it matches the provided admin account.
+- Updates the admin ID and last update timestamp in the `Admin_Account` struct.
+- Serializes the updated `Admin_Account` struct back into the account data.
+
+Function "create_account":
+- Creates a user account.
+- Takes the program ID, accounts, and user bump as input.
+- Checks if the user payer is a signer and the account is not already initialized.
+- Derives the user PDA (Program Derived Address) using "userAccount", the user's key, and the bump.
+- Checks if the derived PDA matches the provided user account.
+- Creates the user account using `invoke_signed` with the user PDA as the signer.
+- Initializes the user account with 10 governance points.
+- Serializes the `User_Account` struct into the newly created account.
+
+Function "open_proposal":
+- Creates a proposal account.
+- Takes the program ID, accounts, title, description, and proposal bump as input.
+- Checks if the user payer is a signer and the proposal account is not already initialized.
+- Derives the proposal PDA (Program Derived Address) using "proposal", the title, and the bump.
+- Checks if the derived PDA matches the provided proposal account.
+- Creates the proposal account using `invoke_signed` with the proposal PDA as the signer.
+- Sets the start and end times for the proposal.
+- Serializes the `Proposal` struct into the newly created account.
+
+Function "vote_process":
+- Processes a vote on a proposal.
+- Takes the program ID, accounts, vote answer, and vote bump as input.
+- Checks if the user payer is a signer and the proposal account and user accounts' owners are the program ID.
+- Derives the vote PDA (Program Derived Address) using "vote", the user's key, the proposal key and the bump.
+- Checks if the derived PDA matches the provided vote record account.
+- Deserializes the `Proposal` and `User_Account` structs from the account data.
+- Checks if the voting time limit has expired.
+- Updates the yes or no votes on the proposal based on the user's vote. The weight of the vote is given by the user's amount of governance points
+- Creates the vote record account.
+- Serializes the `Vote_Record`, `Proposal` and `User_Account` structs into the respective accounts.
+
+Function "manage_governance_points":
+- Manages (adds or subtracts) governance points for a user.
+- Takes the program ID, accounts, amount, admin bump, and instruction (add or subtract) as input.
+- Checks if the admin payer is a signer and the admin and user accounts' owners are the program ID.
+- Derives the admin PDA and checks if it matches the provided admin account.
+- Deserializes the `User_Account` struct from the account data.
+- Adds or subtracts the specified amount from the user's governance points.
+- Serializes the updated `User_Account` struct back into the account data.
+
+Function "execute_instruction":
+- Executes a CPI to another program (vault program).
+- Takes the program ID, accounts, variant instruction, amount, vault bump, and user_bump as input.
+- Checks if the user payer is a signer and user account's owner is the program ID.
+- Checks that user account has been initialized
+- Performs some checks based on the instruction type but these checks are vulnerable as the admin PDAs are created using user_bump instead of admin_bump.
+- Checks if the previous instruction was a vault program confirmation using the `instructions` sysvar.
+- Calls either `send_create_vault_transaction` or `send_instr_to_vault_transaction` based on the variant instruction.
+
+Function "make_decision":
+- Makes a decision on a proposal based on the votes.
+- Takes the program ID, accounts, and admin bump as input.
+- Checks if the admin payer is a signer and the admin and proposal accounts' owners are the program ID.
+- Derives the admin PDA and checks if it matches the provided admin account.
+- Deserializes the `Proposal` struct from the account data.
+- Checks if the voting time limit has expired.
+- Determines if the proposal is approved or denied based on the yes and no votes.
+- Sets the `executed` flag on the proposal.
+- Serializes the updated `Proposal` struct back into the account data.
+```

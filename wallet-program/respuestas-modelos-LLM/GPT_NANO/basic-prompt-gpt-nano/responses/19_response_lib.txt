@@ -1,0 +1,37 @@
+Function "initialize_wallet_account":
+- Creates and initializes a new wallet account associated with a user.
+- Checks if the user is a signer.
+- Derives the program-derived address (PDA) for the wallet.
+- Validates that the provided account matches the PDA.
+- Ensures the account isn't already initialized.
+- Calculates and allocates rent-exempt lamports.
+- Uses `invoke_signed` to create the account with the system program.
+- Serializes the wallet data into the account.
+
+Function "deposit_amount":
+- Adds a specified amount to the wallet's balance.
+- Checks if the user is a signer.
+- Derives the PDA and verifies the wallet account matches it.
+- Deserializes the wallet data.
+- Checks if the wallet is initialized.
+- Safely adds the deposit amount using checked arithmetic.
+- Serializes the updated wallet data back into the account.
+
+Function "withdraw_amount":
+- Subtracts a specified amount from the wallet's balance.
+- Checks if the user is a signer.
+- Derives the PDA and verifies the wallet account matches it.
+- Deserializes the wallet data.
+- Checks if the wallet is initialized.
+- Reduces the wallet amount without validation of sufficient funds (potential underflow risk).
+- Serializes the updated wallet data back into the account.
+
+Function "transfer_amount":
+- Transfers a specified amount from one wallet to another.
+- Checks if the user is a signer.
+- Derives PDAs for source and destination wallets and validates them.
+- Deserializes both source and destination wallet data.
+- Checks if both wallets are initialized.
+- Adds the amount to the destination wallet with checked arithmetic.
+- Deducts the amount from the source wallet without validating available funds (potential underflow risk).
+- Serializes both wallets back into their accounts.

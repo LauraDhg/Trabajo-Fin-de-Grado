@@ -1,0 +1,79 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey "6dVLkpmd5BvVQF7oXpipnQFtKwba2uQkMMwzHnaqf8Gr" as the Vault program ID.
+- Uses unwrap() without error handling, which could panic if the string were invalid (though it is constant and valid here).
+
+Function "action_as_str":
+- Maps a u8 action code to a static string description for logging.
+- Returns "Unknown" for unrecognized codes, which may hide invalid instruction data.
+
+Function "send_create_vault_transaction":
+- Constructs a CPI (Cross-Program Invocation) to create a vault via the Vault program.
+- Uses invoke_signed with PDA-derived seeds ("vault", bump).
+- Includes admin_payer, admin_account_dao, vault_account, and system_program in the instruction accounts.
+- Potential risk: Does not validate that the vault_account is a valid PDA or uninitialized.
+
+Function "send_instr_to_vault_transaction":
+- Constructs a CPI to deposit or withdraw from a vault via the Vault program.
+- Uses invoke_signed with PDA-derived seeds ("vault", bump).
+- Includes user_payer, user_account_dao, and vault_account in the instruction accounts.
+- Does not validate vault_account state or ownership.
+
+Function "process_instruction":
+- Main entrypoint that routes instruction data to appropriate handler functions.
+- Uses InstructionFormat::unpack to deserialize instruction data.
+- Matches on instruction variants and calls corresponding handler functions.
+- No default case handling for unknown instructions (handled by unpack).
+
+Function "create_admin":
+- Creates a new Admin_Account PDA with payer as admin.
+- Validates that admin_payer is a signer and admin_account_dao is uninitialized.
+- Uses system_instruction::create_account with signer seeds.
+- Serializes Admin_Account with admin_id and current timestamp.
+- Risk: No access control beyond signature; any user can become admin if they know the bump.
+
+Function "update_admin":
+- Allows current admin to update the admin ID.
+- Validates current admin signature and PDA correctness.
+- Updates admin_id and last_update timestamp.
+- Risk: No delay or confirmation mechanism; immediate update on signed request.
+
+Function "create_account":
+- Initializes a User_Account with 10 governance points.
+- Validates payer signature and uninitialized account.
+- Uses PDA derived from userAccount + user pubkey + bump.
+- Risk: Fixed 10-point allocation may not reflect actual contributions; no funding mechanism.
+
+Function "open_proposal":
+- Creates a new Proposal with 1-hour voting window.
+- Validates user has a DAO account and is signer.
+- Sets start_time and end_time using clock sysvar.
+- Risk: Title used in PDA derivation could allow collision if same title reused with same bump.
+
+Function "vote_process":
+- Allows a user to vote on a proposal with their governance points.
+- Creates a Vote_Record to prevent double voting.
+- Validates voting window via clock.
+- Uses checked arithmetic to prevent overflow.
+- Risk: Vote weight is based on current governance points, not snapshot at proposal start.
+
+Function "manage_governance_points":
+- Allows admin to add or subtract governance points from a user.
+- Validates admin signature and PDA.
+- Uses checked arithmetic to prevent underflow/overflow.
+- Risk: Admin has unilateral power to modify user balances without checks.
+
+Function "execute_instruction":
+- Handles CPIs to the Vault program (create, deposit, withdraw).
+- Validates user or admin privileges depending on instruction.
+- Checks previous instruction via Instructions sysvar to prevent reentrancy or tampering.
+- Risk: Previous instruction check is advisory and can be bypassed if attacker controls flow.
+- Risk: user_bump is used inconsistently (e.g., admin PDA with user_bump in variant 0).
+- Critical bug: In variant 0 and 2, uses user_bump to derive admin PDA, but should use admin_bump.
+- Risk: No validation of vault_account state or initialization before CPI.
+
+Function "make_decision":
+- Allows admin to finalize a proposal after voting period.
+- Validates admin privileges and proposal ownership.
+- Checks that current time is past end_time.
+- Marks proposal as executed and logs outcome.
+- Risk: Execution is administrative, not automatic; could be delayed or censored.

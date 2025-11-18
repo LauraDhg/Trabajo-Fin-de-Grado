@@ -1,0 +1,60 @@
+Function "vault_program_id":
+- Hardcodes a specific program ID, which may not be correct for all deployments or environments
+- Uses unwrap() which can panic if the string is invalid, potentially halting the program
+
+Function "action_as_str":
+- No apparent vulnerabilities found in this utility function
+
+Function "send_create_vault_transaction":
+- Creates a CPI instruction without proper validation of the target program
+- Uses hardcoded seeds ("vault") which may not match the actual vault program's expectations
+- Does not validate that the vault_program account is actually the expected program
+
+Function "send_instr_to_vault_transaction":
+- Similar to send_create_vault_transaction, creates CPI without proper program validation
+- Missing system program account in instruction accounts for deposit/withdraw operations
+- Uses hardcoded seeds that may not match the target program's expectations
+
+Function "process_instruction":
+- No apparent vulnerabilities in the dispatch function itself
+
+Function "create_admin":
+- Checks lamports > 0 for account initialization but doesn't check if account is already initialized with data
+- Uses create_program_address without verifying the bump seed is correct
+- Does not verify that the system_program account is actually the system program
+
+Function "update_admin":
+- Allows any current admin to change the admin without additional authorization checks
+- No time-based cooldown or multi-sig requirement for admin changes
+- Does not verify the new_admin public key is valid or owned by a real account
+
+Function "create_account":
+- Gives every new user 10 governance points automatically, which could be exploited by creating many accounts
+- Uses user_payer.key in PDA seeds, making PDAs predictable but not necessarily secure
+- Does not check if user already has an account
+
+Function "open_proposal":
+- Uses title as part of PDA seeds, which could lead to collisions if titles are similar
+- Fixed 1-hour voting period may not be appropriate for all proposals
+- No maximum length checks on title and description strings
+
+Function "vote_process":
+- Allows users to vote multiple times by creating new vote records (checks lamports > 0 but not data initialization)
+- Does not check if user has already voted on this proposal
+- Vote weight is based on governance points which can be manipulated by admins
+
+Function "manage_governance_points":
+- Admin can arbitrarily add or subtract any amount of governance points without limits
+- No overflow check when subtracting points (uses unchecked subtraction)
+- No logging or audit trail for point changes
+
+Function "execute_instruction":
+- Complex logic with multiple code paths increases attack surface
+- Checks previous instruction from instruction sysvar but doesn't properly validate it's from the expected program
+- Different validation paths for different instruction variants create inconsistent security checks
+- Uses user_bump parameter inconsistently (as admin bump in some cases)
+
+Function "make_decision":
+- Only checks if current time is after end_time, doesn't verify proposal hasn't already been executed
+- No threshold for proposal approval beyond simple majority
+- Admin can execute decision regardless of voting results

@@ -1,0 +1,66 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program ID changes or differs between environments
+- Uses unwrap() which can panic if the string is invalid, should use proper error handling
+
+Function "send_create_vault_transaction":
+- Missing validation of account ownership and program IDs for vault_program and system_program
+- No validation that the provided vault_bump is correct for the vault_account
+- Potential reentrancy risk through CPI calls without proper checks
+
+Function "send_instr_to_vault_transaction":
+- Missing validation of account ownership for vault_program
+- No validation that the provided vault_bump is correct for the vault_account
+- Missing system program account which may be required for token transfers
+
+Function "process_instruction":
+- No input validation on instruction_data length before unpacking
+- No access control checks at the entry point level
+
+Function "create_admin":
+- Uses lamports > 0 check for initialization which is not sufficient (account could be re-initialized)
+- Missing rent exemption check after account creation
+- No validation that system_program is actually the system program
+
+Function "update_admin":
+- No authorization check to ensure the current admin is the one making the update
+- Missing validation that clock_sysvar is actually the clock sysvar
+- No protection against front-running attacks
+
+Function "create_account":
+- Uses lamports > 0 check for initialization which is not sufficient
+- Missing rent exemption check after account creation
+- No validation that system_program is actually the system program
+- Hardcodes initial governance points (10) without configurable mechanism
+
+Function "open_proposal":
+- Uses title as PDA seed which could lead to collisions if titles are similar
+- Fixed 1-hour duration (3600 seconds) without configurability
+- Uses lamports > 0 check for initialization which is not sufficient
+- No validation that clock_sysvar is actually the clock sysvar
+
+Function "vote_process":
+- Allows multiple votes from same user by creating new vote record each time
+- No check if user has already voted on this proposal
+- Transfers all governance points as vote weight instead of allowing partial votes
+- Uses lamports > 0 check for initialization which is not sufficient
+
+Function "manage_governance_points":
+- No authorization check beyond admin signature - any admin can modify any user's points
+- No validation that the amount being subtracted doesn't cause underflow beyond checked_sub
+- No event logging or audit trail for point changes
+
+Function "execute_instruction":
+- Inconsistent validation logic between variant_instr cases
+- Relies on previous instruction check which can be manipulated
+- Missing validation that vault_program is actually the expected vault program
+- Missing validation that system_program is actually the system program
+- Missing validation that ix_sysvar is actually the instructions sysvar
+
+Function "make_decision":
+- No validation that clock_sysvar is actually the clock sysvar
+- Decision logic only marks as executed but doesn't actually execute any actions
+- No mechanism to prevent repeated execution of the same decision
+- Missing validation that the proposal hasn't already been executed
+
+Function "action_as_str":
+- No security vulnerabilities identified (helper function)

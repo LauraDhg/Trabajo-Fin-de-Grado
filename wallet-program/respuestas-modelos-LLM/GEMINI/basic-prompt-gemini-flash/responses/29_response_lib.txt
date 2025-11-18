@@ -1,0 +1,48 @@
+Function "process_instruction":
+- Unpacks the instruction data into an `InstructionFormat` enum.
+- Matches the unpacked instruction to call the appropriate handler function: `initialize_wallet_account`, `deposit_amount`, `withdraw_amount`, or `transfer_amount`.
+
+Function "initialize_wallet_account":
+- Initializes a wallet account for a user.
+- Takes the program ID and an array of `AccountInfo` structs.
+- Iterates through the `AccountInfo` array to get the user account, wallet account, and system program account.
+- Checks if the system program account is the correct system program.
+- Checks if the user account is a signer.
+- Derives the PDA for the wallet account using `Pubkey::find_program_address`.
+- Creates a `Wallet` struct with an initial amount of 0 and sets the `initialized` flag to true.
+- Serializes the `Wallet` struct.
+- Calculates the rent exemption balance for the wallet.
+- Invokes the system program to create the wallet account using `invoke_signed`.
+- Serializes the wallet data into the newly created account.
+
+Function "deposit_amount":
+- Deposits an amount into a user's wallet account.
+- Takes the program ID, an array of `AccountInfo` structs, and the amount to deposit.
+- Iterates through the `AccountInfo` array to get the user and wallet accounts.
+- Checks if the wallet account belongs to the program.
+- Checks if the user account is a signer.
+- Deserializes the wallet data from the wallet account.
+- Adds the deposit amount to the wallet's `amount` field.
+- Serializes the updated wallet data back into the wallet account.
+
+Function "withdraw_amount":
+- Withdraws an amount from a user's wallet account.
+- Takes the program ID, an array of `AccountInfo` structs, and the amount to withdraw.
+- Iterates through the `AccountInfo` array to get the user and wallet accounts.
+- Checks if the wallet account belongs to the program.
+- Checks if the user account is a signer.
+- Deserializes the wallet data from the wallet account.
+- Checks if the wallet has sufficient funds.
+- Subtracts the withdrawal amount from the wallet's `amount` field using `checked_sub` to prevent underflow.
+- Serializes the updated wallet data back into the wallet account.
+
+Function "transfer_amount":
+- Transfers an amount from one user's wallet to another user's wallet.
+- Takes the program ID, an array of `AccountInfo` structs, and the amount to transfer.
+- Iterates through the `AccountInfo` array to get the user, source wallet, destination user, and destination wallet accounts.
+- Checks if the source and destination wallet accounts belong to the program.
+- Checks if the user account is a signer.
+- Deserializes the wallet data from both the source and destination wallet accounts.
+- Adds the transfer amount to the destination wallet's `amount` field.
+- Subtracts the transfer amount from the source wallet's `amount` field using `checked_sub` to prevent underflow.
+- Serializes the updated wallet data back into both the source and destination wallet accounts.

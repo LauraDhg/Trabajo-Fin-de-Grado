@@ -1,0 +1,33 @@
+Function "process_instruction":
+- Parses and dispatches the instruction to the appropriate function based on instruction data.
+- Uses pattern matching to handle different instruction variants.
+- Calls specific functions for each instruction type, passing relevant parameters.
+
+Function "initialize_wallet_account":
+- Creates a new wallet account associated with a user.
+- Checks for system program correctness and account PDA match.
+- Ensures the account is not already initialized.
+- Calculates rent-exempt balance and creates the account using CPI.
+- Serializes initial wallet data into the account.
+
+Function "deposit_amount":
+- Adds a specified amount to a wallet.
+- Checks ownership of the wallet account.
+- Verifies response PDA correctness.
+- Deserializes wallet data, adding the amount safely with overflow check.
+- Serializes updated wallet data back into the account.
+
+Function "withdraw_amount":
+- Deducts a specified amount from a wallet.
+- Checks ownership and correct PDA.
+- Deserializes wallet data.
+- Deducts amount without overdraft protection, which is a potential bug.
+- Serializes updated wallet data.
+
+Function "transfer_amount":
+- Transfers a specified amount from one wallet to another.
+- Checks ownership and correct PDAs for source and destination wallets.
+- Deserializes both wallets.
+- Adds amount to destination wallet with overflow check.
+- Deducts amount from source wallet without overdraft check, which is a potential bug.
+- Serializes both wallets back into accounts.

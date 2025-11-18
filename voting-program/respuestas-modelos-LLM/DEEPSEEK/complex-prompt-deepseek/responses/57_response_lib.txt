@@ -1,0 +1,61 @@
+Function "vault_program_id":
+- Hardcoded program ID which may be incorrect or outdated if the vault program changes
+- Uses unwrap() which will panic if the string is invalid, potentially halting the program
+
+Function "send_create_vault_transaction":
+- Missing proper validation of account ownership and program IDs
+- Uses invoke_signed with potentially insecure seeds generation
+- No validation that the vault_program account is actually the expected program
+
+Function "send_instr_to_vault_transaction":
+- Missing validation of account ownership and program IDs
+- Uses invoke_signed with potentially insecure seeds generation
+- No validation that the vault_program account is actually the expected program
+
+Function "process_instruction":
+- No validation that the program_id parameter matches the expected program ID
+- No validation of account ordering or required accounts for each instruction
+
+Function "create_admin":
+- Missing rent exemption check before creating account
+- Uses create_program_address without proper error handling for invalid bumps
+- No validation that system_program account is actually the system program
+
+Function "update_admin":
+- Missing access control - any signer can update admin without checking if they are the current admin
+- No validation that clock_sysvar is actually the clock sysvar
+
+Function "create_account":
+- Missing rent exemption check before creating account
+- Hardcodes initial governance points (10) without configurable mechanism
+- No validation that system_program account is actually the system program
+
+Function "open_proposal":
+- Missing rent exemption check before creating account
+- Uses title as part of PDA seeds which could lead to collisions with long titles
+- Fixed 1-hour duration without configurable voting periods
+- No validation that clock_sysvar is actually the clock sysvar
+
+Function "vote_process":
+- Missing rent exemption check before creating account
+- User can vote multiple times by creating multiple vote records
+- No validation that clock_sysvar is actually the clock sysvar
+- Arithmetic overflow protection only on addition, not on subtraction
+
+Function "manage_governance_points":
+- Missing access control - any signer can manage points if they provide admin account
+- No validation that the admin_payer is actually the current admin
+- Subtraction operation is not protected against underflow
+- No validation of amount limits or constraints
+
+Function "execute_instruction":
+- Complex instruction with multiple execution paths and insufficient validation
+- Uses sysvar instructions for validation but doesn't properly validate the sysvar account
+- PDA validation logic is duplicated and inconsistent across variants
+- No proper validation of vault_program account
+
+Function "make_decision":
+- Missing validation that clock_sysvar is actually the clock sysvar
+- No validation that admin_payer is actually the current admin
+- Decision logic is only logged but doesn't trigger any actual execution
+- Uses parentheses in if conditions unnecessarily

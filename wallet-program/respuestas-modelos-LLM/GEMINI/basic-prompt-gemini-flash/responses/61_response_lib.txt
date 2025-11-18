@@ -1,0 +1,34 @@
+Function "process_instruction":
+- Unpacks the instruction data into an `InstructionFormat` enum.
+- Matches the unpacked instruction to call the appropriate handler function: `initialize_wallet_account`, `deposit_amount`, `withdraw_amount`, or `transfer_amount`.
+
+Function "initialize_wallet_account":
+- Gets the required accounts from the `accounts` slice: user account, wallet account, and system program account.
+- Checks if the user account is a signer.
+- Derives the Program Derived Address (PDA) for the wallet account using `Pubkey::find_program_address`.
+- Creates a `Wallet` struct with initial values (amount: 0, initialized: true).
+- Calculates the rent required for the wallet account.
+- Invokes the system program to create the wallet account, signing with the PDA's bump seed.
+- Serializes the `Wallet` struct into the newly created wallet account's data.
+
+Function "deposit_amount":
+- Gets the required accounts from the `accounts` slice: user account and wallet account.
+- Checks if the user account is a signer.
+- Deserializes the `Wallet` struct from the wallet account's data.
+- Adds the deposit `amount` to the `wallet.amount`.
+- Serializes the updated `Wallet` struct back into the wallet account's data.
+
+Function "withdraw_amount":
+- Gets the required accounts from the `accounts` slice: user account and wallet account.
+- Checks if the user account is a signer.
+- Deserializes the `Wallet` struct from the wallet account's data.
+- Subtracts the withdraw `amount` from the `wallet.amount`.
+- Serializes the updated `Wallet` struct back into the wallet account's data.
+
+Function "transfer_amount":
+- Gets the required accounts from the `accounts` slice: user account, source wallet account, destination user account, and destination wallet account.
+- Checks if the user account is a signer.
+- Deserializes the `Wallet` struct from both the source and destination wallet accounts' data.
+- Adds the transfer `amount` to the `dest_wallet.amount`.
+- Subtracts the transfer `amount` from the `src_wallet.amount`.
+- Serializes the updated `Wallet` structs back into their respective wallet accounts' data.

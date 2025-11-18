@@ -1,0 +1,79 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for the vault program, which could be a risk if not properly validated elsewhere; ensure this address is correct and trusted before deployment.
+- Hardcoded values increase rigidity and reduce testability; consider making this configurable in tests or using a more secure method for production.
+
+Function "action_as_str":
+- Pure utility function with no security implications; safely maps instruction variants to human-readable strings.
+
+Function "send_create_vault_transaction":
+- Constructs a CPI (Cross-Program Invocation) to an external vault program; does not validate that `vault_program.key` matches the expected `vault_program_id()`, enabling potential hijacking via incorrect account input.
+- Missing check: should assert `*vault_program.key == vault_program_id()` to prevent malicious program invocation.
+- Uses `invoke_signed` with seeds but does not verify that `vault_account` is a valid PDA derived from the expected program and seeds.
+- Risk of unauthorized program invocation if called with attacker-controlled accounts.
+
+Function "send_instr_to_vault_transaction":
+- Similar to `send_create_vault_transaction`, constructs CPI to external vault program without validating `vault_program.key`.
+- Missing check: should require `*vault_program.key == vault_program_id()`.
+- No validation that `vault_account` is a correct PDA; vulnerable to account substitution.
+- Accepts arbitrary `variant_instr` without strict validation, increasing risk of malformed instructions.
+
+Function "process_instruction":
+- Entry point; dispatches instructions safely using `InstructionFormat::unpack`, but depends entirely on the safety of downstream functions.
+- No explicit instruction-level authorization or rate-limiting; relies on individual handlers for security.
+
+Function "create_admin":
+- Creates a PDA-based admin account; validates signer and uninitialized state correctly.
+- Uses `create_program_address` with `admin_bump` to derive PDA; should confirm this is the only valid derivation method.
+- Serializes data after CPI; if CPI fails, state may be inconsistent, but since account creation fails atomically, this is safe.
+- Does not revalidate `admin_account_dao` ownership after creation; however, it's initialized by this program so ownership is correct.
+
+Function "update_admin":
+- Requires current admin signature and validates PDA correctly.
+- Updates admin and timestamp; safe if PDA and signature checks are sufficient.
+- Missing delay or confirmation mechanism for admin changes, which could be risky in governance contexts.
+
+Function "create_account":
+- Initializes user account with 10 governance points; no cap or control on who can call this.
+- PDA derivation includes `user_payer.key`, making it unique per user; safe.
+- Grants governance points unconditionally; could be exploited if spammed unless rate-limited off-chain.
+- No check if user already has an account (only checks lamports), so recreation attack possible if old account is closed.
+
+Function "open_proposal":
+- Allows any user with a DAO account to create a proposal; no cost or restriction.
+- Title is used in PDA derivation; if title is user-controlled, it may allow collision or prediction attacks.
+- PDA uses `title.as_bytes()` which may not be unique; two proposals with same title and bump would conflict.
+- Hardcoded 1-hour voting window; acceptable but inflexible.
+- No check that proposer has sufficient governance points or is eligible.
+
+Function "vote_process":
+- Allows a user to vote once per proposal (via PDA enforcement); prevents double voting.
+- Uses `user.amount_governance_points` as vote weight; does not check if user has already voted.
+- PDA is based on user, proposal, and bump; ensures one vote per user per proposal.
+- Vote weight is not locked or escrowed; user could transfer tokens after voting.
+- No slashing or penalties for invalid votes; acceptable for basic DAOs.
+- Uses unchecked `try_from_slice` on account data; should use `BorshDeserialize` safely via `try_from_slice_unchecked` only if layout is trusted.
+
+Function "manage_governance_points":
+- Allows admin to add or subtract governance points; uses `checked_sub` to prevent underflow.
+- Correctly validates admin PDA and signature.
+- No event logging or off-chain tracking mechanism; could be improved with emit-style patterns.
+- Risk of admin abuse unless governance is decentralized.
+
+Function "execute_instruction":
+- Performs CPI to vault program based on `variant_instr`.
+- Critical vulnerability: does not validate that `vault_program.key == vault_program_id()`; allows attacker to redirect funds to malicious program.
+- Missing PDA validation for `vault_account`; must be derived from `[b"vault", &[vault_bump]]` with this program as seed.
+- Relies on instruction introspection (`load_current_index`, `load_instruction_at`) to check previous CPI; this is unreliable and can be bypassed (e.g., via batched instructions from another program).
+- Instruction check: `prev_ix.program_id == vault_program_id()` is insufficient; attackers can simulate confirmation.
+- `variant_instr == 0` and `2` incorrectly use `user_bump` with `[b"admin", &[user_bump]]` to derive admin PDA, but `user_bump` is not necessarily the admin bump — this is a logic error.
+- Uses `user_bump` in admin PDA derivation, which is inconsistent; should use `admin_bump` instead.
+- After logic check, calls `send_create_vault_transaction` or `send_instr_to_vault_transaction` — both of which are unsafe due to missing validations.
+- High-risk function: enables arbitrary CPI with signer privileges; lacks proper access control and validation.
+
+Function "make_decision":
+- Allows admin to mark a proposal as executed after voting period.
+- Validates admin signature and PDA correctly.
+- Checks that proposal has ended before execution; prevents early execution.
+- Does not validate the outcome threshold (e.g., quorum); only checks yes vs no votes.
+- Sets `executed = true` but does not prevent re-entry; should check `!proposal.executed` before allowing execution.
+- No associated action taken (e.g., CPI to another program); execution is only state-based unless handled off-chain.

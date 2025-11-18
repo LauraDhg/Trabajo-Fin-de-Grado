@@ -1,0 +1,39 @@
+Function "process_instruction":
+- It uses a match statement to dispatch instructions based on the `InstructionFormat`. This is a common and generally safe pattern.
+
+Function "initialize_wallet_account":
+- Checks if the system program account is correct.
+- Derives the PDA (Program Derived Address) for the wallet account.
+- Checks if the wallet account has already been initialized (has lamports).
+- Creates the wallet account using `invoke_signed`.
+- Serializes the wallet data to the account.
+- Vulnerability: It checks if the account has lamports to prevent initialization. However, this isn't sufficient, as the account data could be corrupted. A better approach is to store an `initialized` boolean in the account data and check that.
+- The program does not validate that the `wallet_account` passed in, is actually the PDA. This means an attacker could pass in any account, and initialize it, which is not the intended behaviour.
+
+Function "deposit_amount":
+- Checks if the wallet account owner is the program itself.
+- Deserializes the wallet data.
+- Checks if the wallet is initialized.
+- Deposits the amount.
+- Serializes the wallet data back.
+- Vulnerability: Missing an overflow check when adding the amount to the wallet, could lead to unexpected behaviour.
+
+Function "withdraw_amount":
+- Checks if the wallet account owner is the program itself.
+- Deserializes the wallet data.
+- Checks if the wallet is initialized.
+- Checks if there are sufficient funds.
+- Withdraws the amount.
+- Serializes the wallet data back.
+- Uses checked subtraction to prevent underflow, which is good.
+
+Function "transfer_amount":
+- Checks if both source and destination wallet account owners are the program itself.
+- Deserializes both source and destination wallet data.
+- Checks if both wallets are initialized.
+- Adds the amount to the destination wallet.
+- Checks for sufficient funds in the source wallet.
+- Subtracts the amount from the source wallet.
+- Serializes both wallet data back.
+- Vulnerability: Missing an overflow check when adding the amount to the destination wallet.
+- The program does not validate that the PDA of the `dest_wallet_account` matches with the `dest_user_account`. An attacker could pass in any account, and increase its `amount`, which is not the intended behaviour.

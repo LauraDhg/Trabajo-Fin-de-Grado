@@ -1,0 +1,37 @@
+Function "process_instruction":
+- Parses the instruction data to determine which specific action to perform
+- Routes the instruction to the corresponding function for account creation, deposit, withdrawal, or transfer
+
+Function "initialize_wallet_account":
+- Creates a new wallet account associated with a user, using PDAs for deterministic address derivation
+- Checks if the system program ID matches expected
+- Validates the wallet account PDA
+- Calculates rent-exempt minimum balance
+- Invokes system instruction to create account with proper authority
+- Serializes initial wallet data into the account
+
+Function "deposit_amount":
+- Adds a specified amount to the user's wallet balance
+- Checks ownership of the wallet account
+- Validates PDA derivation for wallet address
+- Deserializes wallet data
+- Performs a checked addition for overflow safety
+- Serializes updated data back into the account
+
+Function "withdraw_amount":
+- Subtracts a specified amount from the user's wallet balance
+- Checks ownership of the wallet account
+- Validates PDA derivation for wallet address
+- Deserializes wallet data
+- Checks for sufficient funds
+- Performs a checked subtraction for underflow safety
+- Serializes updated data back into the account
+
+Function "transfer_amount":
+- Transfers a specified amount from one user's wallet to another
+- Checks ownership of source and destination wallet accounts
+- Validates PDA derivations for both wallets
+- Deserializes both wallet data
+- Checks for sufficient funds in source wallet
+- Performs checked addition and subtraction for safety
+- Serializes both wallets back to their accounts

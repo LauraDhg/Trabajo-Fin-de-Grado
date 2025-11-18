@@ -1,0 +1,74 @@
+Function "process_instruction":
+- Parses incoming instruction data into a specific instruction format
+- Routes the execution to specific functions based on the instruction variant
+
+Function "create_admin":
+- Creates and initializes an admin account if not already initialized
+- Checks for correct owner and signer
+- Derives program address for admin account
+- Calculates rent and creates account with invoke_signed
+
+Function "update_admin":
+- Updates the admin account with a new admin address
+- Checks owner, signer, and account correctness
+- Deserializes, modifies, and serializes the admin data
+
+Function "create_account":
+- Creates a user governance points account
+- Checks for signer and existing account
+- Derives PDA for user account
+- Creates account with invoke_signed, initializes with points, serializes
+
+Function "open_proposal":
+- Creates a new proposal account
+- Checks owner, signer, and existing account
+- Derives PDA for proposal based on title
+- Sets start/end times, serializes proposal
+
+Function "vote_process":
+- Processes a vote on a proposal
+- Checks ownership, signer, and existing vote record
+- Deserializes proposal and user accounts
+- Checks if voting period is active
+- Updates vote counts
+- Creates vote record account with invoke_signed
+- Serializes updated data
+
+Function "manage_governance_points":
+- Adds or subtracts governance points for a user
+- Checks owner and signer
+- Deserializes user account
+- Modifies governance points based on instruction
+- Serializes data
+
+Function "execute_instruction":
+- Executes different instructions based on variant
+- Checks ownership, signer, and account correctness
+- Loads previous instruction index
+- Calls relevant transaction functions (create vault or token transfers)
+- Uses invoke_signed for CPI
+
+Function "make_decision":
+- Finalizes a proposal
+- Checks owner, signer, and account correctness
+- Checks if proposal period ended
+- Determines if proposal is approved
+- Sets executed flag, serializes
+
+Potential risks and vulnerabilities:
+- Lack of explicit access control on functions that modify state (e.g., only admin should invoke certain functions)
+- Reliance on PDA derivation correctness; if accounts are not correctly derived or matched, may cause logic errors
+- No validation of input strings (title, description) in open_proposal, possible injection or overflow
+- No explicit checks for maximum vote or governance points limits
+- Missing validation for amount in manage_governance_points, potential for underflow
+- Use of unwrap() on Pubkey::from_str() without error handling in vault_program_id
+- No explicit checks to prevent double voting or multiple votes from the same user
+- No validation to ensure votes are within valid range
+- No role verification for admin actions beyond PDA matching
+- Insufficient error handling: some functions may fail silently or with generic errors
+- Potential race conditions if multiple transactions modify the same accounts concurrently
+- No checks for account data size consistency during deserialization, could cause panics
+- Missing anti-replay or nonce mechanisms
+- No enforcement of admin or proposal owner authority beyond owner checks
+- Since all data is stored in account data, possible overflows or data corruption if not handled carefully
+

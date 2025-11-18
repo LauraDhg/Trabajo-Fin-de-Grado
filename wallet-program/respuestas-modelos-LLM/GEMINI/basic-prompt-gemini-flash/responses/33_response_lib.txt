@@ -1,0 +1,39 @@
+Function "process_instruction":
+- Unpacks the instruction data into an `InstructionFormat` enum.
+- Matches the unpacked instruction and calls the corresponding handler function: `initialize_wallet_account`, `deposit_amount`, `withdraw_amount`, or `transfer_amount`.
+
+Function "initialize_wallet_account":
+- Retrieves the user account, wallet account, and system program account from the provided accounts.
+- Checks if the user account is a signer.
+- Derives the Program Derived Address (PDA) for the wallet account using `Pubkey::find_program_address`.
+- Creates a `Wallet` struct with the user's pubkey, an initial amount of 0, and sets `initialized` to true.
+- Calculates the rent required for the wallet account.
+- Invokes the system program to create the wallet account, using the derived PDA as the account's address and the user as the owner.
+- Serializes the `Wallet` struct into the newly created wallet account.
+
+Function "deposit_amount":
+- Retrieves the user account and wallet account from the provided accounts.
+- Checks if the user account is a signer.
+- Deserializes the `Wallet` struct from the wallet account.
+- Checks if the `user_id` in the wallet matches the user account's pubkey.
+- Adds the specified amount to the wallet's amount using `checked_add` to prevent overflow.
+- Serializes the updated `Wallet` struct back into the wallet account.
+
+Function "withdraw_amount":
+- Retrieves the user account and wallet account from the provided accounts.
+- Checks if the user account is a signer.
+- Deserializes the `Wallet` struct from the wallet account.
+- Checks if the `user_id` in the wallet matches the user account's pubkey.
+- Checks if the wallet has sufficient funds to withdraw the specified amount.
+- Subtracts the specified amount from the wallet's amount using `checked_sub` to prevent underflow.
+- Serializes the updated `Wallet` struct back into the wallet account.
+
+Function "transfer_amount":
+- Retrieves the user account, source wallet account, destination user account, and destination wallet account from the provided accounts.
+- Checks if the user account is a signer.
+- Deserializes the `Wallet` structs from both the source and destination wallet accounts.
+- Checks if the `user_id` in the source and destination wallets match their respective user account's pubkeys.
+- Adds the specified amount to the destination wallet's amount using `checked_add` to prevent overflow.
+- Checks if the source wallet has sufficient funds to transfer the specified amount.
+- Subtracts the specified amount from the source wallet's amount using `checked_sub` to prevent underflow.
+- Serializes the updated `Wallet` structs back into their respective wallet accounts.

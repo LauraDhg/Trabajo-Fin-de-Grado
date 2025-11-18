@@ -1,0 +1,42 @@
+Function "process_instruction":
+- It uses a match statement to determine which instruction to execute, which is a standard and safe practice.
+- The function correctly calls other functions to process different instructions.
+
+Function "initialize_wallet_account":
+- Checks if the user account is a signer.
+- Derives the PDA using `find_program_address`, which is standard.
+- Checks if the provided wallet account matches the derived PDA.
+- Checks if the wallet account has already been initialized.
+- Creates the account using `invoke_signed` with the correct seeds.
+- Serializes the wallet data into the newly created account.
+- Checks if the account already has lamports.
+
+Function "deposit_amount":
+- Checks if the user account is a signer.
+- Derives the PDA using `find_program_address`, which is standard.
+- Checks if the provided wallet account matches the derived PDA.
+- Deserializes the wallet data.
+- Checks if the wallet has been initialized.
+- Directly adds the deposit amount to the wallet's amount without any overflow checks.
+- Serializes the updated wallet data back into the account.
+
+Function "withdraw_amount":
+- Checks if the user account is a signer.
+- Derives the PDA using `find_program_address`, which is standard.
+- Checks if the provided wallet account matches the derived PDA.
+- Deserializes the wallet data.
+- Checks if the wallet has been initialized.
+- Checks for sufficient funds before withdrawing.
+- Uses `checked_sub` to prevent underflow.
+- Serializes the updated wallet data back into the account.
+
+Function "transfer_amount":
+- Checks if the user account is a signer.
+- Derives both source and destination PDAs using `find_program_address`.
+- Checks if the provided wallet accounts match the derived PDAs for both source and destination.
+- Deserializes both source and destination wallet data.
+- Checks if both wallets have been initialized.
+- Directly adds the transfer amount to the destination wallet's amount without any overflow checks.
+- Checks for sufficient funds in the source wallet before transferring.
+- Uses `checked_sub` to prevent underflow in the source wallet.
+- Serializes the updated wallet data back into both accounts.

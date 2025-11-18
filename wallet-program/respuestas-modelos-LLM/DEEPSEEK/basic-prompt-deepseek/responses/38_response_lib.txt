@@ -1,0 +1,31 @@
+Function "process_instruction":
+- Dispatches to different functions based on instruction format
+- Handles CreateAccount, IncreaseAmount, WithdrawAmount, and TransferAmount instructions
+- Returns ProgramResult indicating success or error
+
+Function "initialize_wallet_account":
+- Creates a new PDA wallet account using find_program_address
+- Calculates required rent for wallet storage
+- Uses invoke_signed to create account with proper program-derived address seeds
+- Initializes wallet with zero amount and sets initialized flag to true
+- Serializes wallet data into the newly created account
+
+Function "deposit_amount":
+- Increases the amount in a wallet by specified value
+- Validates that wallet account is owned by the program
+- Uses checked_add to prevent arithmetic overflow
+- Updates and serializes wallet state after deposit
+
+Function "withdraw_amount":
+- Decreases the amount in a wallet by specified value
+- Validates that wallet account is owned by the program
+- Checks for sufficient funds before withdrawal
+- Uses checked_sub to prevent arithmetic underflow
+- Updates and serializes wallet state after withdrawal
+
+Function "transfer_amount":
+- Transfers amount from source wallet to destination wallet
+- Validates that both wallet accounts are owned by the program
+- Checks for sufficient funds in source wallet before transfer
+- Uses checked_add and checked_sub for arithmetic operations
+- Updates and serializes both wallet states after transfer

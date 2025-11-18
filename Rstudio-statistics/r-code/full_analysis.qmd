@@ -1,0 +1,629 @@
+---
+title: "Análisis de programas vulnerables"
+author: "Laura de Haro García"
+format: pdf
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+```{r Libraries}
+#| echo: false
+#| output: false
+
+library(tidyverse)
+library(caret)
+library(Metrics)
+
+```
+
+```{r Load the data}
+#| echo: false
+#| output: false
+
+rm(list = ls())
+
+# Wallet
+
+## Basic prompt
+
+gptNanoBasicWallet <- read_csv("../../wallet-program/analisis-respuestas/GPT/gpt_basic_wallet.csv")
+deepSeekBasicWallet <- read_csv("../../wallet-program/analisis-respuestas/DEEPSEEK/deepseek_basic_wallet.csv")
+geminiBasicWallet <- read_csv("../../wallet-program/analisis-respuestas/GEMINI/gemini_basic_wallet.csv")
+qwenBasicWallet <- read_csv("../../wallet-program/analisis-respuestas/QWEN3/qwen_basic_wallet.csv")
+
+## Complex Prompt
+
+gptNanoComplexWallet <- read_csv("../../wallet-program/analisis-respuestas/GPT/gpt_complex_wallet.csv")
+deepSeekComplexWallet <-read_csv("../../wallet-program/analisis-respuestas/DEEPSEEK/deepseek_complex_wallet.csv")
+geminiComplexWallet <- read_csv("../../wallet-program/analisis-respuestas/GEMINI/gemini_complex_wallet.csv")
+qwenComplexWallet <- read_csv("../../wallet-program/analisis-respuestas/QWEN3/qwen_complex_wallet.csv")
+
+
+# Voting
+
+## Basic prompt
+
+gptNanoBasicVoting <- read_csv("../../voting-program/analisis-respuestas/GPT/gpt_basic_voting_final.csv")
+deepSeekBasicVoting <- read_csv("../../voting-program/analisis-respuestas/DEEPSEEK/deepseek_basic_voting_final.csv")
+geminiBasicVoting <- read_csv("../../voting-program/analisis-respuestas/GEMINI/gemini_basic_voting_final.csv")
+qwenBasicVoting <- read_csv("../../voting-program/analisis-respuestas/QWEN3/qwen_basic_voting_final.csv")
+
+
+## Complex Prompt
+
+gptNanoComplexVoting <- read_csv("../../voting-program/analisis-respuestas/GPT/gpt_complex_voting_final.csv")
+deepSeekComplexVoting <- read_csv("../../voting-program/analisis-respuestas/DEEPSEEK/deepseek_complex_voting_final.csv")
+geminiComplexVoting <- read_csv("../../voting-program/analisis-respuestas/GEMINI/gemini_complex_voting_final.csv")
+qwenComplexVoting <- read_csv("../../voting-program/analisis-respuestas/QWEN3/qwen_complex_voting_final.csv")
+
+
+```
+
+# Análisis de los resultados
+
+Como ya se ha mencionado previamente, en el presente trabajo se han analizado 4 grandes modelos de lenguaje, y más concretamente, su capacidad de detectar vulnerabilidades en los 2 contratos inteligentes definidos mediante el uso de 2 prompts diferentes.
+
+## La capacidad de detectar la presencia de vulnerabilidades
+
+En esta sección se analizará la capacidad de los modelos y los prompts
+de detectar la presencia de las vulnerabilidades en el código. Como ya
+se ha establecido previamente, un contrato puede presentar la misma
+vulnerabilidad en más de una función, sin embargo, en esta parte del
+análisis, la repetición de la misma vulnerabilidad no se tendrá en
+cuenta. En otras palabras, si un contrato tiene la vulnerabilidad "A"
+$x$ veces, no se apunta el número de veces que aparece, únicamente que
+está presente. Igualmente, no interesa en cuántas funciones el modelo
+detecta la presencia de la vulnerabilidad "A", únicamente interesa si ha
+detectado su presencia en al menos una. Por lo tanto, si un contrato
+tiene 2 veces una vulnerabilidad de *underflow* y el modelo únicamente
+menciona una de sus apariencias, se considera que ha detectado
+correctamente la presencia de la vulnerabilidad.
+
+
+```{r Consider any number of problems as a positive}
+#| echo: false
+#| output: false
+
+process_df <- function(df, cols = 2:13) {
+  df[, cols] <- lapply(df[, cols], function(x) ifelse(x >= 1, TRUE, FALSE))
+  
+  df <- df %>%
+    mutate(across(everything(), ~ factor(., levels = c(TRUE, FALSE))))
+  
+  return(df)
+}
+
+# Bucle a través de todo los data frames
+make_processed_versions <- function(suffix = "Any", cols = 2:13) {
+  df_names <- ls(envir = .GlobalEnv)
+  df_names <- df_names[sapply(df_names, function(x) is.data.frame(get(x)))]
+
+  
+  for (name in df_names) {
+    df <- get(name, envir = .GlobalEnv)
+    new_df <- process_df(df, cols = cols)
+    new_name <- paste0(name, suffix)
+    assign(new_name, new_df, envir = .GlobalEnv)
+  }
+}
+
+make_processed_versions()
+
+```
+
+Por lo tanto, para cada vulnerabilidad se crean dos vectores: Uno que
+señala la presencia o ausencia de la vulnerabilidad en los contratos y
+otro que señala si el modelo en cuestión la había detectado o no.
+Podemos utilizar estos dos vectores para crear una matriz de confusión.
+
+```{r Create a confusion matrix}
+
+xtabs(formula = ~ PDACheckPredicted + PDACheckReal, data = gptNanoComplexWalletAny)
+
+```
+
+En el caso concreto representado en la imagen, es decir, el modelo **gpt-nano-4.1** con el prompt **complejo** analizando la vulnerabilidad donde se omite el control de verificación del PDA de una cuenta en el programa **Wallet**, podemos observar 14 detecciones correctas de la vulnerabilidad (verdaderos positivos), 28 detecciones correctas de un contrato sin la vulnerabilidad (verdaderos negativos), pero también 19 falsos negativos y 2 falsos positivos. A partir de estos datos, podemos calcular
+varias métricas que nos permiten diagnosticar la calidad de la clasificación. En este trabajo, se empleará la precisión, la sensibilidad y la especificidad.
+
+La precisión sería simplemente:
+$$precisión = \frac{\text{número de predicciones correctas}}{\text{número de predicciones}}$$
+La sensibilidad se calcularía de la siguiente manera:
+$$sensibilidad = \frac{\text{número de verdaderos positivos}}{\text{número de verdaderos positivos} + \text{número de falsos negativos}}$$
+En otras palabras, la sensibilidad comunica qué porcentaje de contratos
+vulnerables han sido identificados identificados como vulnerables.
+
+Finlamente, la especificidad se calcularía de la siguiente manera:
+$$especificidad = \frac{\text{número de verdaderos negativos}}{\text{número de verdaderos negativos} + \text{número de falsos positivos}}$$
+En otras palabras, la sensibilidad comunica qué porcentaje de contratos
+seguros han sido identificados como seguros.
+
+En el caso de la matriz de confusión anteriormente expuesta, su
+precisión equivaldría a $66.\overline{6}$%, la sensibilidad a $42.42$% y
+la especificidad a \~$93.\overline{3}$%.
+
+De la misma manera, podemos evaluar el rendimiento de todos los modelos
+y prompts en cada una de las vulnerabilidades, primero en el contrato
+**Wallet**:
+
+```{r Define the first analytic function}
+#| echo: false
+#| output: false
+analyse <-
+  function(vulnerability, prompt, contract){
+  
+    gptNano <- paste0("gptNano", prompt, contract, "Any")
+    deepSeek <- paste0("deepSeek", prompt, contract, "Any")
+    gemini <- paste0("gemini", prompt, contract, "Any")
+    qwen <- paste0("qwen", prompt, contract, "Any")
+    
+    predictedVariableName <- paste0(vulnerability, "Predicted")
+    actualVariableName <- paste0(vulnerability, "Real")
+    
+    confusionMatrixMetrics <- 
+    data_frame(modelo = c("GPT Nano 4.1", "DeepSeek V3.1", "Gemini Flash 2.0", "Qwen3 235B A22B"),
+           precisión = c(accuracy(predicted = get(gptNano)[[predictedVariableName]],
+                                       actual = get(gptNano)[[actualVariableName]]),
+                           accuracy(predicted = get(deepSeek)[[predictedVariableName]],
+                                       actual = get(deepSeek)[[actualVariableName]]),
+                           accuracy(predicted = get(gemini)[[predictedVariableName]],
+                                       actual = get(gemini)[[actualVariableName]]),
+                           accuracy(predicted = get(qwen)[[predictedVariableName]],
+                                       actual = get(qwen)[[actualVariableName]])
+                           ),
+           sensibilidad = c(sensitivity(data = get(gptNano)[[predictedVariableName]],
+                                       reference = get(gptNano)[[actualVariableName]]),
+                           sensitivity(data = get(deepSeek)[[predictedVariableName]],
+                                       reference = get(deepSeek)[[actualVariableName]]),
+                           sensitivity(data = get(gemini)[[predictedVariableName]],
+                                       reference = get(gemini)[[actualVariableName]]),
+                           sensitivity(data = get(qwen)[[predictedVariableName]],
+                                       reference = get(qwen)[[actualVariableName]])
+                           ),
+           especificidad = c(specificity(data = get(gptNano)[[predictedVariableName]],
+                                       reference = get(gptNano)[[actualVariableName]]),
+                           specificity(data = get(deepSeek)[[predictedVariableName]],
+                                       reference = get(deepSeek)[[actualVariableName]]),
+                           specificity(data = get(gemini)[[predictedVariableName]],
+                                       reference = get(gemini)[[actualVariableName]]),
+                           specificity(data = get(qwen)[[predictedVariableName]],
+                                       reference = get(qwen)[[actualVariableName]])
+                           )
+           
+           )
+    
+    confusionMatrixMetrics %>%
+      pivot_longer(cols = c(sensibilidad, especificidad, precisión),
+                   names_to = "métrica",
+                   values_to = "valor") %>%
+      ggplot(aes(x = modelo,
+                 y = valor,
+                 fill = métrica)) +
+      geom_col(position = "dodge") +
+        labs(x = "Modelo",
+             y = "Valor",
+             fill = "Métricas de la matriz de confusión",
+             title = paste("Contract:", contract, "Prompt:", prompt, "Vulnerability:", vulnerability)) +
+      scale_y_continuous(limits = c(0, 1)) +
+       scale_fill_manual(values = c(
+    "sensibilidad" = "#757fb7",
+    "especificidad" = "#9175b7",
+    "precisión" = "#62dbd7"
+    
+  )) +
+      theme_minimal() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+    
+    }
+  
+```
+
+```{r Wallet contract first analysis}
+#| echo: false
+#| 
+a <- analyse(vulnerability = "OwnerCheck",
+        prompt = "Basic",
+        contract = "Wallet")
+
+analyse(vulnerability = "OwnerCheck",
+        prompt = "Complex",
+        contract = "Wallet")
+
+
+analyse(vulnerability = "SignatureCheck",
+        prompt = "Basic",
+        contract = "Wallet")
+
+analyse(vulnerability = "SignatureCheck",
+        prompt = "Complex",
+        contract = "Wallet")
+
+
+analyse(vulnerability = "PDACheck",
+        prompt = "Basic",
+        contract = "Wallet")
+
+analyse(vulnerability = "PDACheck",
+        prompt = "Complex",
+        contract = "Wallet")
+
+
+analyse(vulnerability = "AccountInitializedCheck",
+        prompt = "Basic",
+        contract = "Wallet")
+
+analyse(vulnerability = "AccountInitializedCheck",
+        prompt = "Complex",
+        contract = "Wallet")
+
+
+analyse(vulnerability = "OverflowCheck",
+        prompt = "Basic",
+        contract = "Wallet")
+
+analyse(vulnerability = "OverflowCheck",
+        prompt = "Complex",
+        contract = "Wallet")
+
+analyse(vulnerability = "UnderflowCheck",
+        prompt = "Basic",
+        contract = "Wallet")
+
+analyse(vulnerability = "UnderflowCheck",
+        prompt = "Complex",
+        contract = "Wallet")
+
+```
+
+E igualmente, en el contrato **Voting**.
+
+```{r Voting contract first analysis}
+#| echo: false
+analyse(vulnerability = "BumpWrong",
+        prompt = "Basic",
+        contract = "Voting")
+
+analyse(vulnerability = "BumpWrong",
+        prompt = "Complex",
+        contract = "Voting")
+
+
+analyse(vulnerability = "AdminCheck",
+        prompt = "Basic",
+        contract = "Voting")
+
+analyse(vulnerability = "AdminCheck",
+        prompt = "Complex",
+        contract = "Voting")
+
+
+analyse(vulnerability = "AccountConfusionCheck",
+        prompt = "Basic",
+        contract = "Voting")
+
+analyse(vulnerability = "AccountConfusionCheck",
+        prompt = "Complex",
+        contract = "Voting")
+
+
+analyse(vulnerability = "CPICheck",
+        prompt = "Basic",
+        contract = "Voting")
+
+analyse(vulnerability = "CPICheck",
+        prompt = "Complex",
+        contract = "Voting")
+
+
+analyse(vulnerability = "OverflowCheck",
+        prompt = "Basic",
+        contract = "Voting")
+
+analyse(vulnerability = "OverflowCheck",
+        prompt = "Complex",
+        contract = "Voting")
+
+analyse(vulnerability = "UnderflowCheck",
+        prompt = "Basic",
+        contract = "Voting")
+
+analyse(vulnerability = "UnderflowCheck",
+        prompt = "Complex",
+        contract = "Voting")
+
+```
+
+### Detección de la función deprecada
+
+Finalmente también cabe mencionar que todos los contratos **Voting**
+contaban con una función deprecada. Ya que no se trata de una
+vulnerabilidad prototípica, no se ha creado una alternativa no
+vulnerable, sino que solamente interesa en qué porcentaje de los
+contratos los modelos llegaran a señalar la presencia de una función
+deprecada.
+
+```{r}
+#| echo: false
+
+deprecated <-
+data_frame(Modelo = c("GPT Nano 4.1", "DeepSeek V3.1", "Gemini Flash 2.0", "Qwen3 235B A22B"),
+           PorcentajeDetectadoBasic = c(sum(gptNanoBasicVoting[,14])/63,
+                                       sum(deepSeekBasicVoting[,14])/63,
+                                       sum(geminiBasicVoting[,14])/63,
+                                       sum(qwenBasicVoting[,14])/63
+                                       ),
+           PorcentajeDetectadoComplex = c(sum(gptNanoBasicVoting[,14])/63,
+                                       sum(deepSeekComplexVoting[,14])/63,
+                                       sum(geminiComplexVoting[,14])/63,
+                                       sum(qwenComplexVoting[,14])/63
+                                       ),
+           )
+
+
+deprecated %>%
+  ggplot(aes(x = Modelo, y = PorcentajeDetectadoBasic, fill = Modelo)) +
+  geom_col(position = "dodge") +
+        labs(x = "Modelo",
+             y = "Porcentaje",
+             title = "Porcentaje de programas en los que cada modelo detectó la función deprecada o la cuenta Sysvar Instruction como vulnerable",
+             subtitle = "Prompt básico") +
+  scale_y_continuous(limits = c(0, 1)) +
+  scale_fill_manual(values = c(
+    "GPT Nano 4.1" = "#74aa9c",
+    "DeepSeek V3.1" = "#4D6BFE",
+    "Gemini Flash 2.0" = "#4796E3",
+    "Qwen3 235B A22B" = "#5B43D4"
+  )) +
+  theme_minimal() + theme(legend.position = "none") + theme(axis.title.x = element_text(size = 10))
+
+
+deprecated %>%
+  ggplot(aes(x = Modelo, y = PorcentajeDetectadoComplex, fill = Modelo)) +
+  geom_col(position = "dodge") +
+        labs(x = "Modelo",
+             y = "Porcentaje",
+             title = "Porcentaje de programas en los que cada modelo detectó la función deprecada o la cuenta Sysvar Instruction como vulnerable",
+             subtitle = "Prompt complejo") +
+  scale_y_continuous(limits = c(0, 1)) +
+  scale_fill_manual(values = c(
+    "GPT Nano 4.1" = "#74aa9c",
+    "DeepSeek V3.1" = "#4D6BFE",
+    "Gemini Flash 2.0" = "#4796E3",
+    "Qwen3 235B A22B" = "#5B43D4"
+  )) +
+  theme_minimal() + theme(legend.position = "none") + theme(axis.title.x = element_text(size = 10))
+
+
+
+```
+
+## Capacidad de detección del número correcto de vulnerabilidades
+
+En este apartado, se examinará la cantidad de vulnerabilidades que
+detectan los diferentes modelos y prompts. Los datos se examinarán
+mediante el error medio absoluto (MAE), raíz del error cuadrático medio
+(RMSE) y el sesgo.
+
+El error medio absoluto se utilizará para ver la distancia media entre
+el número real de vulnerabilidades y el número predicho. Se puede
+calcular utilizando la siguiente fórmula:
+$$\text{MAE} = \frac{1}{n} \sum_{i=1}^{n} \left| y_i - \hat{y}_i \right|$$
+Donde $n$ es el número de casos totales, $y$ es el número de errores
+real e $\hat{y}$ es el número de errores predicho.
+
+La raíz del error cuadrático medio se utiliza sobre todo para penalizar
+los errores más grandes en los que la predicción se aleja en gran medida
+del número real. Aunque a nivel descriptivo no sea la medida más
+relevante, se utiliza frecuentemente como función de pérdida y por lo
+tanto, podría emplearse para tunear un modelo especializado. Podemos
+conseguir su valor utilizando la siguiente fórmula:
+
+$$
+\text{RMSE} = \sqrt{ \frac{1}{n} \sum_{i=1}^{n} \left( y_i - \hat{y}_i \right)^2 }
+$$ Otra vez, $n$ es el número de casos totales, $y$ es el número de
+errores real e $\hat{y}$ es el número de errores predicho
+
+Finalmente, el sesgo se empleará para ver la dirección del error, es
+decir, si el modelo predice más vulnerabilidades de las que hay (sesgo
+negativo) o menos de las que hay (sesgo positivo).
+
+$$
+\text{Sesgo} = \frac{1}{n} \sum_{i=1}^{n} \left( y_i - \hat{y}_i \right)
+$$
+
+Igualmente que en los casos anteriores, $n$ es el número de casos
+totales, $y$ es el número de errores real e $\hat{y}$ es el número de
+errores predicho
+
+```{r define the second analytic function}
+#| echo: false
+#| output: false
+analyse <-
+  function(vulnerability, prompt, contract){
+  
+    gptNano <- paste0("gptNano", prompt, contract)
+    deepSeek <- paste0("deepSeek", prompt, contract)
+    gemini <- paste0("gemini", prompt, contract)
+    qwen <- paste0("qwen", prompt, contract)
+    
+    predictedVariableName <- paste0(vulnerability, "Predicted")
+    actualVariableName <- paste0(vulnerability, "Real")
+    
+    
+    confusionMatrixMertics <- 
+    data_frame(modelo = c("GPT Nano 4.1", "DeepSeek V3.1", "Gemini Flash 2.0", "Qwen3 235B A22B"),
+           MAE = c(mae(predicted = get(gptNano)[[predictedVariableName]],
+                                       actual = get(gptNano)[[actualVariableName]]),
+                           mae(predicted = get(deepSeek)[[predictedVariableName]],
+                                       actual = get(deepSeek)[[actualVariableName]]),
+                           mae(predicted = get(gemini)[[predictedVariableName]],
+                                       actual = get(gemini)[[actualVariableName]]),
+                           mae(predicted = get(qwen)[[predictedVariableName]],
+                                       actual = get(qwen)[[actualVariableName]])
+                           ),
+           RMSE = c(rmse(predicted = get(gptNano)[[predictedVariableName]],
+                                       actual = get(gptNano)[[actualVariableName]]),
+                           rmse(predicted = get(deepSeek)[[predictedVariableName]],
+                                       actual = get(deepSeek)[[actualVariableName]]),
+                           rmse(predicted = get(gemini)[[predictedVariableName]],
+                                       actual = get(gemini)[[actualVariableName]]),
+                           rmse(predicted = get(qwen)[[predictedVariableName]],
+                                       actual = get(qwen)[[actualVariableName]])
+                           ),
+           Sesgo = c(bias(predicted = get(gptNano)[[predictedVariableName]],
+                                       actual = get(gptNano)[[actualVariableName]]),
+                           bias(predicted = get(deepSeek)[[predictedVariableName]],
+                                       actual = get(deepSeek)[[actualVariableName]]),
+                           bias(predicted = get(gemini)[[predictedVariableName]],
+                                       actual = get(gemini)[[actualVariableName]]),
+                           bias(predicted = get(qwen)[[predictedVariableName]],
+                                       actual = get(qwen)[[actualVariableName]])
+                           )
+           
+           )
+    
+    confusionMatrixMertics %>%
+      pivot_longer(cols = c(MAE, RMSE, Sesgo),
+                   names_to = "métrica",
+                   values_to = "valor") %>%
+      ggplot(aes(x = modelo,
+                 y = valor,
+                 fill = métrica)) +
+       geom_col(position = position_dodge(width = 0.8), width = 0.7) +
+        #geom_col(position = "dodge") +
+        labs(x = "Modelo",
+             y = "Valor",
+             fill = "Métricas de error",
+             title = paste("Contract:", contract, "Prompt:", prompt, "Vulnerability:", vulnerability)) +
+      scale_y_continuous(limits = c(-0.5, 6)) +
+      scale_fill_manual(values = c(
+    "Sesgo" = "#62dbd7",
+    "MAE" = "#757fb7",
+    "RMSE" = "#9175b7"
+  )) +
+      theme_minimal() + theme(axis.text.x = element_text(size = 8))
+
+
+    
+  }
+
+```
+
+Podemos examinar los errores en el contrato **Wallet**
+
+```{r Wallet contract second analysis}
+#| echo: false
+analyse(vulnerability = "OwnerCheck",
+        prompt = "Basic",
+        contract = "Wallet")
+
+analyse(vulnerability = "OwnerCheck",
+        prompt = "Complex",
+        contract = "Wallet")
+
+
+analyse(vulnerability = "SignatureCheck",
+        prompt = "Basic",
+        contract = "Wallet")
+
+analyse(vulnerability = "SignatureCheck",
+        prompt = "Complex",
+        contract = "Wallet")
+
+
+analyse(vulnerability = "PDACheck",
+        prompt = "Basic",
+        contract = "Wallet")
+
+analyse(vulnerability = "PDACheck",
+        prompt = "Complex",
+        contract = "Wallet")
+
+
+analyse(vulnerability = "AccountInitializedCheck",
+        prompt = "Basic",
+        contract = "Wallet")
+
+analyse(vulnerability = "AccountInitializedCheck",
+        prompt = "Complex",
+        contract = "Wallet")
+
+
+analyse(vulnerability = "OverflowCheck",
+        prompt = "Basic",
+        contract = "Wallet")
+
+analyse(vulnerability = "OverflowCheck",
+        prompt = "Complex",
+        contract = "Wallet")
+
+analyse(vulnerability = "UnderflowCheck",
+        prompt = "Basic",
+        contract = "Wallet")
+
+analyse(vulnerability = "UnderflowCheck",
+        prompt = "Complex",
+        contract = "Wallet")
+
+```
+
+Y de la misma manera, en el contrato **Voting**.
+
+```{r Voting contract second analysis}
+#| echo: false
+analyse(vulnerability = "BumpWrong",
+        prompt = "Basic",
+        contract = "Voting")
+
+analyse(vulnerability = "BumpWrong",
+        prompt = "Complex",
+        contract = "Voting")
+
+
+analyse(vulnerability = "AdminCheck",
+        prompt = "Basic",
+        contract = "Voting")
+
+analyse(vulnerability = "AdminCheck",
+        prompt = "Complex",
+        contract = "Voting")
+
+
+analyse(vulnerability = "AccountConfusionCheck",
+        prompt = "Basic",
+        contract = "Voting")
+
+analyse(vulnerability = "AccountConfusionCheck",
+        prompt = "Complex",
+        contract = "Voting")
+
+
+analyse(vulnerability = "CPICheck",
+        prompt = "Basic",
+        contract = "Voting")
+
+analyse(vulnerability = "CPICheck",
+        prompt = "Complex",
+        contract = "Voting")
+
+
+analyse(vulnerability = "OverflowCheck",
+        prompt = "Basic",
+        contract = "Voting")
+
+analyse(vulnerability = "OverflowCheck",
+        prompt = "Complex",
+        contract = "Voting")
+
+analyse(vulnerability = "UnderflowCheck",
+        prompt = "Basic",
+        contract = "Voting")
+
+analyse(vulnerability = "UnderflowCheck",
+        prompt = "Complex",
+        contract = "Voting")
+
+```
+

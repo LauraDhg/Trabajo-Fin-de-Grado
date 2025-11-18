@@ -1,0 +1,27 @@
+Function "process_instruction":
+    - This function serves as the main entry point and uses a match statement to route instructions. This is a standard practice. No immediate vulnerabilities are apparent here.
+
+Function "initialize_wallet_account":
+    - It uses `Pubkey::find_program_address` to derive the wallet address. This is good for deterministic address generation.
+    - The `invoke_signed` call correctly uses the bump seed to sign the account creation.
+    - The program checks for rent exemption.
+    - It initializes the wallet and serializes it into the account data.
+    - The account creation size uses `try_into().unwrap()`, which could panic if `wallet_len` is too large for `u32`. This could be handled more gracefully.
+    - The program doesn't verify that the `wallet_account` is the actual PDA derived.
+
+Function "deposit_amount":
+    - Uses `checked_add` to prevent overflow which is good.
+    - It deserializes and serializes the wallet data.
+    - The program doesn't verify that the `wallet_account` is the actual PDA derived.
+    - It doesn't verify that the user account is the expected one associated with the wallet.
+
+Function "withdraw_amount":
+    - The program doesn't verify that the `wallet_account` is the actual PDA derived.
+    - The program doesn't verify that the user account is the expected one associated with the wallet.
+    - It uses a direct subtraction `wallet.amount -= amount;` without `checked_sub`, which is a major vulnerability and will cause a panic if the subtraction results in underflow. This MUST be fixed.
+
+Function "transfer_amount":
+    - The program doesn't verify that the source and destination wallet accounts are the actual PDAs derived.
+    - The program doesn't verify that the user accounts are the expected ones associated with the wallets.
+    - It uses a direct subtraction `src_wallet.amount -= amount;` without `checked_sub`, which is a major vulnerability and will cause a panic if the subtraction results in underflow. This MUST be fixed.
+    - Uses `checked_add` to prevent overflow which is good.

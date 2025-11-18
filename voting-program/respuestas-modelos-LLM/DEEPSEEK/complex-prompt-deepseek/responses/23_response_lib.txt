@@ -1,0 +1,68 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program changes or is redeployed
+- No validation that the returned Pubkey is actually a valid program on-chain
+
+Function "send_create_vault_transaction":
+- Missing validation that vault_program is actually the expected program
+- No validation of account ownership before CPI
+- Uses hardcoded seeds which might not match the actual vault program's expectations
+- Missing rent exemption checks for the accounts being created
+
+Function "send_instr_to_vault_transaction":
+- Missing system program account for operations that might require rent
+- No validation of vault_program ownership
+- Missing checks for account initialization status
+- Uses hardcoded seeds without verification
+
+Function "process_instruction":
+- No instruction data validation beyond basic unpacking
+- Missing checks for program ID ownership of accounts
+- No validation of account lengths or proper account ordering
+
+Function "create_admin":
+- Uses deprecated try_from_slice_unchecked pattern
+- Missing rent exemption validation for the account being created
+- No validation that system_program is actually the system program
+- Potential reinitialization attack if account is already initialized but not owned by program
+
+Function "update_admin":
+- Missing rent exemption checks
+- No validation that the new_admin pubkey is valid
+- Missing signer validation for the new admin
+- No access control beyond current admin check
+
+Function "create_account":
+- Hardcoded initial governance points (10) without justification
+- Missing validation that user_account_dao is uninitialized properly
+- No rent exemption validation
+- Potential PD address collision issues
+
+Function "open_proposal":
+- Uses title as PDA seed which could cause collisions with long titles
+- Fixed 1-hour voting period without configurability
+- Missing validation that user has sufficient governance points
+- No maximum length checks for title and description
+
+Function "vote_process":
+- Arithmetic overflow risk in vote counting (yes_votes += amount)
+- No check for duplicate voting
+- Missing validation that user has not already voted
+- No minimum governance points requirement
+
+Function "manage_governance_points":
+- Arithmetic underflow risk when subtracting points
+- No validation that amount is reasonable
+- Missing access control beyond admin check
+- No event logging for governance point changes
+
+Function "execute_instruction":
+- Uses instruction sysvar for security checks which can be bypassed
+- Missing validation of vault account ownership
+- No validation that the CPI instruction matches expected parameters
+- Potential reentrancy issues with multiple CPIs
+
+Function "make_decision":
+- Time comparison uses current_time < end_time instead of current_time >= end_time
+- No validation that proposal hasn't already been executed
+- Missing quorum requirements for decision making
+- No mechanism for tie-breaking votes

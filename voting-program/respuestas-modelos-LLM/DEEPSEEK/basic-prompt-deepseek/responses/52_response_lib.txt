@@ -1,0 +1,73 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for a vault program
+- Uses from_str and unwrap which could panic if the string is invalid
+
+Function "action_as_str":
+- Converts a u8 action code to a string representation
+- Matches 0 to "Create", 1 to "Deposit", 2 to "Withdraw", others to "Unknown"
+
+Function "send_create_vault_transaction":
+- Constructs and sends a cross-program instruction to a vault program
+- Creates instruction data with variant, pubkey, and bump
+- Uses invoke_signed with vault seeds for PDA signing
+- Handles account setup for vault creation
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends vault operation instructions (deposit/withdraw)
+- Creates instruction data with variant, amount, and pubkey
+- Uses invoke_signed with vault seeds
+- Handles account setup for vault operations
+
+Function "process_instruction":
+- Main entry point that unpacks and routes instructions
+- Matches against InstructionFormat enum variants
+- Calls appropriate handler functions based on instruction type
+
+Function "create_admin":
+- Creates an admin PDA account
+- Validates signer and account initialization status
+- Uses create_account system instruction with signed invocation
+- Stores admin ID and timestamp in account data
+
+Function "update_admin":
+- Updates the admin account with a new admin pubkey
+- Validates owner and signer permissions
+- Updates timestamp and admin ID in account data
+
+Function "create_account":
+- Creates a user PDA account with initial governance points
+- Validates signer and account initialization
+- Uses create_account system instruction with signed invocation
+- Stores user ID and initial points in account data
+
+Function "open_proposal":
+- Creates a proposal PDA account
+- Validates user account ownership and signer
+- Sets proposal timing (1 hour duration)
+- Stores proposal details and voting counters
+
+Function "vote_process":
+- Processes a vote on a proposal
+- Validates account ownership and signer
+- Checks proposal is still active
+- Creates vote record account
+- Updates proposal vote counts with user's governance points
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user account
+- Validates admin permissions through PDA check
+- Performs arithmetic operations on user points
+- Updates user account data with new point balance
+
+Function "execute_instruction":
+- Executes vault-related instructions through CPI
+- Validates account types based on instruction variant
+- Checks previous instruction for vault program confirmation
+- Routes to appropriate vault transaction functions
+
+Function "make_decision":
+- Finalizes a proposal after voting period ends
+- Validates admin permissions
+- Checks if voting period has ended
+- Determines proposal outcome based on vote counts
+- Marks proposal as executed

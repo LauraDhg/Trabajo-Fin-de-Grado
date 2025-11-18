@@ -1,0 +1,48 @@
+Function "process_instruction":
+- Unpacks the instruction data into an `InstructionFormat` enum.
+- Matches the unpacked instruction to call the corresponding function: `initialize_wallet_account`, `deposit_amount`, `withdraw_amount`, or `transfer_amount`.
+
+Function "initialize_wallet_account":
+- Initializes a wallet account.
+- Retrieves accounts from the `accounts` slice using `next_account_info`. It expects a user account, a wallet account, and the system program account.
+- Checks if the provided system program account is the actual system program.
+- Checks if the user account is a signer.
+- Derives the program address (PDA) for the wallet account using `Pubkey::find_program_address`.
+- Checks if the wallet account has already been initialized by verifying lamports.
+- Creates a `Wallet` struct with an initial amount of 0 and `initialized` set to `true`.
+- Calculates the rent required for the wallet account based on its size.
+- Invokes the system program to create the wallet account using `invoke_signed`, transferring rent to the new account.
+- Serializes the `Wallet` struct into the wallet account's data.
+
+Function "deposit_amount":
+- Deposits an amount into the wallet account.
+- Retrieves the user and wallet accounts.
+- Checks if the wallet account is owned by the program.
+- Checks if the user account is a signer.
+- Deserializes the wallet account data into a `Wallet` struct.
+- Checks if the wallet is initialized.
+- Adds the deposit amount to the wallet's amount, using `checked_add` to prevent overflows. Returns `MyError::ArithmeticError` in case of overflow.
+- Serializes the updated `Wallet` struct back into the wallet account's data.
+
+Function "withdraw_amount":
+- Withdraws an amount from the wallet account.
+- Retrieves the user and wallet accounts.
+- Checks if the wallet account is owned by the program.
+- Checks if the user account is a signer.
+- Deserializes the wallet account data into a `Wallet` struct.
+- Checks if the wallet is initialized.
+- Checks if there are sufficient funds in the wallet. Returns `ProgramError::InsufficientFunds` if the requested withdrawal amount exceeds the available balance.
+- Subtracts the withdrawal amount from the wallet's amount, using `checked_sub` to prevent underflows. Returns `MyError::ArithmeticError` in case of underflow.
+- Serializes the updated `Wallet` struct back into the wallet account's data.
+
+Function "transfer_amount":
+- Transfers an amount from one wallet account to another.
+- Retrieves the user account, source wallet account, destination user account and destination wallet accounts.
+- Checks if both the source and destination wallet accounts are owned by the program.
+- Checks if the user account is a signer.
+- Deserializes both the source and destination wallet account data into `Wallet` structs.
+- Checks if both wallets are initialized.
+- Adds the transfer amount to the destination wallet's amount, using `checked_add` to prevent overflows. Returns `MyError::ArithmeticError` in case of overflow.
+- Checks if there are sufficient funds in the source wallet. Returns `ProgramError::InsufficientFunds` if the requested transfer amount exceeds the available balance.
+- Subtracts the transfer amount from the source wallet's amount, using `checked_sub` to prevent underflows. Returns `MyError::ArithmeticError` in case of underflow.
+- Serializes the updated `Wallet` structs back into their respective wallet account data.

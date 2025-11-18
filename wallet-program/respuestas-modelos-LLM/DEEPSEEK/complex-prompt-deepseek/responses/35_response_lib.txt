@@ -1,0 +1,37 @@
+Function "process_instruction":
+- Missing proper account validation and ordering checks
+- No verification that accounts passed match expected instruction requirements
+- Potential for incorrect account indexing if wrong number of accounts provided
+
+Function "initialize_wallet_account":
+- PDA derivation uses user account key but doesn't verify wallet_account matches derived PDA
+- Missing check that wallet_account.owner equals program_id
+- Missing check that user_account is signer
+- Uses unwrap() on try_into() conversion which could panic
+- Doesn't verify system_program is actually the system program
+- Missing rent exemption check after account creation
+
+Function "deposit_amount":
+- Missing account ownership validation (wallet_account.owner should be program_id)
+- Missing signer validation for user_account
+- No PDA verification to ensure wallet_account belongs to user_account
+- Missing re-entrancy protection
+- No validation that amount is positive
+
+Function "withdraw_amount":
+- Missing account ownership validation
+- Missing signer validation for user_account
+- No PDA verification to ensure wallet_account belongs to user_account
+- Missing re-entrancy protection
+- No validation that amount is positive
+- Missing transfer of funds logic (only updates internal state)
+
+Function "transfer_amount":
+- Missing account ownership validation for both wallet accounts
+- Missing signer validation for user_account
+- No PDA verification to ensure wallets belong to respective users
+- Missing re-entrancy protection
+- No validation that amount is positive
+- Missing cross-program invocation for actual token transfer
+- Atomicity issue: updates destination before checking source funds
+- Missing validation that dest_user_account is different from user_account

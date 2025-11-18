@@ -1,0 +1,28 @@
+Function "process_instruction":
+- The function acts as the main entry point, delegating execution to other functions based on the instruction.
+- It relies on `InstructionFormat::unpack` which could lead to errors if the instruction data is malformed.
+
+Function "initialize_wallet_account":
+- Checks if the provided `system_program` account is the actual System Program.
+- Uses `find_program_address` to derive the PDA and validates the provided `wallet_account` against it.
+- Checks if the `wallet_account` already has lamports, preventing reinitialization.
+- Employs `invoke_signed` to create the account, ensuring the program signs the transaction.
+
+Function "deposit_amount":
+- Checks if the `wallet_account` owner is the program itself.
+- Uses `find_program_address` to derive the PDA and validates the provided `wallet_account` against it.
+- Deserializes the wallet data and checks if it's initialized.
+- Uses `checked_add` to prevent overflow when depositing.
+
+Function "withdraw_amount":
+- Checks if the `wallet_account` owner is the program itself.
+- Uses `find_program_address` to derive the PDA and validates the provided `wallet_account` against it.
+- Deserializes the wallet data and checks if it's initialized.
+- Uses direct subtraction `wallet.amount -= amount;` which can cause underflow.
+
+Function "transfer_amount":
+- Checks if both `src_wallet_account` and `dest_wallet_account` owners are the program.
+- Uses `find_program_address` to derive the PDAs for both source and destination wallets, validating the provided accounts.
+- Deserializes both source and destination wallet data and checks if they are initialized.
+- Uses `checked_add` for destination wallet to prevent overflow, but does not check for overflow in the source wallet.
+- Uses direct subtraction `src_wallet.amount -= amount;` which can cause underflow.

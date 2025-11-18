@@ -1,0 +1,49 @@
+Function "vault_program_id":
+- Hardcoded program ID, if the vault program is redeployed, this function needs to be updated, creating a potential point of failure.
+- If the vault program is controlled by a malicious actor, this could lead to unintended interactions.
+
+Function "send_create_vault_transaction":
+- The vault seeds only contain "vault". This can result in a potential collision with other programs using the same seed.
+
+Function "send_instr_to_vault_transaction":
+- The vault seeds only contain "vault". This can result in a potential collision with other programs using the same seed.
+
+Function "process_instruction":
+- This function serves as the main entry point and delegates calls to other functions based on the `instruction`. While this is a common pattern, ensure all possible instruction variants are handled correctly to prevent unexpected behavior.
+
+Function "create_admin":
+- The PDA derivation uses `b"admin"` as a seed. If multiple admin accounts are needed, consider including unique identifiers in the seed.
+- No check is done to ensure that the admin_payer is not the same as the program_id.
+
+Function "update_admin":
+- The PDA derivation uses `b"admin"` as a seed. If multiple admin accounts are needed, consider including unique identifiers in the seed.
+- It uses `try_from_slice` without checking the account data length which can lead to errors.
+
+Function "create_account":
+- The PDA derivation uses `b"userAccount"` and the user's public key. This is a good practice to ensure uniqueness.
+- The program initializes all new accounts with 10 governance points. Consider making this configurable or based on some vesting schedule.
+
+Function "open_proposal":
+- The PDA derivation for proposal accounts uses only `b"proposal"` and the title of the proposal. This can lead to collisions if two proposals have the same title. Consider including a unique identifier, such as a timestamp or a hash of the content, in the seed.
+- The proposal end time is hardcoded to be 1 hour after the start time. This should be configurable.
+
+Function "vote_process":
+- The PDA derivation for vote record accounts uses `b"vote"`, the user account's key, and the proposal account's key. This is a good practice.
+- It uses `try_from_slice` without checking the account data length which can lead to errors.
+- The vote amount is directly taken from the user's `amount_governance_points`. Consider implementing a mechanism to limit the voting power or prevent users from voting multiple times.
+- The function directly updates the proposal and user accounts after a vote. This could be susceptible to race conditions if multiple users vote simultaneously.
+
+Function "manage_governance_points":
+- The PDA derivation uses `b"admin"` as a seed. If multiple admin accounts are needed, consider including unique identifiers in the seed.
+- No checks are done to prevent integer overflow or underflow when adding or subtracting governance points.
+
+Function "execute_instruction":
+- The function uses a match statement based on `variant_instr`. The first three branches of the match statement do not execute any logic.
+- The PDA derivation uses `b"admin"` as a seed. If multiple admin accounts are needed, consider including unique identifiers in the seed.
+- The check `if current_index > 0` is insufficient for verifying the previous instruction. A malicious user can send a transaction to another program and then to this program to bypass the check.
+- The use of `program_id.clone()` to construct `id_pubkey` is unnecessary since program_id is already a Pubkey.
+- The vault seeds only contain "vault". This can result in a potential collision with other programs using the same seed.
+
+Function "make_decision":
+- The PDA derivation uses `b"admin"` as a seed. If multiple admin accounts are needed, consider including unique identifiers in the seed.
+- The function only checks if `yes_votes >= no_votes`. Consider using a quorum or a minimum threshold of votes for a proposal to pass.

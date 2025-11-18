@@ -1,0 +1,58 @@
+Function "vault_program_id":
+- Hardcodes a specific program ID which may not be correct for all deployments
+- Uses unwrap() which can panic if the string is invalid
+
+Function "action_as_str":
+- No apparent vulnerabilities found
+
+Function "send_create_vault_transaction":
+- Uses hardcoded vault_program_id which may not match the actual vault program
+- No validation of account ownership or program IDs
+- Potential for incorrect CPI if vault program ID changes
+
+Function "send_instr_to_vault_transaction":
+- Similar to send_create_vault_transaction with hardcoded program ID dependency
+- Missing system program account in CPI which may be required for token transfers
+
+Function "process_instruction":
+- No apparent vulnerabilities found
+
+Function "create_admin":
+- Uses create_program_address without verifying the bump seed matches
+- Does not verify that admin_account_dao is uninitialized properly (only checks lamports)
+- Missing proper access control - anyone can create admin account
+
+Function "update_admin":
+- Allows any current admin to transfer admin rights without additional safeguards
+- No time-based cooldown or multi-sig requirement for admin changes
+
+Function "create_account":
+- Gives fixed 10 governance points to every new user without validation
+- Potential for Sybil attack with unlimited account creation
+- No mechanism to prevent duplicate accounts for same user
+
+Function "open_proposal":
+- Proposal title is used in PDA derivation without length validation
+- Fixed 1-hour voting period may not be appropriate for all use cases
+- No spam prevention mechanism for proposal creation
+
+Function "vote_process":
+- Users can vote multiple times by creating multiple accounts
+- No check if user has already voted on this proposal
+- Vote weight based on governance points without transfer restrictions
+
+Function "manage_governance_points":
+- Admin can arbitrarily add/subtract governance points without limits
+- No logging or audit trail for point manipulation
+- Potential for admin abuse of power
+
+Function "execute_instruction":
+- Complex logic with multiple code paths increases attack surface
+- Uses instruction sysvar to check previous instruction, which can be manipulated
+- Missing proper validation of vault program interactions
+- User_bump parameter used inconsistently across different instruction types
+
+Function "make_decision":
+- Only checks if current time > end_time, but doesn't validate proposal state
+- No mechanism to prevent re-execution of already executed proposals
+- Decision making is purely based on vote count without additional safeguards

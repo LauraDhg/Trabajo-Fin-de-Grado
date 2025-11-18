@@ -1,0 +1,52 @@
+Function "process_instruction":
+- Unpacks instruction data using InstructionFormat::unpack
+- Matches instruction type to call appropriate handler function
+- Returns ProgramResult from handler functions
+
+Function "initialize_wallet_account":
+- Creates a PDA wallet account using find_program_address with seeds "wallet" and user account key
+- Checks if system program is provided and valid
+- Verifies user account is signer
+- Checks if wallet account already has lamports (potential initialization state check)
+- Calculates rent requirements for wallet account
+- Uses invoke_signed with PDA bump seed to create account
+- Serializes initial wallet state with amount=0 and initialized=true
+
+Function "deposit_amount":
+- Increases wallet amount by specified value
+- Verifies wallet account is owned by the program
+- Checks user account is signer
+- Deserializes wallet data from account
+- Validates wallet is initialized
+- Uses checked_add to prevent integer overflow
+- Serializes updated wallet state back to account
+
+Function "withdraw_amount":
+- Decreases wallet amount by specified value
+- Verifies wallet account is owned by the program
+- Checks user account is signer
+- Deserializes wallet data from account
+- Validates wallet is initialized
+- Checks sufficient funds before withdrawal
+- Uses checked_sub to prevent integer underflow
+- Serializes updated wallet state back to account
+
+Function "transfer_amount":
+- Transfers amount from source wallet to destination wallet
+- Verifies both wallet accounts are owned by the program
+- Checks user account is signer
+- Deserializes both wallet accounts
+- Validates both wallets are initialized
+- Adds amount to destination wallet first (potential reentrancy issue)
+- Checks source wallet has sufficient funds after destination update
+- Subtracts amount from source wallet
+- Serializes both updated wallet states
+
+Potential risks and vulnerabilities:
+- **Integer overflow/underflow**: Uses checked_add/checked_sub but relies on custom error handling
+- **Reentrancy**: In transfer_amount, destination wallet is updated before source wallet validation
+- **Access control**: Only checks if user is signer, no additional authorization checks
+- **PDA verification**: Missing explicit PDA verification in deposit/withdraw/transfer functions
+- **Error handling**: Custom error mapping may not cover all edge cases
+- **Account validation**: Limited validation of account relationships and ownership
+- **State consistency**: Potential issues with concurrent operations on same accounts

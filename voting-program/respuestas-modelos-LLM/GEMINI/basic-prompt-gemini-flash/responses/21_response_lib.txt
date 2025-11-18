@@ -1,0 +1,90 @@
+Function "vault_program_id":
+- Returns a hardcoded `Pubkey`.
+- This `Pubkey` represents the ID of the vault program.
+
+Function "action_as_str":
+- Takes a `u8` representing an action.
+- Returns a string slice (`&'static str`) describing the action.
+- Handles "Create", "Deposit", and "Withdraw" actions, returning "Unknown" for others.
+
+Function "send_create_vault_transaction":
+- Sends a transaction to the vault program to create a new vault.
+- Takes several account infos as arguments, including the admin payer, admin account, vault account, vault program, and system program.
+- Takes `variant_instr`, `id_pubkey`, and `vault_bump` as instruction data.
+- Constructs an instruction and uses `invoke_signed` to send the transaction, signing with the vault's seeds.
+
+Function "send_instr_to_vault_transaction":
+- Sends a transaction to the vault program to perform an action (deposit or withdraw).
+- Takes account infos for the user payer, user account, vault account, and vault program.
+- Takes `variant_instr`, `id_pubkey`, `amount`, and `vault_bump` as instruction data.
+- Constructs an instruction and uses `invoke_signed` to send the transaction, signing with the vault's seeds.
+
+Function "process_instruction":
+- The main entry point of the Solana program.
+- Deserializes the instruction data into an `InstructionFormat` enum.
+- Matches on the instruction type and calls the corresponding handler function.
+
+Function "create_admin":
+- Creates an admin account.
+- Takes the program ID and account slice as input.
+- Checks that the admin payer is a signer.
+- Derives the admin PDA.
+- Creates the admin account using `invoke_signed` with the admin PDA as a signer.
+- Serializes the admin account data.
+
+Function "update_admin":
+- Updates the admin account with a new admin `Pubkey`.
+- Takes the program ID, accounts slice, and the new admin `Pubkey` as input.
+- Checks that the admin payer is a signer.
+- Derives the admin PDA.
+- Deserializes the admin account data, updates the `admin_id` field, and serializes the updated data back into the account.
+
+Function "create_account":
+- Creates a user account.
+- Takes the program ID and account slice as input.
+- Checks that the user payer is a signer.
+- Derives the user PDA based on the user's `Pubkey`.
+- Creates the user account using `invoke_signed` with the user PDA as a signer.
+- Serializes the user account data.
+
+Function "open_proposal":
+- Creates a new proposal account.
+- Takes the program ID, accounts slice, title, and description as input.
+- Checks that the user payer is a signer.
+- Derives the proposal PDA based on the proposal title.
+- Creates the proposal account using `invoke_signed` with the proposal PDA as a signer.
+- Serializes the proposal data, including setting the start and end times.
+
+Function "vote_process":
+- Processes a vote on a proposal.
+- Takes the program ID, accounts slice, and a boolean `vote_answer` as input.
+- Checks that the user payer is a signer.
+- Derives the vote record PDA.
+- Deserializes the proposal and user account data.
+- Updates the proposal's `yes_votes` or `no_votes` based on the `vote_answer`.
+- Creates a vote record account using `invoke_signed`.
+- Serializes the vote record, proposal, and user account data.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user account.
+- Takes the program ID, accounts slice, amount, and an instruction boolean as input.
+- Checks that the admin payer is a signer.
+- Derives the admin PDA.
+- Deserializes the user account data.
+- Adds or subtracts the specified amount from the user's `amount_governance_points`.
+
+Function "execute_instruction":
+- Executes a given instruction by CPI to another program.
+- Checks that the user payer is a signer.
+- It calls `send_create_vault_transaction` or `send_instr_to_vault_transaction` based on the `variant_instr`.
+- Checks that the `vault_program` passed in is the correct program by comparing its `Pubkey` to the result of `vault_program_id`.
+- It also checks `INSTRUCTIONS_SYSVAR_ID` to ensure the correct sysvar account is used.
+
+Function "make_decision":
+- Determines if a proposal is approved or denied based on the votes.
+- Takes the program ID and accounts slice as input.
+- Checks that the admin payer is a signer.
+- Derives the admin PDA.
+- Deserializes the proposal data.
+- Checks if the proposal has ended.
+- Sets the `executed` flag of the proposal to `true`.

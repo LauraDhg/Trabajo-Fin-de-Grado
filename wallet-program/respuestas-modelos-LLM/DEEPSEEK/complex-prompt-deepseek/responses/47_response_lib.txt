@@ -1,0 +1,36 @@
+Function "process_instruction":
+- No explicit validation of account ordering or expected account counts for each instruction variant
+- No validation that accounts belong to expected program IDs
+- Missing checks for account ownership before processing instructions
+
+Function "initialize_wallet_account":
+- Uses `try_to_vec()?.len()` for account size calculation which may not match actual serialized size
+- Uses `unwrap()` on `try_into()` conversion which could panic
+- No validation that wallet_account is actually a PDA derived from the expected seeds
+- No validation that wallet_account is uninitialized before creating account
+- Missing check that system_program is actually the system program
+
+Function "deposit_amount":
+- No validation that wallet_account belongs to the program
+- No validation that wallet_account is properly initialized
+- No validation that wallet_account is a PDA derived from user_account
+- Missing overflow protection on amount addition (though checked_add is used)
+- No validation that the deposited amount corresponds to an actual token transfer
+
+Function "withdraw_amount":
+- Uses unchecked subtraction (`-=`) which can cause integer underflow
+- No validation that wallet_account belongs to the program
+- No validation that wallet_account is properly initialized
+- No validation that wallet_account is a PDA derived from user_account
+- No validation that user has sufficient balance before withdrawal
+- No mechanism to actually transfer funds out of the account
+
+Function "transfer_amount":
+- Uses unchecked subtraction (`-=`) which can cause integer underflow
+- No validation that src_wallet_account and dest_wallet_account belong to the program
+- No validation that accounts are properly initialized
+- No validation that src_wallet_account is a PDA derived from user_account
+- No validation that dest_wallet_account is a PDA derived from dest_user_account
+- No validation that source has sufficient balance before transfer
+- No cross-program invocation to actually transfer funds between accounts
+- Missing signature validation for destination account if required

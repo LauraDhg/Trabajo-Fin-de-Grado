@@ -1,0 +1,27 @@
+Function "process_instruction":
+- The function uses a match statement to route instructions based on the `InstructionFormat`. This is a standard practice.
+
+Function "initialize_wallet_account":
+- The program derives a Program Derived Address (PDA) using `Pubkey::find_program_address`. This is a good practice for managing program-owned accounts.
+- Checks if the user account is a signer, preventing unauthorized account initialization.
+- Creates the wallet account using `invoke_signed`, ensuring that the program controls the account's creation.
+- Serializes the `Wallet` struct into the newly created account.
+- The program checks for the user's signature.
+
+Function "deposit_amount":
+- Checks if the user account is a signer.
+- Checks if the `user_id` in the `Wallet` struct matches the user account's key, preventing unauthorized access.
+- Uses `checked_add` to prevent arithmetic overflows.
+
+Function "withdraw_amount":
+- Checks if the user account is a signer.
+- Checks if the `user_id` in the `Wallet` struct matches the user account's key.
+- Checks for sufficient funds before withdrawing.
+- Uses `checked_sub` to prevent arithmetic overflows.
+
+Function "transfer_amount":
+- Checks if the user account is a signer.
+- Checks if the `user_id` in both source and destination `Wallet` structs match the respective user account keys.
+- Uses `checked_add` and `checked_sub` to prevent arithmetic overflows.
+- Checks for sufficient funds in the source wallet before transferring.
+- Transfers funds directly between wallets owned by the program, without involving native SOL transfers.

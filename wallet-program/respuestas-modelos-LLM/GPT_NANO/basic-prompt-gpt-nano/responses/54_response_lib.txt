@@ -1,0 +1,50 @@
+Function "process_instruction":
+- Parses the instruction data and matches it to call the appropriate function.
+- Acts as the main entry point for the program, routing instructions to specific handlers.
+
+Function "initialize_wallet_account":
+- Creates a new wallet account for a user, using PDA derived from "wallet" and user public key.
+- Checks that the user account is a signer.
+- Validates that the provided account matches the expected PDA address.
+- Calculates rent exemption amount.
+- Invokes system instruction to create the account with the right size and rent exemption.
+- Serializes an initial wallet state into the account data.
+- Contains potential risks: 
+  - No check on whether the wallet account already exists, possibly overwriting data.
+  - Assumes the account is uninitialized; no explicit check for that.
+  - Uses `unwrap()` during size conversion which can panic.
+  - No explicit access control beyond signer check; relies on PDA derivation for ownership validation.
+
+Function "deposit_amount":
+- Retrieves wallet PDA and verifies the provided account matches it.
+- Deserializes wallet state.
+- Adds the specified amount to the wallet's `amount`.
+- Serializes the updated wallet back into the account data.
+- Contains potential risks:
+  - No overflow check in `wallet.amount += amount`; risk of overflow.
+  - No check if the wallet is initialized or not.
+  - Assumes the wallet account data can be deserialized into a Wallet struct.
+  - No validation on maximum wallet balance, which may lead to overflow vulnerabilities.
+
+Function "withdraw_amount":
+- Retrieves wallet PDA and verifies the provided account matches it.
+- Deserializes wallet state.
+- Subtracts the specified amount from the wallet's `amount`.
+- Serializes the updated wallet back into the account data.
+- Contains potential risks:
+  - No underflow check before `wallet.amount -= amount`; can cause panic if `amount` > `wallet.amount`.
+  - No validation that the wallet was initialized.
+  - Similar deserialization risk as above.
+
+Function "transfer_amount":
+- Retrieves source and destination wallet PDAs and verifies their addresses.
+- Deserializes both source and destination wallet states.
+- Adds `amount` to destination wallet and subtracts from source.
+- Serializes both wallets back into their respective accounts.
+- Contains potential risks:
+  - No underflow check on `src_wallet.amount -= amount`.
+  - No overflow check on `dest_wallet.amount += amount`.
+  - Assumes the accounts are already initialized.
+  - No validation that the source wallet has enough balance before transfer.
+  - If the source wallet has insufficient funds, it will panic or lead to inconsistent state.
+  - Potential race conditions if accounts are externally modified.

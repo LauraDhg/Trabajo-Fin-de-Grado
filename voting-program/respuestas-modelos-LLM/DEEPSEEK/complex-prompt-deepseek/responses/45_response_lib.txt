@@ -1,0 +1,58 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program changes or is redeployed
+- No mechanism to update or validate the vault program ID dynamically
+
+Function "send_create_vault_transaction":
+- Uses hardcoded seeds ("vault") for PDA derivation which may conflict with other programs
+- No validation of vault_program account ownership or authenticity
+- Missing proper error handling for invoke_signed failures
+
+Function "send_instr_to_vault_transaction":
+- Missing system_program account in invoke_signed call for deposit/withdraw operations
+- No validation of vault_program account ownership
+- Uses hardcoded seeds without proper namespace isolation
+
+Function "process_instruction":
+- No instruction data validation before unpacking
+- Missing access control checks at the entry point level
+
+Function "create_admin":
+- Uses create_account without checking if account is already initialized properly
+- No validation that system_program account is actually the system program
+- Potential reinitialization attack if account lamports check fails
+
+Function "update_admin":
+- No authorization check to verify that the current admin is the one making the change
+- Allows any signer to change the admin without verifying they are the current admin
+- Missing validation of system_program account
+
+Function "create_account":
+- Hardcodes initial governance points (10) without configurable mechanism
+- No maximum limit on governance points
+- Missing validation that system_program account is actually the system program
+
+Function "open_proposal":
+- Fixed 1-hour voting period (3600 seconds) without configurability
+- Uses title as part of PDA derivation which could cause collisions with similar titles
+- No maximum length validation for title and description strings
+
+Function "vote_process":
+- Arithmetic overflow risk in yes_votes/no_votes addition without checked operations
+- Allows multiple votes from same user if different vote_record accounts are created
+- No prevention of double voting by same user
+
+Function "manage_governance_points":
+- No overflow/underflow protection in governance points arithmetic
+- No authorization check to verify admin identity matches stored admin
+- Allows arbitrary governance point manipulation by any admin
+
+Function "execute_instruction":
+- Uses instruction sysvar to check previous instruction, which can be manipulated
+- No proper validation of vault_program account ownership
+- Missing validation of system_program account in some paths
+- Inconsistent user_bump usage for different instruction variants
+
+Function "make_decision":
+- No validation that the admin making the decision is the current admin
+- Uses parentheses in condition (current_time < proposal.end_time) which is unnecessary but not harmful
+- Missing validation of clock sysvar account ownership

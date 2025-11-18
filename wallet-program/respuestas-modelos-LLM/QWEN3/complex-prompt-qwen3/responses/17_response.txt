@@ -1,0 +1,42 @@
+Function "process_instruction":
+- Dispatches instructions based on deserialized input without validating ownership or authority upfront
+- Uses unpack on untrusted input data which could lead to panic if malformed
+- Does not validate account count or permissions before calling handler functions
+- Relies on inner functions for access control, increasing risk of inconsistent enforcement
+
+Function "initialize_wallet_account":
+- Verifies PDA correctly using find_program_address with expected seeds
+- Checks that wallet_account matches expected PDA, preventing arbitrary account initialization
+- Fails to verify that system_program is actually the Solana system program
+- Does not confirm that user_account is a signer, allowing unauthorized account creation
+- Checks lamports > 0 to prevent reinitialization but should use initialized flag instead
+- Uses unchecked lamports borrow which could be manipulated
+- Serializes wallet data after account creation but does not protect against reentrancy
+- Missing validation that wallet_account is owned by the current program
+- Missing check that wallet_account is not executable
+
+Function "deposit_amount":
+- Correctly validates wallet PDA against user account
+- Uses try_from_slice for deserializing wallet data, but should use try_from_slice_unchecked only after validating data length
+- Does not verify that user_account is a signer, allowing unauthorized deposits
+- Performs arithmetic safely using checked_add
+- Missing ownership check on wallet_account
+- Missing validation that wallet data length matches expected size
+
+Function "withdraw_amount":
+- Validates PDA and checks initialization flag correctly
+- Verifies sufficient funds before subtraction
+- Uses checked_sub for safe arithmetic
+- Does not require user_account to be a signer, enabling unauthorized withdrawals
+- Missing ownership and data length validation on wallet_account
+- No explicit check that user_account owns or controls the source wallet
+
+Function "transfer_amount":
+- Validates both source and destination PDAs correctly
+- Checks initialization status for both wallets
+- Performs arithmetic safely using checked_add and checked_sub
+- Reorders operations: adds to destination before subtracting from source, creating temporary inflation risk if transaction fails mid-way
+- Does not require either user_account or dest_user_account to be signers
+- Missing ownership checks on both wallet accounts
+- Missing signer validation enables unauthorized transfers
+- No data length validation on wallet accounts before deserialization

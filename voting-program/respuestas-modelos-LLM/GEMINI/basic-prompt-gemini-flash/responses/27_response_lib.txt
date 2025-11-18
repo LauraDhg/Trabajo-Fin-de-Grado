@@ -1,0 +1,87 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for a vault program.
+
+Function "process_instruction":
+- Unpacks the instruction data into an `InstructionFormat` enum.
+- Matches the unpacked instruction to call the corresponding function.
+- Dispatches program logic based on the instruction type.
+
+Function "create_admin":
+- Creates an admin account.
+- Checks if the `admin_payer` is a signer.
+- Checks if the admin account has already been initialized.
+- Derives the admin account's PDA.
+- Validates the `clock_sysvar` account.
+- Creates and serializes an `Admin_Account` struct into the admin account.
+- Invokes the system program to create the admin account with rent exemption.
+
+Function "update_admin":
+- Updates the admin account with a new admin Pubkey.
+- Checks if the `admin_account_dao` is owned by the program.
+- Checks if the `admin_payer` is a signer.
+- Deserializes and updates the `Admin_Account` struct.
+- Derives the admin account's PDA.
+- Validates the `clock_sysvar` account.
+- Serializes the updated `Admin_Account` back into the account.
+
+Function "create_account":
+- Creates a user account.
+- Checks if the `user_payer` is a signer.
+- Checks if the user account has already been initialized.
+- Derives the user account's PDA.
+- Creates and serializes a `User_Account` struct into the user account.
+- Invokes the system program to create the user account with rent exemption, initializing `amount_governance_points` to 10.
+
+Function "open_proposal":
+- Creates a proposal account.
+- Checks if the `user_account_dao` is owned by the program.
+- Checks if the `user_payer` is a signer.
+- Checks if the `proposal_account` has already been initialized.
+- Derives the proposal account's PDA.
+- Deserializes the `User_Account` and verifies its type.
+- Validates the `clock_sysvar` account.
+- Creates and serializes a `Proposal` struct into the proposal account.
+- Sets the proposal's start and end times.
+- Invokes the system program to create the proposal account with rent exemption.
+
+Function "vote_process":
+- Processes a user's vote on a proposal.
+- Checks if the `user_account_dao` and `proposal_account` are owned by the program.
+- Checks if the `user_payer` is a signer.
+- Checks if the vote record account has already been initialized.
+- Derives the vote record account's PDA.
+- Deserializes the `Proposal` and `User_Account` structs.
+- Verifies the `User_Account` type.
+- Creates a `Vote_Record` struct.
+- Validates the `clock_sysvar` account.
+- Checks if the voting period is still active.
+- Updates the proposal's `yes_votes` or `no_votes` based on the user's vote.
+- Invokes the system program to create the vote record account with rent exemption.
+
+Function "manage_governance_points":
+- Manages a user's governance points (adds or subtracts).
+- Checks if the `admin_account_dao` and `user_account_dao` are owned by the program.
+- Checks if the `admin_payer` is a signer.
+- Derives the admin account's PDA.
+- Deserializes the `User_Account` struct.
+- Verifies the `User_Account` type.
+- Adds or subtracts the specified amount from the user's governance points.
+
+Function "execute_instruction":
+- Executes instructions related to a vault program (create, deposit, withdraw).
+- Checks if the `user_account_dao` is owned by the program.
+- Checks if the `user_payer` is a signer.
+- Validates the `vault_program` and `ix_sysvar` accounts.
+- Loads the current instruction index and checks the previous instruction.
+- Calls either `send_create_vault_transaction` or `send_instr_to_vault_transaction` based on the `variant_instr`.
+
+Function "make_decision":
+- Executes a proposal based on the votes.
+- Checks if the `admin_account_dao` and `proposal_account` are owned by the program.
+- Checks if the `admin_payer` is a signer.
+- Derives the admin account's PDA.
+- Deserializes the `Proposal` struct.
+- Validates the `clock_sysvar` account.
+- Checks if the proposal's voting period has ended.
+- Determines if the proposal is approved based on the vote count.
+- Sets the `executed` flag on the proposal.

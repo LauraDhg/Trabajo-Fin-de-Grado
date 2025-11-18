@@ -1,0 +1,37 @@
+Function "process_instruction":
+- Unpacks the instruction data into an `InstructionFormat` enum.
+- Matches the unpacked instruction and calls the corresponding handler function: `initialize_wallet_account`, `deposit_amount`, `withdraw_amount`, or `transfer_amount`.
+
+Function "initialize_wallet_account":
+- Retrieves the user account, wallet account, and system program account from the provided accounts.
+- Checks if the system program account is the actual system program.
+- Derives the PDA (Program Derived Address) for the wallet account.
+- Checks if the wallet account has already been initialized.
+- Creates a `Wallet` struct with an initial amount of 0 and sets `initialized` to true.
+- Calculates the rent-exemption balance for the wallet account.
+- Uses `invoke_signed` to create the wallet account with the derived PDA as the signer.
+- Serializes the `Wallet` struct into the wallet account's data.
+
+Function "deposit_amount":
+- Retrieves the user account and wallet account from the provided accounts.
+- Checks if the wallet account's owner is the program itself.
+- Deserializes the `Wallet` struct from the wallet account's data.
+- Checks if the wallet has been initialized.
+- Increases the wallet's `amount` by the specified `amount`.
+- Serializes the updated `Wallet` struct back into the wallet account's data.
+
+Function "withdraw_amount":
+- Retrieves the user account and wallet account from the provided accounts.
+- Checks if the wallet account's owner is the program itself.
+- Deserializes the `Wallet` struct from the wallet account's data.
+- Checks if the wallet has been initialized.
+- Decreases the wallet's `amount` by the specified `amount`.
+- Serializes the updated `Wallet` struct back into the wallet account's data.
+
+Function "transfer_amount":
+- Retrieves the user account, source wallet account, destination user account, and destination wallet account.
+- Checks that both source and destination wallet accounts are owned by the program.
+- Deserializes both source and destination `Wallet` structs from their respective account data.
+- Checks if both wallets have been initialized.
+- Adds the specified `amount` to the destination wallet's `amount` and subtracts it from the source wallet's `amount`.
+- Serializes the updated `Wallet` structs back into their respective account data.

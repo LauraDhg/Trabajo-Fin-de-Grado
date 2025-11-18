@@ -1,0 +1,43 @@
+Function "process_instruction":
+- Dispatches to specific instruction handlers based on unpacked instruction data
+- Uses InstructionFormat enum to determine which operation to perform
+- Handles CreateAccount, IncreaseAmount, WithdrawAmount, and TransferAmount instructions
+
+Function "initialize_wallet_account":
+- Creates a new wallet account using program derived address (PDA) with seeds [b"wallet", user_account.key]
+- Checks if account already has lamports to prevent reinitialization
+- Calculates required rent for wallet account storage
+- Uses invoke_signed with PDA bump for cross-program invocation to create account
+- Serializes initial wallet state with amount 0 and initialized flag set to true
+- Missing validation that wallet_account matches the derived PDA address
+- Missing ownership check that the created account belongs to the program
+
+Function "deposit_amount":
+- Increases the amount in a wallet account by specified value
+- Deserializes wallet data from account storage
+- Validates that wallet is initialized before operation
+- Performs unchecked arithmetic addition (potential overflow risk)
+- Serializes updated wallet state back to account data
+- Missing authorization check to ensure user_account owns the wallet
+- Missing validation that wallet_account belongs to the program
+
+Function "withdraw_amount":
+- Decreases the amount in a wallet account by specified value
+- Deserializes wallet data from account storage
+- Validates that wallet is initialized before operation
+- Performs unchecked arithmetic subtraction (potential underflow risk)
+- Serializes updated wallet state back to account data
+- Missing authorization check to ensure user_account owns the wallet
+- Missing validation that wallet_account belongs to the program
+- Missing balance check to prevent withdrawing more than available amount
+
+Function "transfer_amount":
+- Transfers amount from source wallet to destination wallet
+- Deserializes both source and destination wallet data
+- Validates that both wallets are initialized
+- Performs unchecked arithmetic operations (potential overflow/underflow risks)
+- Serializes updated states for both wallets
+- Missing authorization check to ensure user_account owns the source wallet
+- Missing validation that both wallet accounts belong to the program
+- Missing balance check to prevent transferring more than source wallet balance
+- Missing validation that dest_user_account owns the destination wallet

@@ -1,0 +1,45 @@
+Function "create_admin":
+- Uses `unwrap()` on `Pubkey::from_str()`, which can panic if the string is invalid, potentially causing runtime failures during deployment or execution.
+- Does not verify the caller's authority (e.g., only admin), allowing anyone with a wallet to invoke and overwrite the admin account.
+- Uses `Clock::from_account_info()` without handling potential errors explicitly, which may panic if the account data is invalid.
+  
+Function "update_admin":
+- Does not verify if the caller is authorized to update admin, potentially allowing unauthorized updates.
+- Uses `Clock::from_account_info()` without explicit error handling which may cause panics if account data is invalid.
+- Assumes the `admin_account_dao` is owned by the program without additional validation, which could be manipulated if ownership is incorrect.
+  
+Function "create_account":
+- Sets a fixed initial governance points of 10, which, while not insecure, could be abused if account creation is not restricted.
+- Uses `invoke_signed()` with a calculated bump seed but does not check whether the account already exists or is initialized, risking overwriting existing accounts.
+- Lacks validation to ensure the caller has authority or specific privileges before creating accounts, possibly leading to spamming or account flooding.
+- Uses `pubkey::find_program_address` to derive PDAs but assumes the derived address matches the provided account without further checks.
+  
+Function "open_proposal":
+- Uses `title.as_bytes()` directly in `find_program_address`, which can lead to collisions if different proposals share the same title or are too similar, risking overwriting.
+- Does not verify if the caller is authorized or has voting rights, allowing anyone to create proposals freely.
+- No verification that the proposal account is not already initialized beyond lamports check, risking account overwrite.
+- Uses `Clock::from_account_info()` without explicit error handling, risking panic if invalid data.
+  
+Function "vote_process":
+- Checks if vote record account is already initialized but does not verify if the user has already voted, leading to potential multiple votes from the same user.
+- Uses `checked_add()` for vote tallies but does not verify if the proposal is still open for voting beyond timestamp.
+- Creates new `Vote_Record` account every vote without checking historical votes, possibly leading to duplicate votes.
+- The vote weight is directly based on the governance points from the user, but no validation ensures governance points are sufficient or not manipulated.
+- Uses `Clock::from_account_info()` without explicit error handling, risking panics.
+  
+Function "manage_governance_points":
+- Does not verify if the caller has administrative privileges, allowing any signer to modify governance points.
+- Has a bug in subtracting governance points: `user.amount_governance_points -= amount;` without ensuring underflow is prevented (which is mitigated by `checked_sub()` in idiomatic code but not used here).
+- Assumes owner is always set correctly; no additional checks are performed to prevent unauthorized modifications.
+  
+Function "execute_instruction":
+- Validation of `variant_instr` is minimal; only a `match` with default error, no explicit check for valid commands.
+- `invoke_signed()` relies on derived seeds; if seeds are incorrect or maliciously manipulated, could invoke unexpected instructions.
+- Does not verify the authority or state of the vault account, leading to potential misuse.
+- Uses `load_current_index()` and `load_instruction_at()` without explicit error handling, risking panics if data is corrupt.
+  
+Function "make_decision":
+- No access control for who can invoke decision-making; any signer can execute, risking unilateral decisions.
+- Does not check whether the proposal has already been executed, which could lead to multiple executions.
+- Utilizes `Clock::from_account_info()` without robust error handling, risking panics.
+- Compares votes for decision but lacks safeguards if vote counts are inconsistent or corrupted.

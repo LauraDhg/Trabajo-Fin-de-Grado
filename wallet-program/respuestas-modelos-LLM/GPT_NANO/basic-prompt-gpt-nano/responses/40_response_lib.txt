@@ -1,0 +1,48 @@
+Function "process_instruction":
+- Parses the instruction data and calls the corresponding function based on the instruction variant.
+- Acts as the main entry point for processing instructions to the program.
+
+Function "initialize_wallet_account":
+- Creates and initializes a new wallet account associated with a user.
+- Checks that the provided system program account is valid.
+- Derives the program-derived address (PDA) for the wallet and verifies the provided account matches.
+- Creates the account with rent exemption and serializes initial Wallet data.
+
+Function "deposit_amount":
+- Increases the wallet's amount by a specified deposit amount.
+- Checks ownership of the wallet account.
+- Verifies wallet account matches the PDA.
+- Deserializes, updates, and serializes the Wallet state with the new amount.
+
+Function "withdraw_amount":
+- Decreases the wallet's amount by a specified withdrawal amount.
+- Checks account ownership.
+- Verifies wallet account matches the PDA.
+- Checks for sufficient funds.
+- Deserializes, updates, and serializes the Wallet state.
+
+Function "transfer_amount":
+- Transfers amount from source wallet to destination wallet.
+- Checks ownership of source and destination wallet accounts.
+- Verifies wallet accounts match their respective PDAs.
+- Checks source wallet has sufficient funds.
+- Deserializes, updates, and serializes both wallets for transfer.
+
+Potential risks and vulnerabilities:
+- "initialize_wallet_account": 
+  - No check if wallet account is already initialized, risking overwrites.
+- "deposit_amount":
+  - No check for overflow when adding amount to wallet.amount.
+- "withdraw_amount":
+  - Uses checked_sub with custom error, but prior to that by problem is okay.
+- "transfer_amount":
+  - No check for overflow when adding to destination wallet; could overflow.
+  - Checks account ownership but could be vulnerable to account hijacking if not properly assigned.
+- All functions:
+  - Assumes account data length is sufficient and correctly formatted, which could lead to errors if not.
+  - No explicit access control: any account owner could call functions if they have the account.
+  - No explicit checks to prevent re-initialization or duplicate account creation.
+  - Potential replay or duplicate transactions if not handled outside the program.
+- General:
+  - No validation on instruction data, such as zero or negative amounts.
+  - No explicit security against malicious account manipulation beyond basic owner check and PDA derivation.

@@ -1,0 +1,73 @@
+Function "vault_program_id":
+- Hardcoded program ID which may be incorrect if the vault program is redeployed
+- Uses unwrap() which will panic if the string is invalid, making the program unusable
+
+Function "send_create_vault_transaction":
+- Creates a CPI instruction without proper validation of the vault program ID
+- Uses hardcoded seeds ("vault") which may conflict with other programs
+- Does not validate that the vault_account is derived from the expected seeds
+
+Function "send_instr_to_vault_transaction":
+- Creates CPI instruction without proper validation of accounts
+- Missing system program account in instruction accounts for vault operations
+- Uses hardcoded seeds without proper validation
+
+Function "process_instruction":
+- No validation of instruction data length before unpacking
+- No access control checks at the entry point level
+
+Function "create_admin":
+- Does not verify that system_program is actually the system program
+- Uses try_into().unwrap() which could panic on large account sizes
+- No rent exemption check after account creation
+
+Function "update_admin":
+- No authorization check to ensure only current admin can update
+- No validation that new_admin is a valid pubkey
+- No timestamp validation to prevent rapid admin changes
+
+Function "create_account":
+- Gives free governance points (10) without any economic mechanism
+- No maximum limit on governance points creation
+- Uses try_into().unwrap() which could panic
+
+Function "open_proposal":
+- Fixed 1-hour voting period (3600 seconds) without configurability
+- Proposal title used in PDA seeds without length validation
+- No spam protection for proposal creation
+
+Function "vote_process":
+- Allows multiple votes from same user (creates new vote record each time)
+- No check if user has already voted on this proposal
+- Vote weight based on governance points without decay mechanism
+
+Function "manage_governance_points":
+- Admin can arbitrarily add/remove governance points without limits
+- No event logging for governance point changes
+- No validation that amount doesn't cause underflow/overflow
+
+Function "execute_instruction":
+- Instruction variant validation is incomplete (missing cases)
+- IX sysvar usage for previous instruction check is insecure
+- No proper validation of vault program ID before CPI
+
+Function "make_decision":
+- Time check uses parentheses in condition (current_time < proposal.end_time) which is syntactically odd
+- Only checks if proposal is still active, doesn't validate execution state
+- No mechanism to prevent repeated execution
+
+Function "action_as_str":
+- Incomplete match pattern (only handles 0,1,2 but instruction has variant 3 for withdraw)
+- Returns "Unknown" for invalid actions instead of proper error
+
+Function "try_from_slice_unchecked" (usage throughout):
+- Used without proper bounds checking on slice lengths
+- Potential for deserialization errors and panics
+
+Function "invoke_signed" (usage throughout):
+- Used with dynamically created instructions without proper validation
+- No checks that the invoked program is the expected program
+
+Function "load_instruction_at" and "load_current_index":
+- Instruction sysvar usage for security checks is deprecated and insecure
+- Relies on instruction ordering which can be manipulated

@@ -1,0 +1,60 @@
+Function "vault_program_id":
+- Hardcoded program ID which cannot be changed after deployment
+- No validation that the provided address is a valid program ID
+
+Function "send_create_vault_transaction":
+- Missing proper account validation for the vault program
+- No checks on the vault_bump parameter validity
+- Potential reentrancy risk through CPI calls
+
+Function "send_instr_to_vault_transaction":
+- Missing system program account in instruction accounts for vault operations
+- No validation of vault program ID before invocation
+- Potential reentrancy through CPI calls
+
+Function "process_instruction":
+- No input validation on instruction_data length before unpacking
+- Missing proper error handling for malformed instructions
+
+Function "create_admin":
+- Uses deprecated try_from_slice_unchecked pattern
+- Missing rent exemption check after account creation
+- No validation that system_program is actually the system program
+- Potential signature spoofing as admin_payer isn't properly validated
+
+Function "update_admin":
+- Allows arbitrary admin changes without proper authorization checks
+- Missing validation that the caller is the current admin
+- No timestamp validation to prevent replay attacks
+
+Function "create_account":
+- Hardcoded initial governance points (10) without justification
+- Missing proper account ownership validation
+- Potential PD address collision risk
+
+Function "open_proposal":
+- Fixed 1-hour proposal duration which cannot be configured
+- Uses title as PDA seed which could lead to collisions with long titles
+- No maximum length validation for title and description
+
+Function "vote_process":
+- Double voting prevention relies on account initialization check only
+- No check if user has already voted on this proposal
+- Arithmetic overflow protection but no underflow protection
+- Missing validation that user_account_dao belongs to the signer
+
+Function "manage_governance_points":
+- Admin can arbitrarily modify any user's governance points
+- No access control beyond admin signature
+- Potential for governance token manipulation
+
+Function "execute_instruction":
+- Instruction validation logic has redundant PDA checks
+- Uses deprecated sysvar instruction loading methods
+- Missing proper validation of vault program accounts
+- Potential reentrancy through CPI calls to external vault program
+
+Function "make_decision":
+- Decision logic only compares yes vs no votes without quorum requirements
+- No validation that proposal hasn't already been executed
+- Missing proper access control beyond admin signature

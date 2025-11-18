@@ -1,0 +1,64 @@
+Function "vault_program_id":
+- Hardcoded program ID which cannot be changed after deployment
+- Uses unwrap() which will panic if the string is invalid
+
+Function "action_as_str":
+- No security vulnerabilities identified
+
+Function "send_create_vault_transaction":
+- Missing proper validation of account ownership and program IDs
+- Uses hardcoded vault_program_id which may not match intended program
+- No validation that vault_account is actually a PDA with the expected seeds
+
+Function "send_instr_to_vault_transaction":
+- Missing proper validation of account ownership and program IDs
+- Uses hardcoded vault_program_id which may not match intended program
+- No validation that vault_account is actually a PDA with the expected seeds
+
+Function "process_instruction":
+- No security vulnerabilities identified
+
+Function "create_admin":
+- Missing rent exemption check before account creation
+- Uses unwrap() which could panic on account length conversion
+- No validation that system_program is actually the system program
+
+Function "update_admin":
+- Missing access control - any signer can update admin without checking if they are the current admin
+- No validation that the new_admin is a valid Pubkey
+
+Function "create_account":
+- Missing rent exemption check before account creation
+- Uses unwrap() which could panic on account length conversion
+- No validation that system_program is actually the system program
+- Hardcodes initial governance points to 10 without configurable mechanism
+
+Function "open_proposal":
+- Missing rent exemption check before account creation
+- Uses unwrap() which could panic on account length conversion
+- No validation that system_program is actually the system program
+- Fixed 1-hour proposal duration without configurable time limits
+- Proposal title used in PDA seeds without length/sanitization checks
+
+Function "vote_process":
+- Missing rent exemption check before account creation
+- Uses unwrap() which could panic on account length conversion
+- No validation that system_program is actually the system program
+- User can vote multiple times by creating new vote records
+- No check if user has already voted on this proposal
+
+Function "manage_governance_points":
+- Missing access control - any signer can manage points if they pass admin account check
+- No overflow/underflow protection for subtraction operation (uses unchecked subtraction)
+- No validation that the operation is authorized by the actual admin
+
+Function "execute_instruction":
+- Missing proper validation of vault program and instruction sysvar
+- Incomplete account validation in match arms (admin/user PDA checks don't use the bump)
+- Instruction sysvar validation is incomplete and could be bypassed
+- No proper CPI validation to prevent unauthorized cross-program invocations
+
+Function "make_decision":
+- Missing proper access control - any signer can finalize decisions if they pass admin check
+- Time validation uses strict equality which may miss edge cases
+- No validation that the proposal hasn't already been executed

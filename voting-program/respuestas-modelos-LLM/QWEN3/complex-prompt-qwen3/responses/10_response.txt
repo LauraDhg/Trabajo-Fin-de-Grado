@@ -1,0 +1,86 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey which may be insecure if not validated against expected deployment; ensure this matches the actual Vault program's ID on-chain.
+
+Function "create_admin":
+- Initializes an admin PDA using a static seed ("admin"), which is correct, but does not verify that the system program account passed is the actual system program.
+- Uses `invoke_signed` to create the account, which is appropriate for PDA-controlled creation.
+- Does not check if `system_program` is the actual system program (should compare to `system_program::ID`).
+- Serializes data after `invoke_signed`, which is safe only because the account is created and owned by the program.
+- Relies on `Rent::get()` which is secure and standard.
+
+Function "update_admin":
+- Properly checks ownership and signer status.
+- Validates PDA using `find_program_address`, preventing arbitrary account input.
+- Updates admin without re-initializing; safe as long as deserialization is protected via `try_from_slice`.
+- No arithmetic or unchecked operations; safe.
+
+Function "create_account":
+- Uses a PDA derived from user's key, which is secure.
+- Correctly checks signer and lamports to prevent reinitialization.
+- Allocates rent-exempt account via `invoke_signed`, which is correct.
+- Assigns 10 governance points by default — consider making this configurable or secured behind admin control to prevent inflation.
+- Does not validate `system_program` account key.
+
+Function "open_proposal":
+- Derives PDA from proposal title bytes; vulnerable to title collisions if two proposals have identical titles.
+- Title is not normalized (e.g., whitespace, case), increasing collision risk.
+- Uses current timestamp and sets end time to +3600 seconds; logic is sound.
+- Allows any user to create a proposal — consider requiring a minimum governance stake.
+- No validation of title or description length; could lead to excessive memory usage or DoS.
+- Does not validate `system_program` or `clock_sysvar` beyond key check.
+
+Function "vote_process":
+- Derives vote PDA using user and proposal keys — secure and collision-resistant.
+- Checks that proposal is still active using clock — correct use of time validation.
+- Adds vote weight based on user's full governance points; no mechanism to prevent double voting (mitigated by vote record PDA).
+- Uses `checked_add` for arithmetic — correct defense against overflow.
+- Serializes both `vote_record`, `proposal`, and `user` — but does not modify `user`, so re-serialization is unnecessary and could be a bug if it overwrites uncommitted changes.
+- No validation of `system_program` or `clock_sysvar`.
+
+Function "manage_governance_points":
+- Allows admin to add or subtract governance points.
+- Subtraction uses unchecked `-=`, which can underflow if `amount > user.amount_governance_points`.
+- Vulnerable to underflow: should use `checked_sub` instead.
+- No upper limit on adding points — risk of inflation unless tightly controlled.
+- Correctly verifies admin PDA.
+
+Function "execute_instruction":
+- Uses `instructions_sysvar` to check previous instruction was from Vault program — intended as a security check but is easily bypassed because sysvar can be faked if not validated.
+- Does not validate that `ix_sysvar` is the actual instructions sysvar (`INSTRUCTIONS_SYSVAR_ID`) before use — critical vulnerability.
+- Uses `load_current_index` and `load_instruction_at` safely, but only after confirming sysvar key — fix in place but order matters.
+- For variant 0 (create vault), checks if `user_account_dao` is admin PDA — correct.
+- For variant 1 (deposit), checks if `user_account_dao` is user PDA — correct.
+- For variant 2 (withdraw), incorrectly checks if `user_account_dao` is admin PDA — should be admin for withdraw, but logic may be correct depending on design.
+- Calls `send_create_vault_transaction` or `send_instr_to_vault_transaction` with `program_id` as `id_pubkey` — unclear purpose; may be used for verification in Vault program.
+- No validation of `system_program` account.
+
+Function "make_decision":
+- Correctly checks that proposal has ended before execution.
+- Only allows admin to execute.
+- Sets `executed = true` after decision — prevents re-execution.
+- Does not perform any CPI or state changes beyond marking proposal as executed — safe.
+- Does not validate `clock_sysvar` beyond key check.
+
+Function "send_create_vault_transaction":
+- Constructs instruction with `variant_instr`, `id_pubkey`, and `vault_bump`.
+- Uses `invoke_signed` with PDA signer — correct for cross-program invocation (CPI).
+- Seeds used: `b"vault"` and `vault_bump` — must match Vault program’s expected PDA.
+- Does not validate that `vault_program.key` matches expected Vault program ID within function — done in `execute_instruction`, so acceptable.
+- Potential risk if `vault_bump` is not correctly derived off-chain.
+
+Function "send_instr_to_vault_transaction":
+- Similar to above; constructs CPI to Vault program.
+- Includes `amount` in data for deposit/withdraw — correct.
+- Uses same PDA signing logic — secure if seeds are correct.
+- Relies on caller to provide correct `vault_bump`.
+
+Function "action_as_str":
+- Simple mapping of instruction variant to string; no security implications.
+
+Function "process_instruction":
+- Dispatches instructions safely via `InstructionFormat::unpack`.
+- Uses exhaustive match — safe.
+- No instruction-level authorization checks; handled in individual functions.
+
+Function "try_from_slice_unchecked":
+- Not directly used in a dangerous way, but imported; ensure no use of `try_from_slice_unchecked` on untrusted data — currently using `try_from_slice`, which is safe.

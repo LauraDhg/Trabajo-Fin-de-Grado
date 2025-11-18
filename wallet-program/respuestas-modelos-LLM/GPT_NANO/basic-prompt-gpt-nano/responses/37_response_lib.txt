@@ -1,0 +1,33 @@
+Function "process_instruction":
+- Determines which instruction to execute based on the input data
+- Routes the call to the appropriate function: initialize_wallet_account, deposit_amount, withdraw_amount, or transfer_amount
+- Unpacks instruction data using InstructionFormat
+
+Function "initialize_wallet_account":
+- Creates a new wallet account associated with a user if it hasn't been initialized
+- Checks if the wallet account already has lamports to prevent re-initialization
+- Uses invoke_signed to create the account with the correct PDA (Program Derived Address)
+- Serializes the Wallet struct into the account data
+
+Function "deposit_amount":
+- Adds a specified amount to the wallet's current balance
+- Checks if the user is signer
+- Unpacks the wallet account data
+- Checks if account data is initialized
+- Uses checked_add to prevent overflow
+
+Function "withdraw_amount":
+- Subtracts a specified amount from the wallet's balance
+- Checks if the user is signer
+- Unpacks the wallet account data
+- Checks if account data is initialized
+- Does not check if balance is sufficient before subtraction, which is a risk
+
+Function "transfer_amount":
+- Transfers an amount from a source wallet to a destination wallet
+- Checks if the user is signer
+- Unpacks both source and destination wallet data
+- Checks initialization status for both wallets
+- Adds amount to destination wallet with checked_add
+- Subtracts amount from source wallet without balance check, risking underflow
+- Serializes both wallets after update

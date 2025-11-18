@@ -1,0 +1,89 @@
+Function "action_as_str":
+- Converts a u8 action code into a human-readable string.
+
+Function "send_create_vault_transaction<'info>":
+- Constructs and sends a transaction to create a new vault.
+- Uses program-derived addresses (PDAs) for authority.
+- Uses invoke_signed to invoke other programs with signed PDAs.
+
+Function "send_instr_to_vault_transaction<'info>":
+- Constructs and sends a transaction to interact with the vault (deposit/withdraw).
+- Uses program-derived addresses (PDAs) for authority.
+- Uses invoke_signed for cross-program invocation.
+
+Function "process_instruction":
+- Entry point for the program.
+- Unpacks instructions and routes to specific handlers like create_admin, update_admin, create_account, etc.
+- Uses pattern matching on instruction types.
+
+Function "create_admin":
+- Creates an admin account if not already initialized.
+- Validates signer and PDA correctness.
+- Uses invoke_signed to create account with rent exemption.
+- Stores admin info with timestamp.
+
+Function "update_admin":
+- Updates the admin account.
+- Checks owner and signer.
+- Updates last_update timestamp and admin_id.
+
+Function "create_account":
+- Creates a user account for governance points.
+- Checks signer and account initialization.
+- Uses invoke_signed for account creation.
+- Initializes account with default governance points.
+
+Function "open_proposal":
+- Creates a new proposal with title and description.
+- Checks account ownership, signer, and initialization.
+- Stores proposal info with start and end times.
+- Uses invoke_signed for account creation.
+
+Function "vote_process":
+- Processes a vote on a proposal.
+- Checks signatures, account ownership, and account existence.
+- Checks if voting period is active.
+- Adds governance points to votes.
+- Creates a vote record account with invoke_signed.
+- Updates proposal votes and user governance points.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user.
+- Checks owner, signer, and account correctness.
+- Uses checked arithmetic and serializes updated user account.
+
+Function "execute_instruction":
+- Executes instructions like create vault, deposit, or withdraw.
+- Validates account owners and signatures.
+- Checks metadata, such as previous instruction.
+- Calls helper functions to send transactions to vault.
+
+Function "make_decision":
+- Finalizes a proposal.
+- Checks owner and signer.
+- Validates proposal account.
+- Checks if voting period ended.
+- Determines if proposal is approved based on votes.
+- Marks proposal as executed and serializes.
+
+Potential risks and vulnerabilities:
+- No explicit access control on critical functions like create_admin or update_admin beyond owner checks.
+- Use of unwrap() in vault_program_id() can panic if parsing fails.
+- No checks for overflow/underflow in arithmetic operations besides checked_add.
+- Reliance on PDA correctness; if seeds change, accounts may be misaligned.
+- No explicit limit on number of proposals or votes, which could cause resource exhaustion.
+- No validation of string lengths for title and description, potential for large data.
+- No validation if accounts are rent-exempt before usage.
+- Possible reentrancy through cross-program invocations or account modifications.
+- The code does not verify the correctness of account data before mutating.
+- No explicit checks for duplicate proposals or votes.
+- No logging or error messages for failed invoke_signed calls other than Propogation of errors.
+- The global vault_id is hardcoded; if compromised, it could interfere; no key whitelist.
+- No validation or encryption on stored data like proposal descriptions, making data visible.
+- No explicit measures against replay attacks or double voting besides account existence checks.
+- Lack of explicit time validation on admin or proposal timestamps beyond basic comparisons.
+- Use of "unwrap" during some conversions (like to_vec()?.len()) could panic on malformed data.
+- The code is susceptible to logical errors if accounts are not correctly matched to expected PDAs.
+- No explicit checks for the total governance points to prevent overflow.
+- No input validation on string inputs (title, description) for malicious content or length.
+- Possible race conditions if two transactions modify the same account simultaneously.

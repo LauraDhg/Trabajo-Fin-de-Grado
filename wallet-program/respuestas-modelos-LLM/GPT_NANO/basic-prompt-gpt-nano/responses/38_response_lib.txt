@@ -1,0 +1,36 @@
+Function "process_instruction":
+- Acts as the main entry point for processing different instructions.
+- Decodes instruction data and routes to the appropriate function based on instruction type.
+- Ensures that the correct function is called for each user request.
+
+Function "initialize_wallet_account":
+- Creates a new wallet account associated with a user.
+- Checks that the system program ID matches expectations.
+- Derives a program address (PDA) for the wallet.
+- Creates and allocates space for the wallet account on-chain.
+- Serializes and stores the wallet data into the account.
+- Performs foundational setup for wallet management.
+
+Function "deposit_amount":
+- Adds a specified amount to the user's wallet balance.
+- Checks that the wallet account owner matches the program ID.
+- Deserializes the wallet data.
+- Uses checked_add to prevent overflow.
+- Serializes the updated wallet data back into the account.
+
+Function "withdraw_amount":
+- Subtracts a specified amount from the user's wallet balance.
+- Checks wallet ownership for security.
+- Deserializes wallet data.
+- Checks whether the wallet has sufficient funds.
+- Uses checked_sub to prevent arithmetic underflow.
+- Serializes the updated wallet data.
+
+Function "transfer_amount":
+- Transfers a specified amount from one wallet to another.
+- Checks ownership of source and destination wallet accounts.
+- Deserializes both wallets.
+- Checks for sufficient balance in source wallet.
+- Adds amount to destination wallet with checked_add.
+- Subtracts amount from source wallet with checked_sub.
+- Serializes both wallets back into their respective accounts.

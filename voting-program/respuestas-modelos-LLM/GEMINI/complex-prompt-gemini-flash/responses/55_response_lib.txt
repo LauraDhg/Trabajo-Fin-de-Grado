@@ -1,0 +1,53 @@
+Function "vault_program_id":
+- Hardcoded program ID, which couples this program to a specific vault program deployment. It should be configurable.
+
+Function "process_instruction":
+- Central dispatch function, which is standard. No immediate vulnerabilities.
+
+Function "create_admin":
+- Checks for account already initialized, which prevents accidental overwrites.
+- Uses `create_program_address` to derive the admin account's PDA, which is good.
+- Creates the admin account using `invoke_signed` with the correct seeds.
+
+Function "update_admin":
+- Checks for `IllegalOwner` and `MissingRequiredSignature`.
+- Checks if the user trying to update the admin is the current admin.
+- Updates the admin account with the new admin pubkey and the last update timestamp.
+
+Function "create_account":
+- Checks for `MissingRequiredSignature` and if the account is already initialized.
+- Uses `create_program_address` for PDA derivation with a seed that includes the user's key, increasing uniqueness.
+- Assigns initial governance points.
+
+Function "open_proposal":
+- Checks for `IllegalOwner`, `MissingRequiredSignature` and if the account is already initialized.
+- Uses `create_program_address` for PDA derivation, using the title as a seed. Potential DoS if the same title is reused.
+- Sets a fixed proposal duration (1 hour).
+
+Function "vote_process":
+- Checks for `IllegalOwner` and `MissingRequiredSignature`.
+- Uses `create_program_address` for PDA derivation using the user's account and proposal's account as seeds.
+- Prevents voting after the proposal's end time.
+- Uses `checked_add` to prevent overflow when adding votes.
+- Serializes the updated proposal account, user account and vote record account.
+
+Function "manage_governance_points":
+- Checks for `IllegalOwner` and `MissingRequiredSignature`.
+- Checks if the user trying to manage the points is the admin.
+- Uses `checked_add` to prevent overflow when adding points.
+- Uses `.amount_governance_points -= amount;` to substract points. Possible underflow. Should use checked_sub.
+
+Function "execute_instruction":
+- Checks for `IllegalOwner` and `MissingRequiredSignature`.
+- Uses a `match` statement based on `variant_instr`.
+- Implements CPI to interact with a vault program.
+- Checks if the previous instruction was from vault program.
+- Depending on `variant_instr` and PDA derivations in internal matching, it allows the program to do operations on admin or user accounts.
+- If `variant_instr` is 0, 1 or 2, it calls `send_create_vault_transaction` or `send_instr_to_vault_transaction` respectively, potentially executing CPIs to a vault program.
+- Has a redundant logic block for admin check in `variant_instr` 0 and 2.
+
+Function "make_decision":
+- Checks for `IllegalOwner` and `MissingRequiredSignature`.
+- Checks if the user trying to make the decision is the admin.
+- Ensures the proposal has ended before allowing a decision.
+- Sets the `executed` flag to `true` after a decision is made.

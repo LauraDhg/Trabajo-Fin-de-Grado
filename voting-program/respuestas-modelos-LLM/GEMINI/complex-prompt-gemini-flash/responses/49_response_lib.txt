@@ -1,0 +1,58 @@
+Function "vault_program_id":
+- Hardcoded program ID, consider using a more flexible approach such as storing it in a configuration account.
+
+Function "process_instruction":
+- This is the main entry point, which is good.
+- It unpacks the instruction data and calls the corresponding function.
+
+Function "create_admin":
+- Uses `find_program_address` to derive the admin PDA, which is good.
+- Checks if the admin account is already initialized.
+- Creates the admin account using `invoke_signed`.
+- Serializes the admin account data.
+
+Function "update_admin":
+- Uses `find_program_address` to derive the admin PDA.
+- Checks if the admin account is owned by the program.
+- Updates the admin ID.
+- Serializes the updated admin account data.
+
+Function "create_account":
+- Uses `find_program_address` to derive the user account PDA.
+- Checks if the user account is already initialized.
+- Creates the user account using `invoke_signed`.
+- Serializes the user account data.
+- Assigns initial governance points.
+
+Function "open_proposal":
+- Uses `find_program_address` to derive the proposal PDA.
+- Checks if the proposal account is already initialized.
+- Sets a fixed duration (1 hour) for the proposal.
+- Creates the proposal account using `invoke_signed`.
+- Serializes the proposal data.
+
+Function "vote_process":
+- Uses `find_program_address` to derive the vote record PDA.
+- Checks if the vote record account is already initialized.
+- Validates that the proposal is still open.
+- Increments the yes/no votes based on the user's governance points.
+- Creates the vote record account using `invoke_signed`.
+- Serializes the vote record data.
+- Serializes the updated proposal data.
+
+Function "manage_governance_points":
+- Uses `find_program_address` to derive the admin PDA.
+- Adds or subtracts governance points from a user's account.
+
+Function "execute_instruction":
+- Checks for account ownership and signer status.
+- Has a logic flaw where it checks the user account against admin PDA for `variant_instr` 0 and 2, and vice-versa.
+- Uses `load_current_index` and `load_instruction_at` to check the previous instruction, offering some protection against being front-run.
+- Delegates the actual execution to `send_create_vault_transaction` or `send_instr_to_vault_transaction`.
+
+Function "make_decision":
+- Uses `find_program_address` to derive the admin PDA.
+- Checks if the proposal has ended.
+- Determines if the proposal is approved based on the vote count.
+- Sets the `executed` flag on the proposal.
+- Serializes the updated proposal data.

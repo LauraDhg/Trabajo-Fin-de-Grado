@@ -1,0 +1,65 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program changes or is redeployed
+- No validation that the program ID corresponds to an actual vault program
+
+Function "action_as_str":
+- No security vulnerabilities identified (utility function)
+
+Function "send_create_vault_transaction":
+- Missing validation that vault_program is the expected program
+- No checks on account ownership or proper program validation
+- Potential for cross-program invocation to malicious programs
+
+Function "send_instr_to_vault_transaction":
+- Missing validation that vault_program is the expected program
+- No signature verification for user_payer in cross-program context
+- Potential for cross-program invocation to malicious programs
+
+Function "process_instruction":
+- No instruction data validation beyond unpacking
+- Missing access control checks at the entry point level
+
+Function "create_admin":
+- Uses deprecated `try_to_vec()` for account length calculation
+- No validation that admin_payer is authorized to create admin account
+- Missing rent exemption check before account creation
+
+Function "update_admin":
+- No authorization check to verify admin_payer is the current admin
+- Allows any signer to change admin without permission validation
+- Missing validation that new_admin is a valid pubkey
+
+Function "create_account":
+- Hardcoded initial governance points (10) without validation
+- Missing validation that user_account_dao PDA derivation is correct
+- Uses deprecated `try_to_vec()` for account length calculation
+
+Function "open_proposal":
+- Fixed 1-hour proposal duration (3600 seconds) without configurability
+- Missing validation that user has sufficient governance points
+- Uses title bytes for PDA derivation which may cause collisions
+- Uses deprecated `try_to_vec()` for account length calculation
+
+Function "vote_process":
+- Missing check if user has already voted on this proposal
+- No validation that vote_amount doesn't exceed user's governance points
+- Uses deprecated `try_to_vec()` for account length calculation
+- Missing reentrancy protection for vote counting
+
+Function "manage_governance_points":
+- No access control beyond admin account ownership check
+- Allows arbitrary governance point manipulation without constraints
+- Subtraction operation (instruction=false) doesn't use checked_sub, risking underflow
+- Missing validation that amount is reasonable
+
+Function "execute_instruction":
+- Uses instruction sysvar to check previous instruction, which can be manipulated
+- Missing proper validation of vault_program account
+- PDA validation logic is inconsistent across variant_instr cases
+- Missing validation that user has proper permissions for each instruction type
+
+Function "make_decision":
+- Missing validation that proposal hasn't already been executed
+- Decision logic only compares yes_votes >= no_votes without threshold
+- No mechanism to actually execute the proposal decision
+- Missing validation that admin has authority to finalize decisions

@@ -1,0 +1,56 @@
+Function "vault_program_id":
+- Hardcoded program ID which is a security risk if changed in the future without updating the program.
+
+Function "process_instruction":
+- Entry point of the program. It unpacks the instruction data and calls the corresponding function.
+- Relies on the `InstructionFormat::unpack` function to correctly deserialize the instruction data. Errors in deserialization could lead to unexpected behavior.
+
+Function "create_admin":
+- Creates an admin account with the current timestamp.
+- Uses `invoke_signed` to create the admin account, ensuring that the program signs the transaction.
+- Checks if the admin account has already been initialized.
+- Stores the admin account data using serialization.
+
+Function "update_admin":
+- Updates the admin account with a new admin Pubkey and the current timestamp.
+- Checks if the current user has admin privileges.
+- Uses `try_from_slice` to deserialize the admin account data.
+- Re-serializes the modified admin account data.
+
+Function "create_account":
+- Creates a user account and initializes it with 10 governance points.
+- Uses `invoke_signed` to create the user account.
+- Checks if the account has already been initialized.
+- Stores the user account data using serialization.
+
+Function "open_proposal":
+- Creates a new proposal account.
+- The end time is calculated as `start_time + 3600` which means only 1 hour after its creation.
+- Uses `invoke_signed` to create the proposal account.
+- Stores the proposal data using serialization.
+
+Function "vote_process":
+- Processes a vote for a proposal.
+- Checks if the proposal is still open.
+- Updates the proposal's vote count based on the user's governance points.
+- Creates a vote record account.
+- Uses `invoke_signed` to create the vote record account.
+- There are multiple serializations at the end of the function.
+
+Function "manage_governance_points":
+- Manages (adds or subtracts) governance points for a user.
+- Checks if the user performing the action has admin privileges.
+- Updates the user's governance points based on the instruction.
+- There is an arithmetic overflow protection when adding, but not when substracting.
+
+Function "execute_instruction":
+- Executes different instructions related to a vault program.
+- The check `if user_account_dao.key != &admin_pda` repeats multiple times.
+- Uses a hardcoded `vault_program_id`.
+- Loads previous instructions.
+
+Function "make_decision":
+- Makes a decision on a proposal based on the votes.
+- Checks if the current user has admin privileges.
+- Checks if the proposal is still active.
+- Updates the proposal's `executed` field.

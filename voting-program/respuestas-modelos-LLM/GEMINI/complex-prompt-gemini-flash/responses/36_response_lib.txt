@@ -1,0 +1,69 @@
+Function "vault_program_id":
+- Hardcoded program ID is a potential security risk. If the vault program is compromised, this program will interact with it. Consider making the program ID configurable or using a more secure method of referencing it, such as storing it in an updatable account.
+
+Function "send_create_vault_transaction":
+- The `vault_seeds` is hardcoded, and if the vault program uses this to verify the vault account, it could be vulnerable to replay attacks. Check how the vault program uses the seeds.
+- The program does not check if the `admin_account_dao` account has enough lamports to cover rent exemption.
+- The `vault_seeds` only contain "vault". It needs to have other unique information.
+
+Function "send_instr_to_vault_transaction":
+- The `vault_seeds` is hardcoded, and if the vault program uses this to verify the vault account, it could be vulnerable to replay attacks. Check how the vault program uses the seeds.
+- The program does not check if the `user_account_dao` account has enough lamports to cover rent exemption.
+- The `vault_seeds` only contain "vault". It needs to have other unique information.
+
+Function "process_instruction":
+- This function acts as the main entry point, dispatching instructions. It's crucial that the `InstructionFormat::unpack` function correctly deserializes the instruction data and that all possible instruction types are handled safely and correctly. Any deserialization errors or unhandled instruction types could lead to unexpected behavior or vulnerabilities.
+
+Function "create_admin":
+- The program checks that the `admin_account_dao` account is not already initialized but it does not check the size of the account. If an attacker can create an account at the PDA with a smaller size, the serialization will fail.
+- Ensure `account_len` is within reasonable bounds to prevent excessive rent costs or potential denial-of-service attacks.
+- Missing check for `clock_sysvar.key == &CLOCK_SYSVAR_ID` and `system_program.key == &system_program::ID`.
+- There isn't a size check for `admin_account_dao` to ensure that it can store the serialized `Admin_Account` struct.
+
+Function "update_admin":
+- The program reads the state and then writes to it. It needs to check that the size of `admin_account_dao` is large enough.
+
+Function "create_account":
+- The program checks that the `user_account_dao` account is not already initialized but it does not check the size of the account. If an attacker can create an account at the PDA with a smaller size, the serialization will fail.
+- The `amount_governance_points` is hardcoded to 10.
+- Missing check for `system_program.key == &system_program::ID`.
+- There isn't a size check for `user_account_dao` to ensure that it can store the serialized `User_Account` struct.
+
+Function "open_proposal":
+- The program checks that the `proposal_account` account is not already initialized but it does not check the size of the account. If an attacker can create an account at the PDA with a smaller size, the serialization will fail.
+- The `end_time` is calculated by adding 3600 seconds (1 hour) to the `start_time`. This fixed duration might not be appropriate for all proposals and could be a potential point of contention or manipulation. Consider making the duration configurable.
+- The account `user` is being serialized even when not modified, except for the checks.
+- There isn't a size check for `proposal_account` to ensure that it can store the serialized `Proposal` struct.
+- The `title` and `description` strings are not validated for length. Large strings could lead to excessive rent costs or denial-of-service attacks.
+- The `user` account is read, but not used later. The serialization is innecesary.
+
+Function "vote_process":
+- The program checks that the `vote_record_account` account is not already initialized but it does not check the size of the account. If an attacker can create an account at the PDA with a smaller size, the serialization will fail.
+- Integer overflow is handled in the `checked_add` calls, which is good.
+- The program reads the state and then writes to it. It needs to check that the size of `user_account_dao` and `proposal_account` is large enough.
+-  The account `user` is being serialized even when not modified, except for the checks.
+- There isn't a size check for `vote_record_account` to ensure that it can store the serialized `Vote_Record` struct.
+- PDA seed contains a mutable property `user.amount_governance_points`. This could lead to unexpected behavior.
+- The `user` account is read, but not used later. The serialization is innecesary.
+
+Function "manage_governance_points":
+- Integer overflow/underflow is handled in the `checked_add` and `checked_sub` calls, which is good.
+- There isn't a check to ensure that the admin is authorized to manage governance points. Anyone could call this instruction.
+- The program reads the state and then writes to it. It needs to check that the size of `user_account_dao` is large enough.
+- There is no upper limit for the amount of governance points a user can have.
+- Missing admin account validation using `Admin_Account::try_from_slice(&admin_account_dao.data.borrow())?;`. If the account doesn't have the `Admin_Account` format, it could lead to unexpected behavior.
+- The account `admin_account_dao` is not validated.
+
+Function "execute_instruction":
+- The check `lamports == 0` is not correct.
+- The PDA derivations inside the match arms are not being used.
+- The `vault_program_id()` is hardcoded, making it difficult to upgrade or change the vault program.
+- The check `current_index > 0` is not robust. An attacker could manipulate the instruction order to bypass this check.
+- The program logic uses `load_instruction_at` and checks the previous instruction. This is vulnerable to instruction spoofing, as the instructions sysvar can be manipulated. Use cross-program invocation (CPI) to ensure the vault program executes the desired logic.
+- Accounts are being validated inside a match arm, which makes the code hard to read. Consider extract those to make the code more readable.
+
+Function "make_decision":
+- The program reads the state and then writes to it. It needs to check that the size of `proposal_account` is large enough.
+- Anyone can call this instruction once the proposal ends, not just the admin.
+- Missing admin account validation using `Admin_Account::try_from_slice(&admin_account_dao.data.borrow())?;`. If the account doesn't have the `Admin_Account` format, it could lead to unexpected behavior.
+- The account `admin_account_dao` is not validated.

@@ -1,0 +1,76 @@
+Function "action_as_str":
+- Converts an action u8 into a string literal for display or logging purposes.
+
+Function "send_create_vault_transaction":
+- Prepares and executes a cross-program invocation (CPI) to create a vault.
+- Constructs instruction data, accounts, and seeds for signing.
+- Uses "invoke_signed" to execute the instruction securely with program-derived address (PDA) signing.
+
+Function "send_instr_to_vault_transaction":
+- Prepares and executes a CPI to interact with a vault (deposit or withdraw).
+- Constructs instruction data with amount and ID.
+- Uses "invoke_signed" with seeds for PDA authorization.
+
+Function "process_instruction":
+- Entrypoint for processing incoming instructions.
+- Deserializes instruction data into a specific enum format.
+- Dispatches to different function handlers based on instruction variant.
+
+Function "create_admin":
+- Creates an admin account associated with the program.
+- Checks signer and account lamports for initialization.
+- Calculates PDA for admin account and verifies.
+- Creates account using system program instructions.
+- Serializes admin account data into account storage.
+
+Function "update_admin":
+- Updates the admin account with a new admin ID and timestamp.
+- Validates owner and signer.
+- Checks current admin privileges, deserializes admin account.
+- Updates admin ID and timestamp.
+- Serializes updated admin account data.
+
+Function "create_account":
+- Creates a user account with governance points.
+- Checks signer and lamports for initialization.
+- Finds PDA and verifies.
+- Creates account with system instruction with PDA seeds.
+- Initializes "User_Account" data and serializes it.
+
+Function "open_proposal":
+- Creates a proposal account with title and description.
+- Checks owner, signer, and account lamports.
+- Finds PDA for proposal and verifies.
+- Sets start and end times based on current timestamp.
+- Creates proposal account and serializes the proposal data.
+
+Function "vote_process":
+- Handles voting on a proposal.
+- Checks owner, signer, and existing vote record.
+- Verifies proposal is active based on time.
+- Updates votes (yes or no) based on the user's governance points.
+- Creates a "Vote_Record" account with the vote details.
+- Serializes account states of vote record, proposal, and user.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user.
+- Checks owner and signer, verifies admin privileges via PDA.
+- Deserializes admin and user accounts.
+- Updates governance points accordingly.
+- Re-serializes user account data.
+
+Function "execute_instruction":
+- Executes various instructions based on "variant_instr" (create vault, deposit, withdraw).
+- Checks owner, signer, and account lamports.
+- Handles different instruction cases with appropriate PDA verification.
+- Executes corresponding auxiliary functions for each instruction.
+- Performs CPI to vault program via helper functions.
+
+Function "make_decision":
+- Processes decision logic on a proposal.
+- Checks owner and signer.
+- Deserializes admin and proposal accounts.
+- Validates admin privileges.
+- Checks if proposal has ended based on timestamps.
+- Determines and logs whether the proposal is approved or denied.
+- Marks proposal as executed and serializes it back.

@@ -1,0 +1,32 @@
+Function "process_instruction":
+- Uses try_from_slice_unchecked which can lead to deserialization vulnerabilities if not properly validated
+- No validation of account ordering or expected account counts for different instruction types
+- Missing proper access control checks before processing instructions
+
+Function "initialize_wallet_account":
+- Missing validation that user_account is signer
+- Missing validation that wallet_account is not initialized (only checks lamports > 0)
+- Uses unwrap() on try_into() conversion which could panic
+- PDA derivation uses user_account.key but doesn't verify wallet_account matches derived PDA
+- Missing rent exemption validation for the created account
+
+Function "deposit_amount":
+- Missing validation that user_account is signer
+- Missing validation that wallet_account PDA matches expected derivation
+- No access control - any user can deposit to any wallet
+- Missing overflow protection (wallet.amount += amount could overflow)
+- No validation that deposited amount corresponds to actual token transfer
+
+Function "withdraw_amount":
+- Missing validation that user_account is signer and owner of the wallet
+- Missing validation that wallet_account PDA matches expected derivation
+- Missing validation that withdrawn amount corresponds to actual token transfer back to user
+- Uses checked_sub but error handling converts to custom error instead of proper ProgramError
+
+Function "transfer_amount":
+- Missing validation that user_account is signer and owner of source wallet
+- Missing validation that both wallet accounts match their expected PDA derivations
+- Missing overflow protection (dest_wallet.amount += amount could overflow)
+- No validation that destination wallet belongs to destination user
+- Transfer logic is not atomic - if serialization fails on second wallet, first wallet is already modified
+- Missing cross-program invocation for actual token transfer if this represents token movement

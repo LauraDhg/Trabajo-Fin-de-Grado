@@ -1,0 +1,95 @@
+Function "send_create_vault_transaction":
+- Constructs an instruction data vector with provided parameters.
+- Creates an instruction to invoke the vault program for creating a vault.
+- Defines vault seeds for signing.
+- Calls invoke_signed to execute the instruction with signer seeds.
+- Potential risk: If vault_bump, system_program, or program_id are manipulated, it could lead to unauthorized vault creation.
+
+Function "send_instr_to_vault_transaction":
+- Constructs instruction data for deposit or withdrawal, including amount and id.
+- Creates an instruction to invoke the vault program for deposit or withdrawal.
+- Defines vault seeds for signing.
+- Calls invoke_signed to execute the instruction.
+- Potential risk: Similar to above, incorrect vault_bump could lead to unauthorized access, resulting in security issues.
+
+Function "process_instruction":
+- Parses and dispatches incoming instruction data to corresponding functions.
+- Does not contain logic itself, simply routes.
+
+Function "create_admin":
+- Checks for signer's signature.
+- Ensures admin account isn't already initialized.
+- Creates a program-derived address (PDA) for admin account.
+- Checks PDA correctness.
+- Retrieves current timestamp.
+- Creates and serializes an admin account with admin ID and timestamp.
+- Potential risk: If create_program_address generates same address for different seeds, could lead to overwriting or unauthorized access.
+
+Function "update_admin":
+- Checks owner and signer authenticity.
+- Loads existing admin data.
+- Recalculates PDA and checks correctness.
+- Updates admin ID and timestamp.
+- Serializes updated data.
+- Potential risk: If owner or PDA validation is compromised, admin could be maliciously replaced.
+
+Function "create_account":
+- Checks for signer's signature.
+- Ensures account isn't already initialized.
+- Creates a PDA for user account.
+- Checks correctness of PDA.
+- Initializes user account with governance points.
+- Potential risk: Incorrect PDA derivation could cause account hijacking or duplication.
+
+Function "open_proposal":
+- Checks owner and signer.
+- Ensures proposal account isn't already initialized.
+- Creates PDA for proposal.
+- Sets start and end times.
+- Creates and serializes proposal data.
+- Potential risk: Title collisions lead to overwriting, PDA collision, or malicious proposal creation.
+
+Function "vote_process":
+- Checks owner and signer.
+- Ensures vote record doesn't exist.
+- Creates PDA for vote record.
+- Loads proposal and user account.
+- Checks if voting period is active.
+- Adds governance points to votes, checking for overflow.
+- Creates vote record account.
+- Serializes updated proposal, vote record, and user account.
+- Potential risk: Overflow in votes, PDA collisions, or duplicate votes.
+
+Function "manage_governance_points":
+- Checks owner and signer.
+- Loads user account.
+- Adds or subtracts governance points with checked arithmetic.
+- Serializes user account.
+- Potential risk: Overflows or underflows if not properly checked, or PDA collision.
+
+Function "execute_instruction":
+- Checks owner and signer.
+- Validates instruction parameter.
+- Loads instruction index from sysvar.
+- Validates previous instruction if any.
+- Calls specific send_* functions based on instruction variant.
+- Potential risk: If instruction data is manipulated, could execute unintended instructions.
+
+Function "make_decision":
+- Checks owner and signer.
+- Loads proposal.
+- Checks if current time exceeds proposal end time.
+- Decides proposal outcome based on votes.
+- Marks proposal as executed.
+- Serializes proposal.
+- Potential risk: Race conditions if multiple executions occur simultaneously.
+
+General Risks & Vulnerabilities:
+- PDA derivation uses predictable seeds, potentially exploitable if attacker can guess or manipulate inputs.
+- Authority checks rely on PDA and owner validation, vulnerability if PDA or owner verification fails.
+- Overflow checks in governance points and votes mitigate some risk, but if logic is bypassed, overflow or underflow could occur.
+- No explicit reentrancy protection, though Solana's single-threaded execution mitigates this.
+- Critical reliance on accurate sysvar data (Clock, instructions) which could be manipulated if not securely provided.
+- Logging with msg() is optional but can reveal internal state, risking information disclosure if logs are accessed maliciously.
+- No explicit rate-limiting or anti-spam measures, potential for DoS if malicious accounts flood proposal or vote creation.
+

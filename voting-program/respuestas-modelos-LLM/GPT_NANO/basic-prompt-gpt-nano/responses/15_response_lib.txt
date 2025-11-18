@@ -1,0 +1,79 @@
+Function "send_create_vault_transaction":
+- Constructs an instruction to create a vault on the vault program.
+- Sets up account metas and instruction data.
+- Calls invoke_signed to execute the instruction with seed-based signing.
+- Uses an array of seeds for PDA derivation.
+
+Function "send_instr_to_vault_transaction":
+- Constructs an instruction to interact with the vault (deposit/withdraw).
+- Sets up account metas and instruction data based on amount and Pubkey.
+- Calls invoke_signed to execute the instruction with seed-based signing.
+
+Function "process_instruction":
+- Entry point for processing instructions.
+- Unpacks instruction data into specific instructions.
+- Delegates to corresponding function based on instruction type.
+
+Function "create_admin":
+- Initializes an admin account, creating a PDA for admin.
+- Checks for signer and correct account balance.
+- Sets last_update to current timestamp.
+- Creates account with a program-derived address and serializes data.
+
+Function "update_admin":
+- Updates the admin's address in the admin account.
+- Checks owner, signer, and account PDA.
+- Deserializes, modifies, and serializes admin data.
+
+Function "create_account":
+- Initializes a user account PDA with specific seed.
+- Checks owner, signer, and account balance.
+- Creates and serializes a new user account.
+
+Function "open_proposal":
+- Creates a proposal account PDA based on title.
+- Checks owner, signer, and existing account.
+- Sets proposal start and end times.
+- Creates and serializes the proposal data.
+
+Function "vote_process":
+- Handles voting on proposals.
+- Checks owner, signer, and account initialization.
+- Verifies vote is within the proposal period.
+- Adds user's governance points to proposal votes.
+- Creates a vote record account via CPI and serializes data.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points for a user.
+- Checks owner, signer, and PDA correctness.
+- Serializes updated user data.
+
+Function "execute_instruction":
+- Executes different actions based on variant_instr.
+- Checks owner, signer, and account balances.
+- Validates PDA for admin or user, depending on instruction.
+- Calls send_create_vault_transaction or send_instr_to_vault_transaction accordingly.
+- Uses load_current_index and load_instruction_at to verify previous instruction.
+
+Function "make_decision":
+- Finalizes a proposal, marking it as executed.
+- Checks owner, signer, and PDA for admin and proposal.
+- Verifies that the proposal end_time has passed.
+- Reports vote tally and logs decision.
+- Marks proposal as executed and serializes.
+
+Potential risks and vulnerabilities:
+- No access control beyond PDA checks, relies on PDA derivation.
+- No explicit checks for multiple votes by same user beyond account existence.
+- Transaction data size limits are not validated explicitly.
+- Potential for account balance errors if lamports are not handled correctly.
+- No handling for duplicate proposals with same title.
+- No checks for overflow beyond checked_add and checked_sub.
+- No explicit handling of recovery or re-initialization.
+- Dependence on invocations to other programs (vault) may introduce external risks.
+- No input sanitization for strings like title/description.
+- Use of unwrap() on from_str() in vault_program_id() can panic if invalid.
+- No rate limiting or anti-spam measures.
+- Signatures are checked only for specific accounts; other authorizations are implicit.
+- Race conditions possible if multiple transactions modify the same account concurrently.
+- Use of unchecked unpacks which may cause runtime panics if data is malformed.

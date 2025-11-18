@@ -1,0 +1,26 @@
+Function "initialize_wallet_account":
+- Does not validate that the provided wallet_account matches the derived PDA (wallet_pda), allowing potential misuse of incorrect accounts
+- Missing validation to ensure the account being initialized is not already initialized (re-initialization attack)
+- No ownership check to verify that user_account actually owns the wallet being created
+- Uses unwrap() on try_into() conversion which could panic if wallet_len is too large
+
+Function "deposit_amount":
+- Missing access control - does not verify that the user_account has authority to modify the wallet
+- No validation that wallet_account is actually a PDA derived from user_account
+- Does not check if the wallet is initialized before operating on it
+- Missing transfer of actual tokens/funds - only updates internal state without moving SOL or tokens
+
+Function "withdraw_amount":
+- Missing access control - no verification that user_account owns the wallet
+- Uses unchecked subtraction (wallet.amount -= amount) which could cause integer underflow
+- No validation that wallet_account is the correct PDA for user_account
+- Does not transfer actual funds back to user - only updates internal state
+- Missing check for sufficient balance before withdrawal
+
+Function "transfer_amount":
+- Missing access control - no verification that user_account owns src_wallet
+- Uses unchecked subtraction (src_wallet.amount -= amount) which could cause integer underflow
+- No validation that src_wallet_account and dest_wallet_account are proper PDAs
+- Missing validation that destination wallet is initialized
+- Does not transfer actual funds between accounts - only updates internal state
+- No check for sufficient balance in source wallet before transfer

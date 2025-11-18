@@ -1,0 +1,28 @@
+Function "process_instruction":
+- No direct vulnerabilities found in this routing function
+- Relies on proper validation in individual instruction handlers
+
+Function "initialize_wallet_account":
+- Uses unwrap() on try_into() conversion which could panic if wallet_len exceeds u64
+- Does not verify that wallet_account is uninitialized before writing to it
+- Missing validation to ensure wallet_account data length is sufficient
+- No check to prevent reinitialization of existing wallet
+
+Function "deposit_amount":
+- Uses checked_add for arithmetic which is safe
+- Properly validates PDA and ownership
+- Requires user to be signer which is appropriate
+
+Function "withdraw_amount":
+- Uses unchecked subtraction (wallet.amount -= amount) which could cause integer underflow
+- No validation that wallet has sufficient balance before withdrawal
+- Missing overflow/underflow protection
+- Does not verify that amount is positive
+
+Function "transfer_amount":
+- Uses unchecked subtraction (src_wallet.amount -= amount) which could cause integer underflow
+- No validation that source wallet has sufficient balance before transfer
+- Missing overflow/underflow protection for both source and destination
+- Does not verify that amount is positive
+- Uses checked_add for destination which is safe
+- Missing validation that destination wallet is initialized

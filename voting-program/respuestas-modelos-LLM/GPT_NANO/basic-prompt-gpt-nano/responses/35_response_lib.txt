@@ -1,0 +1,74 @@
+Function "send_create_vault_transaction":
+- Creates and prepares a transaction instruction to create a vault.
+- Sets up account metas and instruction data.
+- Uses "invoke_signed" to call the vault program with the appropriate seeds for signing.
+- Ensures the correct order and ownership of accounts.
+
+Function "send_instr_to_vault_transaction":
+- Creates and prepares a transaction instruction to send an operation (deposit/withdraw) to the vault.
+- Sets up account metas and instruction data including amount.
+- Uses "invoke_signed" with seeds for vault signing.
+- Handles data serialization for different instruction types.
+
+Function "process_instruction":
+- Entry point for processing instructions.
+- Deserializes instruction data using "InstructionFormat".
+- Routes to specific functions based on the instruction variant.
+- Acts as the dispatcher for various program features.
+
+Function "create_admin":
+- Initializes the admin account with signature verification.
+- Checks if the account already has funds (to ensure it’s uninitialized).
+- Derives the PDA and validates the account.
+- Creates and serializes the admin account data.
+- Uses "invoke_signed" to create the account with rent exemption.
+
+Function "update_admin":
+- Updates admin account information with signature verification.
+- Checks account ownership and admin authority.
+- Deserializes current admin info, updates it, and serializes it back.
+- Ensures only current admin can update.
+
+Function "create_account":
+- Creates a user governance account.
+- Sets initial governance points.
+- Validates owner and signature.
+- Uses "invoke_signed" for account creation.
+
+Function "open_proposal":
+- Creates a new proposal account with given title and description.
+- Checks ownership, signer status, and account initialization.
+- Uses "invoke_signed" for account creation.
+- Sets start time and end time for voting.
+
+Function "vote_process":
+- Facilitates voting on proposals.
+- Verifies account ownership and signature.
+- Checks if the account already exists.
+- Loads proposal and user data.
+- Checks voting time window.
+- Updates proposal votes based on user's governance points.
+- Creates a vote record account with "invoke_signed".
+- Serializes updated data.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user.
+- Validates admin privileges and signatures.
+- Deserializes accounts.
+- Performs safe arithmetic operations with "checked_add" and manual subtraction.
+- Serializes updated user account data.
+
+Function "execute_instruction":
+- Executes vault operations based on instruction type.
+- Validates owner and signature.
+- Checks account correctness and ownership.
+- Verifies last instruction via instructions sysvar.
+- Calls specific helper functions for vault creation, deposit, or withdrawal.
+- Uses "invoke_signed" for cross-program invocations (CPI).
+
+Function "make_decision":
+- Decides outcome of a proposal.
+- Checks ownership, signatures, and proposal status.
+- Verifies voting period has ended.
+- Compares yes and no votes.
+- Marks proposal as executed and serializes the result.

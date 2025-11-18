@@ -1,0 +1,62 @@
+Function "send_create_vault_transaction":
+- Constructs an instruction to create a vault by setting up the instruction data and accounts, then invokes it with signed seeds.
+- Uses `invoke_signed` to securely execute the instruction with program-derived address (PDA) seeds.
+- Handles account metadata and data serialization for the vault creation process.
+
+Function "send_instr_to_vault_transaction":
+- Constructs an instruction for depositing to or withdrawing from a vault based on the variant instruction.
+- Uses `invoke_signed` with PDA seeds for secure execution.
+- Organizes transaction data including amount and account metas.
+
+Function "process_instruction":
+- Entry point that unpacks the instruction and dispatches to different action functions based on instruction type.
+- Parses and interprets incoming instruction data into a specified enum format.
+- Routes to handler functions like create_admin, update_admin, create_account, etc.
+
+Function "create_admin":
+- Creates and initializes the admin account PDA with proper seed derivation.
+- Checks for account initialization, owner validation, and signature requirement.
+- Uses `invoke_signed` to create account with rent exemption.
+- Updates account data with admin info and timestamp.
+
+Function "update_admin":
+- Updates the admin account with a new admin ID and timestamp.
+- Validates owner and signature.
+- Deserializes, modifies, and re-serializes admin account data.
+
+Function "create_account":
+- Creates and initializes a user account PDA with seed derivation.
+- Checks existing account state, owner validation, and signature.
+- Uses `invoke_signed` to create account and initializes governance points.
+
+Function "open_proposal":
+- Creates and initializes a proposal account PDA with seed derived from title.
+- Sets proposal parameters including start and end times.
+- Uses `invoke_signed` for account creation.
+- Serializes proposal data into account.
+
+Function "vote_process":
+- Processes a vote on a proposal, linking a vote record account.
+- Checks for previous account existence, owner, signer, and proposal validity.
+- Updates proposal votes based on governance points.
+- Creates vote record account with `invoke_signed`.
+- Serializes updates to proposal, user, and vote record accounts.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user account.
+- Validates owner, signer, and admin PDA derivation.
+- Deserializes, updates, and re-serializes the user account.
+
+Function "execute_instruction":
+- Executes different instruction types (create vault, deposit, withdraw) based on variant instruction.
+- Checks owner and signer.
+- Validates account PDAs depending on instruction type.
+- Loads previous instruction from instruction sysvar.
+- Calls corresponding vault transaction function.
+
+Function "make_decision":
+- Finalizes a proposal, validates ownership and signature.
+- Checks if the proposal has ended based on timestamp.
+- Determines approval based on yes/no votes.
+- Marks the proposal as executed and serializes.
+

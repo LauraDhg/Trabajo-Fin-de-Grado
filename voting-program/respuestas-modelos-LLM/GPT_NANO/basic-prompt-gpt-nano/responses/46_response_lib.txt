@@ -1,0 +1,71 @@
+Function "send_create_vault_transaction":
+- Constructs and sends a transaction to create a vault, using the provided instruction data and account info.
+- Prepares instruction data with the variant instruction, ID, and vault bump.
+- Sets up accounts and invokes the instruction using `invoke_signed` with vault seeds.
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends a transaction to perform deposit or withdrawal in the vault.
+- Prepares instruction data with the variant instruction, amount, and ID.
+- Sets up accounts and invokes the instruction via `invoke_signed` with vault seeds.
+
+Function "process_instruction":
+- Entry point for the program, processes incoming instructions based on their format.
+- Unpacks instruction data and dispatches to specific functions like create_admin, update_admin, etc.
+
+Function "create_admin":
+- Creates and initializes an admin account with specific permissions.
+- Checks for signer signature, account state, and verifies PDA match.
+- Allocates space, assigns rent, and serializes admin data into account.
+
+Function "update_admin":
+- Updates the admin account with a new admin ID and timestamp.
+- Checks for owner and signer, verifies PDA, and updates admin data.
+
+Function "create_account":
+- Creates a new user account with initial governance points.
+- Checks for signer, account state, PDA correctness, and allocates space.
+- Serializes user data to account.
+
+Function "open_proposal":
+- Creates a new proposal with title, description, and timing.
+- Checks account owner, signer, PDA correctness, and account initialization.
+- Sets start/end time, serializes proposal.
+
+Function "vote_process":
+- Processes a user's vote on a proposal, updating votes and creating vote record.
+- Checks account owners, signer, PDA correctness, and that proposal is open.
+- Updates proposal votes, creates vote record account, and serializes data.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points for a user, authorized by admin.
+- Verifies owners, signer, PDA correctness.
+- Updates governance points with checked arithmetic, serializes user.
+
+Function "execute_instruction":
+- Executes different instructions (create vault, deposit, withdraw) based on variant.
+- Checks ownership, signer, and account correctness.
+- Loads previous instruction info for verification.
+- Calls relevant transaction functions.
+
+Function "make_decision":
+- Finalizes a proposal after voting period ends.
+- Checks owners, signer, PDA correctness.
+- Verifies time, compares votes, marks proposal as executed.
+
+Potential Risks and Vulnerabilities:
+- "unwrap()" in vault_program_id() may panic if parse fails.
+- Many PDA verifications rely on correct seeds; weak seed choices could risk PDA collision.
+- Lack of explicit access control beyond PDA check; could be exploited if PDA is predictable.
+- No explicit validation of instruction data beyond unpacking; malformed data may cause issues.
+- No checks on the validity of input data (e.g., empty strings for title/description in proposals).
+- Usage of `try_from_slice()` assumes data is correctly formatted, risking panic on malformed data.
+- No additional restrictions on updates, e.g., only certain accounts can update admin.
+- Potential for re-entrancy if any external calls or cross-program invocations are not carefully managed.
+- Account ownership checks could be bypassed if accounts are maliciously assigned.
+- No explicit handling of maximum values or overflow/underflow aside from checked_sub in governance points.
+- Use of "System instruction" for creating accounts; if misused, could lead to account reuse or duplication.
+- Reliance on "load_current_index" and instruction sysvar may be fragile if sysvar data is manipulated.
+- No explicit rate limiting or logging of critical actions beyond messaging; potential for abuse.
+- Potencial risk if instruction unpacking (InstructionFormat::unpack) isn't securely validated.
+- No explicit measures for preventing duplicate proposals with same titles or IDs.
+

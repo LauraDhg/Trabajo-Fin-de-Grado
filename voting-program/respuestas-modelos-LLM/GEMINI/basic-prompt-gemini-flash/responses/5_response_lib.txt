@@ -1,0 +1,117 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey, which is presumably the program ID of the vault program.
+
+Function "action_as_str":
+- Takes a `u8` representing an action.
+- Returns a string slice (`&'static str`) describing the action.
+- Uses a match statement to map the `u8` value to a string.
+- Returns "Unknown" for any unrecognized action.
+
+Function "send_create_vault_transaction":
+- Sends a cross-program invocation (CPI) to the vault program to create a vault.
+- Takes several account infos, including the admin payer, the admin account, the vault account, the vault program, and the system program.
+- Constructs the instruction data with a variant instruction, the program ID, and the vault bump seed.
+- Invokes the vault program using `invoke_signed` with the constructed instruction and the vault seeds.
+
+Function "send_instr_to_vault_transaction":
+- Sends a CPI to the vault program for deposit or withdraw operations.
+- Takes several account infos, including the user payer, the user account, the vault account, and the vault program.
+- Constructs the instruction data with a variant instruction, the amount, and the program ID.
+- Invokes the vault program using `invoke_signed` with the constructed instruction and the vault seeds.
+
+Function "process_instruction":
+- This is the main entry point of the Solana program.
+- It unpacks the instruction data using `InstructionFormat::unpack`.
+- It uses a match statement to call the appropriate function based on the unpacked instruction.
+
+Function "create_admin":
+- Creates an admin account.
+- Checks if the admin payer is a signer.
+- Checks if the admin account has already been initialized.
+- Derives the admin PDA using `Pubkey::find_program_address`.
+- Checks if the provided admin account matches the derived PDA.
+- Gets the current clock time using `Clock::from_account_info`.
+- Creates an `Admin_Account` struct.
+- Calculates the rent required for the account.
+- Invokes the system program to create the account using `invoke_signed`.
+- Serializes the `Admin_Account` struct into the account data.
+
+Function "update_admin":
+- Updates the admin account with a new admin.
+- Checks if the admin account's owner is the program.
+- Checks if the admin payer is a signer.
+- Deserializes the `Admin_Account` from the account data.
+- Derives the admin PDA using `Pubkey::find_program_address`.
+- Checks if the provided admin account matches the derived PDA.
+- Checks if the admin payer is the current admin.
+- Gets the current clock time using `Clock::from_account_info`.
+- Updates the admin ID and last update time in the `Admin_Account` struct.
+- Serializes the updated `Admin_Account` struct back into the account data.
+
+Function "create_account":
+- Creates a user account.
+- Checks if the user payer is a signer.
+- Checks if the account has already been initialized.
+- Derives the user PDA using `Pubkey::find_program_address`.
+- Checks if the provided user account matches the derived PDA.
+- Creates a `User_Account` struct.
+- Calculates the rent required for the account.
+- Invokes the system program to create the account using `invoke_signed`.
+- Serializes the `User_Account` struct into the account data.
+
+Function "open_proposal":
+- Creates a new proposal.
+- Checks the owner of the User Account.
+- Checks if the user payer is a signer.
+- Checks if the proposal account is already initialized.
+- Derives the proposal PDA using `Pubkey::find_program_address`.
+- Checks if the provided proposal account matches the derived PDA.
+- Gets the current clock time using `Clock::from_account_info`.
+- Sets the start and end times for the proposal.
+- Creates a `Proposal` struct.
+- Calculates the rent required for the account.
+- Invokes the system program to create the account using `invoke_signed`.
+- Serializes the `Proposal` struct into the account data.
+
+Function "vote_process":
+- Processes a user's vote on a proposal.
+- Checks if the user and proposal account owners are correct.
+- Checks if the user is a signer.
+- Checks if the vote record account has already been initialized.
+- Derives the vote PDA using `Pubkey::find_program_address`.
+- Checks if the provided vote record account matches the derived PDA.
+- Deserializes the `Proposal` and `User_Account` from their account data.
+- Creates a `Vote_Record` struct.
+- Gets the current clock time.
+- Checks if the proposal is still open for voting.
+- Updates the yes or no vote count in the `Proposal` struct based on the user's vote.
+- Creates the vote record account and serializes the vote record and updates the proposal and user account
+
+Function "manage_governance_points":
+- Manages (adds or subtracts) governance points for a user.
+- Checks if the admin and user account owners are correct.
+- Checks if the admin payer is a signer.
+- Derives the admin PDA and validates the admin account.
+- Deserializes the `Admin_Account` and checks if the admin payer has privileges.
+- Deserializes the `User_Account`.
+- Adds or subtracts the specified amount of governance points from the user's account.
+- Serializes the updated `User_Account` back into the account data.
+
+Function "execute_instruction":
+- Executes a given instruction, such as creating, depositing, or withdrawing from a vault.
+- Takes a variant instruction code, an amount, and a vault bump seed as input.
+- Checks the ownership of the user account.
+- Checks if the user is a signer.
+- Performs different actions based on the `variant_instr` value.
+- Sends a CPI to the vault program using `send_create_vault_transaction` or `send_instr_to_vault_transaction`.
+- Confirms if the previous instruction was from the Vault program using `load_current_index` and `load_instruction_at`.
+
+Function "make_decision":
+- Makes a decision on a proposal based on the vote results.
+- Checks account ownership and signer status.
+- Validates the admin account and admin privileges.
+- Deserializes the `Admin_Account` and `Proposal` data.
+- Checks if the voting period has ended.
+- Determines if the proposal is approved or denied based on the vote counts.
+- Sets the `executed` flag on the `Proposal` struct.
+- Serializes the updated `Proposal` back into the account data.

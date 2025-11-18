@@ -1,0 +1,33 @@
+Function "process_instruction":
+- Parses the instruction data and routes to the appropriate function based on the instruction variant.
+- Acts as the main entry point for processing incoming instructions.
+- Handles different wallet operations such as create, deposit, withdraw, and transfer.
+
+Function "initialize_wallet_account":
+- Creates and initializes a new wallet account with a program-derived address.
+- Checks if the wallet account already has lamports to prevent reinitialization.
+- Uses invoke_signed to create the account with the correct seeds and bump.
+- Serializes the Wallet struct into the account data.
+- Validates the system program ID.
+
+Function "deposit_amount":
+- Adds a specified amount to the wallet's balance.
+- Checks that the wallet account is owned by the program.
+- Unpacks, verifies, and updates the wallet data with the added amount.
+- Uses checked_add to prevent overflow.
+- Serializes the updated wallet data.
+
+Function "withdraw_amount":
+- Subtracts a specified amount from the wallet's balance.
+- Checks ownership and verifies the wallet is initialized.
+- Ensures sufficient funds are available.
+- Uses checked_sub to prevent underflow.
+- Serializes the updated wallet data.
+
+Function "transfer_amount":
+- Transfers a specified amount from one wallet to another.
+- Checks ownership of both source and destination accounts.
+- Verifies both wallets are initialized.
+- Checks for sufficient funds in source wallet.
+- Adds the amount to the destination wallet and subtracts from the source wallet with checked arithmetic.
+- Serializes both wallets to update their state.

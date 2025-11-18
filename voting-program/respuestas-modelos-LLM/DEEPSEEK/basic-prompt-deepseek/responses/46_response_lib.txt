@@ -1,0 +1,71 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for the vault program
+- Uses from_str and unwrap which may panic if the string is invalid
+
+Function "action_as_str":
+- Converts a u8 action code to a string representation
+- Matches 0 to "Create", 1 to "Deposit", 2 to "Withdraw", others to "Unknown"
+
+Function "send_create_vault_transaction":
+- Constructs and sends a cross-program invocation to create a vault
+- Uses invoke_signed with vault seeds for PDA signing
+- Includes system program in account metas
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends a cross-program invocation for vault operations
+- Handles deposit and withdraw instructions
+- Uses invoke_signed with vault seeds for PDA signing
+
+Function "process_instruction":
+- Main entry point that unpacks and routes instructions
+- Matches on InstructionFormat enum variants
+- Calls appropriate handler functions based on instruction type
+
+Function "create_admin":
+- Creates an admin PDA account with initial admin set to payer
+- Checks for signer and account initialization status
+- Uses invoke_signed for account creation with admin seeds
+- Stores admin ID and creation timestamp
+
+Function "update_admin":
+- Updates the admin ID in the admin account
+- Verifies current admin is signer and account ownership
+- Updates timestamp when admin is changed
+- Validates PDA address with admin seeds
+
+Function "create_account":
+- Creates a user PDA account with initial governance points
+- Uses user's public key in PDA seeds for unique account address
+- Initializes with 10 governance points by default
+- Uses invoke_signed for account creation
+
+Function "open_proposal":
+- Creates a proposal PDA account with title-based seeds
+- Sets proposal duration to 1 hour from creation
+- Initializes vote counts to zero
+- Stores proposal metadata and timing information
+
+Function "vote_process":
+- Processes a vote on a proposal
+- Creates vote record PDA account
+- Adds user's governance points to yes/no vote counts
+- Checks proposal is still active before voting
+- Validates user account type and ownership
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from user accounts
+- Only callable by admin accounts
+- Uses checked arithmetic to prevent underflow
+- Validates account types and ownership
+
+Function "execute_instruction":
+- Executes vault-related instructions via CPI
+- Validates different account types based on instruction variant
+- Checks previous instruction was from vault program
+- Routes to appropriate vault transaction functions
+
+Function "make_decision":
+- Finalizes proposal execution after voting period
+- Compares yes vs no votes to determine outcome
+- Marks proposal as executed
+- Validates admin authority and proposal ownership

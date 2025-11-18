@@ -1,0 +1,91 @@
+Function "send_create_vault_transaction":
+- Constructs and sends a transaction instruction to create a vault.
+- Prepares instruction data, including the variant, ID public key, and vault bump.
+- Sets up account metas for the vault creation instruction.
+- Uses invoke_signed to execute CPI with seed-based signer.
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends a transaction instruction to interact with vault, either deposit or withdraw.
+- Prepares instruction data, including the variant, amount, and ID public key.
+- Sets up account metas for vault interaction.
+- Uses invoke_signed to execute CPI with seed-based signer.
+
+Function "process_instruction":
+- Entry point of the program.
+- Unpacks instruction data to determine which instruction to execute.
+- Calls relevant function based on instruction variant: create_admin, update_admin, create_account, open_proposal, vote_process, manage_governance_points, execute_instruction, make_decision.
+
+Function "create_admin":
+- Creates an admin account using system program CPI.
+- Checks that the payer is signer and admin account is uninitialized.
+- Derives expected admin PDA and verifies account key.
+- Sets current timestamp as last_update.
+- Serializes admin account data into account.
+
+Function "update_admin":
+- Updates the admin account with a new admin ID.
+- Checks owner and signer requirements.
+- Verifies the account's PDA.
+- Deserializes, updates admin ID and timestamp, then re-serializes.
+
+Function "create_account":
+- Creates a user account with governance points.
+- Checks signer and uninitialized account.
+- Derives user PDA and validates.
+- Constructs User_Account struct, serializes it.
+- Invokes create_account CPI with seed.
+
+Function "open_proposal":
+- Creates a proposal account with provided title and description.
+- Checks owner and signer.
+- Derives proposal PDA and verifies.
+- Loads user account, updates/serializes.
+- Initializes Proposal struct with current timestamp and 1-hour duration.
+- Creates account and serializes proposal data.
+
+Function "vote_process":
+- Processes a vote on a proposal.
+- Checks owners and signatures.
+- Derives vote record PDA and verifies.
+- Loads proposal and user accounts.
+- Checks if current time exceeds proposal end time.
+- Updates yes or no votes based on vote answer.
+- Creates vote record account.
+- Serializes vote record, proposal, and user accounts.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points for a user.
+- Checks owners and signatures.
+- Validates admin privileges via PDA.
+- Serializes updated user account.
+
+Function "execute_instruction":
+- Executes vault related instructions based on variant.
+- Checks owners and signatures.
+- Validates user account ownership.
+- Handles different instruction variants (create vault, deposit, withdraw) with proper validation.
+- Loads previous instruction if any for validation.
+- Calls send_create_vault_transaction or send_instr_to_vault_transaction accordingly.
+
+Function "make_decision":
+- Concludes a proposal.
+- Checks owner and signer.
+- Validates admin privileges.
+- Loads proposal account.
+- Checks if proposal is still active.
+- Prints votes and declares if approved or denied.
+- Marks proposal as executed and serializes.
+
+Potential Risks and Vulnerabilities:
+- Unwrap without proper error handling can cause panics, e.g., in "vault_program_id" or "try_from_slice" calls.
+- No access control beyond owner checks, risk unauthorized account creation or modification.
+- Inadequate validation of account relationships or account data could lead to data corruption.
+- Use of "unwrap" in "vault_program_id" can panic if the string is invalid.
+- No explicit checks on instruction_data boundaries, risking buffer overflows or invalid data processing.
+- Insufficient validation on the proposal title and description strings for length, which may cause serialization issues.
+- No checks on token/lamport transfers; assumes accounts are pre-funded or correctly initialized.
+- Race conditions not explicitly managed, e.g., for concurrent updates.
+- "invoke_signed" and "invoke" calls are assumed safe but may be misused if seed matches are incorrect.
+- Potential re-entrancy or replay attacks if instruction order is not enforced.
+- Missing account data size checks, which could lead to serialization/deserialization errors.
+

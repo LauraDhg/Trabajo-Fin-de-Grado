@@ -1,0 +1,23 @@
+Function "process_instruction":
+- This function acts as the main dispatcher, routing execution to different functions based on the provided instruction data.
+
+Function "initialize_wallet_account":
+- The program derives a Program Derived Address (PDA) for the wallet account using `Pubkey::find_program_address`. This is good for controlling account creation.
+- Uses `invoke_signed` to create the wallet account, correctly signing the instruction with the PDA's seed and bump.
+- The wallet account's data is initialized and serialized, which is the expected behavior.
+- Checks that the user account is a signer.
+
+Function "deposit_amount":
+- Checks that the user account is a signer.
+- Uses `checked_add` which prevents overflow.
+
+Function "withdraw_amount":
+- Checks that the user account is a signer.
+- Performs subtraction using the `-` operator, which can lead to underflow.
+- Does not have any checks to prevent the withdrawal of funds exceeding the wallet's balance.
+
+Function "transfer_amount":
+- Checks that the user account is a signer.
+- Performs subtraction using the `-` operator, which can lead to underflow in the source wallet.
+- Uses `checked_add` which prevents overflow in the destination wallet.
+- Does not have any checks to prevent the transfer of funds exceeding the source wallet's balance.

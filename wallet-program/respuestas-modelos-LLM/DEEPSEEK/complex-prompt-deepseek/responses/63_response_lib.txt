@@ -1,0 +1,36 @@
+Function "process_instruction":
+- No access control checks for instruction handlers
+- No validation of account ownership or program-derived addresses
+- Instruction data deserialization without proper validation
+
+Function "initialize_wallet_account":
+- Missing validation that wallet_account is actually a PDA derived from the program
+- No check that user_account is signer
+- No validation that system_program is actually the system program
+- Uses unwrap() which can panic instead of proper error handling
+- Missing validation that the account being created doesn't already exist
+- No check that the created account has sufficient lamports for rent
+
+Function "deposit_amount":
+- No access control - any account can deposit to any wallet
+- No validation that wallet_account is owned by the program
+- No validation that user_account has authority over the wallet
+- Missing overflow/underflow protection for amount addition
+- No validation that the wallet is initialized
+
+Function "withdraw_amount":
+- No access control - any account can withdraw from any wallet
+- No validation that wallet_account is owned by the program  
+- No validation that user_account has authority over the wallet
+- Missing underflow protection - can withdraw more than available balance
+- No validation that the wallet is initialized
+- Missing overflow/underflow protection for amount subtraction
+
+Function "transfer_amount":
+- No access control - any account can transfer from any wallet to any wallet
+- No validation that src_wallet_account and dest_wallet_account are owned by the program
+- No validation that user_account has authority over the source wallet
+- Missing underflow protection - can transfer more than available balance
+- No validation that wallets are initialized
+- Missing overflow protection for destination wallet amount addition
+- Missing cross-program invocation checks for destination account ownership

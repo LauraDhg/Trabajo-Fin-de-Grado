@@ -1,0 +1,30 @@
+Function "initialize_wallet_account":
+- Uses deterministic PDAs but lacks explicit check that the account is rent-exempt or already initialized, potentially leading to overwriting existing data.
+- Does not verify that the wallet_account is owned by the program, risking account hijacking or corruption.
+- Calls create_account without updates or checks for existing account, leading to potential creation over existing accounts.
+- The rent calculation and creation process could be manipulated if rent info is outdated or incorrectly fetched.
+- No explicit check that the account being initialized is not already initialized, risking reinitialization and data corruption.
+
+Function "deposit_amount":
+- Does not verify the signer of the transaction, allowing unauthorized deposits if other security checks are not enforced elsewhere.
+- Assumes the provided wallet account is the correct PDA without explicit verification, risking fund misallocation.
+- No validation or cap on the maximum deposit amount, risking overflow or business logic issues.
+- Potentially vulnerable to race conditions if concurrent transactions attempt to modify the wallet data simultaneously.
+
+Function "withdraw_amount":
+- Lacks signature verification to confirm the user_authority; anyone can invoke this function to modify wallet if they know the account.
+- Does not lock or prevent concurrent modifications, risking race conditions or double spending.
+- Does not verify the account's owner explicitly, trusting only the PDA derivation.
+- No maximum withdrawal limits or validation beyond available funds.
+
+Function "transfer_amount":
+- Lacks signature or authority checks on source or destination accounts, enabling unauthorized transfers.
+- Assumes the accounts are correct PDAs but doesn't verify account ownership or that they are writable.
+- No lock or sequential transaction control to prevent race conditions during concurrent transfers.
+- Does not validate that source and destination are not the same accounts, potentially allowing redundant or harmful transactions.
+- No explicit validation for the maximum transfer limit, overflow, or business rules.
+
+General:
+- The program does not include explicit amount validation against negative or zero values, which could cause unintended behavior.
+- No multisignature or access control mechanisms, making all state changes potentially executable by any user who calls the functions.
+- Lacks explicit account data ownership verification, risking account hijacking if accounts are supplied by malicious actors.

@@ -1,0 +1,54 @@
+Function "send_create_vault_transaction":
+- Constructs and sends a "create vault" instruction to the vault program.
+- Prepares instruction data and accounts, then invokes with signed seeds.
+- Uses invoke_signed for PDA account creation and CPI call.
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends deposit or withdraw instructions to the vault program.
+- Prepares instruction data and accounts, then invokes with signed seeds.
+- Handles both deposit and withdraw based on variant_instr parameter.
+
+Function "process_instruction":
+- Entry point for the program processing.
+- Deserializes instructions and dispatches to specific handlers like create_admin, update_admin, etc.
+- Uses pattern matching to select the instruction function.
+
+Function "create_admin":
+- Creates an admin account, initializes it, and serializes data.
+- Checks signatures and ownership, and creates PDA for admin account.
+- Uses invoke_signed for creating the account with rent exemption.
+
+Function "update_admin":
+- Updates the admin account data with new admin ID and timestamp.
+- Checks admin privileges by verifying admin_id matches signer.
+- Serializes updated admin info into account data.
+
+Function "create_account":
+- Creates a new user account PDA with initial governance points.
+- Checks signer signature and account initialization status.
+- Uses invoke_signed to create the account and serializes account data.
+
+Function "open_proposal":
+- Creates a new proposal PDA with proposal details.
+- Checks user account type and account ownership.
+- Initializes proposal timings and serializes the proposal account data.
+
+Function "vote_process":
+- Records a vote on a proposal, updating vote tallies.
+- Checks that voter is a valid user and within proposal time window.
+- Creates a vote record PDA and serializes vote and proposal data.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points for a user account.
+- Verifies admin privileges and serializes the updated user account.
+
+Function "execute_instruction":
+- Executes vault-related instructions based on variant.
+- Checks owner and signer, verifies vault program ID.
+- Loads previous instruction from sysvar to validate execution order.
+- Calls respective send functions for vault operations.
+
+Function "make_decision":
+- Finalizes a proposal by comparing yes/no votes after proposal end.
+- Checks admin privileges, validity, and timestamps.
+- Marks proposal as executed and logs decision outcome.

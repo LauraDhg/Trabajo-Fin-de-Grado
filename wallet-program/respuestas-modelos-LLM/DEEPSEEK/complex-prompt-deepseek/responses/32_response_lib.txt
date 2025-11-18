@@ -1,0 +1,33 @@
+Function "process_instruction":
+- No direct vulnerabilities found in the dispatch function itself
+- Relies on proper validation in the individual instruction handlers
+
+Function "initialize_wallet_account":
+- Does not validate that wallet_account is actually a PDA derived from the expected seeds
+- Uses unwrap() on try_into() conversion which could panic if wallet_len is too large
+- Does not verify that the created account matches the expected PDA address
+- Missing validation to ensure the account being initialized is actually owned by the program
+- Potential reinitialization attack if account already exists with data but zero lamports
+
+Function "deposit_amount":
+- No signature validation to ensure the wallet belongs to the user
+- No PDA validation to ensure wallet_account is actually derived from user_account
+- Missing ownership check to ensure wallet_account is owned by the program
+- Arithmetic operation uses unchecked addition which could overflow (though u64 overflow is unlikely in practice)
+- No transfer of actual tokens/lamports - only updates internal accounting
+
+Function "withdraw_amount":
+- No signature validation to ensure the wallet belongs to the user  
+- No PDA validation to ensure wallet_account is actually derived from user_account
+- Missing ownership check to ensure wallet_account is owned by the program
+- Uses checked_sub with custom error handling which is good practice
+- No actual transfer of funds out of the account - only updates internal accounting
+
+Function "transfer_amount":
+- No validation that src_wallet_account belongs to user_account
+- No validation that dest_wallet_account belongs to dest_user_account
+- No PDA validation for either wallet account
+- Missing ownership checks for both wallet accounts
+- Arithmetic operations: unchecked addition for dest_wallet (potential overflow) and checked_sub for src_wallet
+- Transfer happens in internal accounting only, no actual token/lamport movement
+- Missing validation that the destination wallet is properly initialized and owned by the program

@@ -1,0 +1,64 @@
+Function "vault_program_id":
+- Hardcoded program ID which may change in different environments, leading to incorrect CPI calls
+- No validation that the program ID corresponds to an actual vault program
+
+Function "action_as_str":
+- No security vulnerabilities identified in this helper function
+
+Function "send_create_vault_transaction":
+- Missing validation that vault_program account matches the hardcoded vault_program_id()
+- No verification that vault_account is properly derived from expected seeds
+- Potential reentrancy risk as it performs CPI without proper state validation
+
+Function "send_instr_to_vault_transaction":
+- Missing validation that vault_program account matches the hardcoded vault_program_id()
+- No verification that vault_account is properly derived from expected seeds
+- Missing system program account for certain vault operations that may require it
+
+Function "process_instruction":
+- No input validation on instruction_data before unpacking
+- Missing length checks on instruction data to prevent out-of-bounds reads
+
+Function "create_admin":
+- Uses deprecated check for account initialization (lamports > 0 instead of checking data length)
+- Missing rent exemption validation after account creation
+- No validation that system_program account is actually the system program
+
+Function "update_admin":
+- Missing rent exemption check for the updated account
+- No validation that the new_admin public key is valid/not zero
+- Missing authorization checks beyond simple admin ID comparison
+
+Function "create_account":
+- Uses deprecated check for account initialization (lamports > 0)
+- Hardcoded initial governance points (10) without validation
+- Missing rent exemption validation after account creation
+
+Function "open_proposal":
+- Uses title as part of PDA seeds without length validation, potential for seed collision
+- Fixed 1-hour duration without configurability
+- Missing validation that user_account_dao actually belongs to the user_payer
+- Uses deprecated lamports check for initialization
+
+Function "vote_process":
+- Missing validation that user_account_dao belongs to user_payer
+- User can vote multiple times by creating different vote record accounts
+- No prevention of double voting through proper state tracking
+- Uses deprecated lamports check for initialization
+
+Function "manage_governance_points":
+- Subtraction operation (instruction=false) doesn't use checked_sub, risking integer underflow
+- No validation that amount is reasonable or within bounds
+- Missing access control beyond admin check
+
+Function "execute_instruction":
+- Complex control flow with multiple match statements that duplicate validation logic
+- Missing validation that vault_program account is actually the expected vault program
+- Instruction sysvar usage for previous instruction check is unreliable and can be manipulated
+- Inconsistent account validation across different instruction variants
+
+Function "make_decision":
+- Missing validation that proposal has not already been executed
+- No mechanism to prevent repeated execution of the same proposal
+- Uses parentheses in condition (current_time < proposal.end_time) unnecessarily
+- Missing comprehensive vote validation and tally verification

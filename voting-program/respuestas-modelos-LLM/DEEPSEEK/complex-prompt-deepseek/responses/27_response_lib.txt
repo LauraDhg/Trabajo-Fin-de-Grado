@@ -1,0 +1,72 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program ID changes
+- No validation that the returned Pubkey is actually a valid program
+
+Function "send_create_vault_transaction":
+- Uses hardcoded seeds "vault" which may conflict with other programs
+- No validation of account ownership before CPI
+- No check that vault_account is actually a PDA derived from the expected seeds
+
+Function "send_instr_to_vault_transaction":
+- Missing system_program account in CPI accounts when required by vault program
+- No validation of account ownership before CPI
+- No check that vault_account is actually a PDA derived from the expected seeds
+
+Function "process_instruction":
+- No instruction data validation beyond unpacking
+- No access control checks at the entry point level
+
+Function "create_admin":
+- Uses create_program_address without fallback for invalid bumps
+- No rent exemption check before account creation
+- Potential reinitialization attack if account is not properly validated
+
+Function "update_admin":
+- No authorization check to verify the current admin is the signer
+- Allows any signer to change the admin without permission validation
+- No validation that new_admin is a valid pubkey
+
+Function "create_account":
+- Hardcoded initial governance points (10) without configurable mechanism
+- Uses user-provided bump without validation
+- No maximum limit on governance points
+
+Function "open_proposal":
+- Fixed 1-hour voting period without configurability
+- Uses title as PDA seed which may cause collisions with similar titles
+- No validation that title length is reasonable for PDA derivation
+
+Function "vote_process":
+- Arithmetic overflow risk in vote counting (yes_votes += amount)
+- No check for duplicate votes from same user
+- Voting power based on current governance points, which can be manipulated
+
+Function "manage_governance_points":
+- Admin can arbitrarily modify any user's governance points without restrictions
+- No upper bound check on governance points addition
+- No event logging for governance point changes
+
+Function "execute_instruction":
+- Instruction sysvar usage for previous instruction check is unreliable
+- No proper validation of CPI accounts ownership
+- Different validation paths for variant_instr but same execution logic
+
+Function "make_decision":
+- Time comparison uses current_time < end_time instead of current_time > end_time
+- No threshold mechanism for proposal approval (simple majority only)
+- No mechanism to handle tie votes
+
+Function "action_as_str":
+- No security vulnerabilities identified (helper function only)
+
+Function "try_from_slice":
+- Uses try_from_slice_unchecked which may deserialize malformed data
+- No bounds checking on slice operations
+
+Function "invoke_signed":
+- Multiple instances without proper validation of derived addresses
+- No check that the provided bumps match the actual derived addresses
+
+Function "Pubkey::create_program_address":
+- Used without fallback mechanism for invalid bumps
+- No validation that the derived address matches the expected PDA

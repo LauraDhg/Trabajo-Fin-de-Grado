@@ -1,0 +1,62 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program ID changes or is deployed to a different address
+- Uses unwrap() which will panic if the string is invalid, potentially halting the program
+
+Function "action_as_str":
+- No apparent security vulnerabilities in this helper function
+
+Function "send_create_vault_transaction":
+- Missing proper validation of account ownership and types before CPI
+- No checks to ensure the vault program is the expected program
+- Potential reentrancy risk as it performs CPI without proper state validation
+
+Function "send_instr_to_vault_transaction":
+- Missing proper validation of account ownership and types before CPI
+- No checks to ensure the vault program is the expected program
+- Potential reentrancy risk as it performs CPI without proper state validation
+
+Function "process_instruction":
+- No input validation on instruction data before unpacking
+- Potential for malformed instruction data to cause panics
+
+Function "create_admin":
+- Uses create_program_address which may fail and panic if bump is incorrect
+- Missing proper rent exemption checks before account creation
+- No validation that system_program is actually the system program
+
+Function "update_admin":
+- No access control beyond checking the current admin - missing multi-sig or timelock for admin changes
+- Allows immediate admin transfer without any cooldown or confirmation period
+
+Function "create_account":
+- Hardcodes 10 governance points for new accounts - potential inflation vulnerability
+- Uses create_program_address which may fail and panic if bump is incorrect
+- No validation that system_program is actually the system program
+
+Function "open_proposal":
+- Fixed 1-hour voting period (3600 seconds) may not be sufficient for all use cases
+- Uses create_program_address which may fail and panic if bump is incorrect
+- No validation that system_program is actually the system program
+- Proposal title used in PDA derivation could cause collisions if titles are similar
+
+Function "vote_process":
+- Arithmetic overflow risk in vote counting (yes_votes +=, no_votes +=)
+- Users can vote multiple times by creating different vote record accounts
+- No prevention of double voting for the same proposal
+- Uses create_program_address which may fail and panic if bump is incorrect
+
+Function "manage_governance_points":
+- Admin can arbitrarily mint or burn governance points without limits
+- No logging or auditing of point changes
+- Potential for admin abuse to manipulate voting outcomes
+
+Function "execute_instruction":
+- Complex control flow with multiple match statements increases attack surface
+- Uses instruction sysvar to check previous instruction, which can be manipulated
+- Missing proper validation of all account types before CPI calls
+- Potential reentrancy issues with multiple CPIs
+
+Function "make_decision":
+- Time check uses current_time < proposal.end_time instead of current_time > proposal.end_time (logic error)
+- Admin can execute decisions arbitrarily without proper voting outcome validation
+- No mechanism to prevent multiple executions of the same proposal

@@ -1,0 +1,45 @@
+Function "process_instruction":
+- Unpacks the instruction data into an `InstructionFormat` enum.
+- Matches the instruction to the corresponding function: `initialize_wallet_account`, `deposit_amount`, `withdraw_amount`, or `transfer_amount`.
+- Returns a `ProgramResult`.
+
+Function "initialize_wallet_account":
+- Takes `program_id` and an array of `AccountInfo` as input.
+- Retrieves account information for the user, wallet, and system program from the `accounts` array using an iterator.
+- Checks if the system program ID is correct.
+- Derives the PDA (Program Derived Address) for the wallet account using `Pubkey::find_program_address`.
+- Creates a `Wallet` struct with an initial amount of 0 and `initialized` set to true.
+- Calculates the rent required for the wallet account.
+- Invokes the system program to create the wallet account, using the derived PDA as the account address.
+- Serializes the `Wallet` struct into the wallet account's data.
+- Returns `Ok(())` on success.
+
+Function "deposit_amount":
+- Takes `program_id`, an array of `AccountInfo`, and an `amount` as input.
+- Retrieves account information for the user and wallet accounts from the `accounts` array.
+- Checks if the wallet account's owner is the program itself.
+- Deserializes the wallet account's data into a `Wallet` struct.
+- Increases the `amount` field of the `Wallet` struct.
+- Serializes the updated `Wallet` struct back into the wallet account's data.
+- Returns `Ok(())` on success.
+
+Function "withdraw_amount":
+- Takes `program_id`, an array of `AccountInfo`, and an `amount` as input.
+- Retrieves account information for the user and wallet accounts from the `accounts` array.
+- Checks if the wallet account's owner is the program itself.
+- Deserializes the wallet account's data into a `Wallet` struct.
+- Checks if the wallet has sufficient funds to withdraw the requested `amount`. Returns `ProgramError::InsufficientFunds` if not.
+- Decreases the `amount` field of the `Wallet` struct using `checked_sub` to prevent underflow. Returns `MyError::ArithmeticError` if there is an underflow.
+- Serializes the updated `Wallet` struct back into the wallet account's data.
+- Returns `Ok(())` on success.
+
+Function "transfer_amount":
+- Takes `program_id`, an array of `AccountInfo`, and an `amount` as input.
+- Retrieves account information for the user, source wallet, destination user and destination wallet accounts from the `accounts` array.
+- Checks if the source and destination wallet account's owner is the program itself.
+- Deserializes the source and destination wallet account's data into `Wallet` structs.
+- Checks if the source wallet has sufficient funds to transfer the requested `amount`. Returns `ProgramError::InsufficientFunds` if not.
+- Decreases the `amount` field of the source `Wallet` struct using `checked_sub` to prevent underflow. Returns `MyError::ArithmeticError` if there is an underflow.
+- Increases the `amount` field of the destination `Wallet` struct.
+- Serializes the updated source and destination `Wallet` structs back into their respective wallet account's data.
+- Returns `Ok(())` on success.

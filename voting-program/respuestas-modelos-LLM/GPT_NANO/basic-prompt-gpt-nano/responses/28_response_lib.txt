@@ -1,0 +1,57 @@
+Function "send_create_vault_transaction":
+- Constructs and sends a transaction to create a vault, invoking an external vault program with specific accounts and data.
+- Uses `invoke_signed` to sign and execute the instruction with program-derived addresses (PDAs).
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends a transaction to perform deposit or withdrawal in the vault, invoking an external vault program.
+- Uses `invoke_signed` with the necessary account metas and PDA seeds.
+
+Function "process_instruction":
+- Entry point for processing incoming instructions.
+- Unpacks instruction data into known instruction formats.
+- Routes execution to specific functions based on instruction type.
+
+Function "create_admin":
+- Creates and initializes an admin account PDA with admin data.
+- Checks signer requirement, account existence, and sets admin data with current Clock timestamp.
+- Uses `invoke_signed` to create account with rent exemption.
+
+Function "update_admin":
+- Updates the admin account PDA with new admin ID.
+- Checks ownership, signer, and account PDA correctness.
+- Writes updated admin info with current Clock timestamp.
+
+Function "create_account":
+- Creates a user account PDA with initial governance points.
+- Checks signer, account existence, and correctness of PDA.
+- Uses `invoke_signed` for account creation.
+
+Function "open_proposal":
+- Creates a proposal PDA with proposal details.
+- Checks ownership, signer, and account PDA.
+- Sets proposal start and end time based on Clock.
+- Uses `invoke_signed` to create account.
+
+Function "vote_process":
+- Records a vote on a proposal.
+- Checks ownership, signer, and whether vote record account is initialized.
+- Checks voting time window.
+- Updates proposal votes, creates vote record PDA.
+- Serializes vote record, proposal, and user account states.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points for a user.
+- Checks admin ownership and signer.
+- Modifies user governance points with checked subtraction and serializes.
+
+Function "execute_instruction":
+- Executes vault-related instructions (create, deposit, withdraw) via CPI.
+- Checks owner, signer, and validity of involved accounts.
+- Loads previous instruction from sysvar.
+- Calls helper functions to send transactions to vault program depending on instruction variant.
+
+Function "make_decision":
+- Finalizes a proposal by checking votes.
+- Checks owner, signer, and if proposal is expired.
+- Decides approval or denial based on vote counts.
+- Marks proposal as executed and serializes.

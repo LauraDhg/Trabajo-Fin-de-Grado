@@ -1,0 +1,60 @@
+Function "vault_program_id":
+- Hardcoded program ID may be insecure if the vault program changes or is compromised
+- No validation that the returned Pubkey corresponds to an actual deployed program
+
+Function "send_create_vault_transaction":
+- Uses hardcoded seeds ("vault") which may cause collisions if other programs use similar seeds
+- No validation of vault_program account ownership before invocation
+- Missing validation that vault_account is properly derived from the seeds
+
+Function "send_instr_to_vault_transaction":
+- Missing system_program account in invoke_signed call for deposit/withdraw operations
+- No validation of vault_program account ownership
+- Missing validation that vault_account is properly derived
+
+Function "process_instruction":
+- No instruction data validation beyond basic unpacking
+- Missing access control checks at the entrypoint level
+
+Function "create_admin":
+- Missing rent exemption check before account creation
+- No validation that system_program account is actually the system program
+- Potential reinitialization attack if account is recreated after being closed
+
+Function "update_admin":
+- No authorization check beyond matching admin_id - susceptible to replay attacks
+- Missing validation that clock_sysvar is actually the clock sysvar
+- No timestamp validation to prevent outdated updates
+
+Function "create_account":
+- Fixed governance points allocation (10) without validation
+- Missing validation that system_program account is actually the system program
+- No rent exemption check before account creation
+
+Function "open_proposal":
+- Uses title as PDA seed which may cause collisions with similar titles
+- Fixed 1-hour duration without configurability
+- Missing validation that system_program and clock_sysvar are legitimate
+- No rent exemption check before proposal account creation
+
+Function "vote_process":
+- Allows multiple votes from same user by creating new vote records each time
+- Missing validation that system_program and clock_sysvar are legitimate
+- No rent exemption check before vote record creation
+- Arithmetic overflow protection only for addition, not subtraction
+
+Function "manage_governance_points":
+- Subtraction operation (instruction=false) lacks overflow/underflow protection
+- Admin can arbitrarily modify any user's governance points without restrictions
+- No validation that amount is reasonable or within bounds
+
+Function "execute_instruction":
+- Relies on previous instruction check which can be bypassed by malicious actors
+- Missing proper validation of vault_program account ownership
+- Inconsistent account validation across different instruction variants
+- Uses deprecated load_current_index and load_instruction_at functions
+
+Function "make_decision":
+- Time validation only checks if current time is after end_time, missing start_time check
+- No validation that clock_sysvar is actually the clock sysvar
+- Decision logic only compares yes_votes >= no_votes without considering quorum or thresholds

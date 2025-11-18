@@ -1,0 +1,50 @@
+Function "vault_program_id":
+- Hardcoded program ID. This makes the program less flexible and harder to upgrade. It's better to use a configurable value or a program-derived address.
+
+Function "process_instruction":
+- This function serves as the main entry point for processing instructions, effectively acting as a dispatcher.
+- Each match arm calls a specific function to handle different instruction types.
+
+Function "create_admin":
+- Uses `invoke_signed` to create the admin account, which is good for security because it ensures that the program's signature is required to create the account.
+- The admin account's address is derived using `Pubkey::find_program_address`, which prevents users from creating admin accounts at arbitrary addresses.
+- Account size is calculated dynamically using `account.try_to_vec()?.len()`, which prevents buffer overflows and ensures that the account has enough space to store the admin data.
+
+Function "update_admin":
+- Checks that `admin_account_dao.owner` is equal to `program_id`. This prevents other programs from modifying the admin account.
+- Uses `Admin_Account::try_from_slice` to deserialize the admin account data, which prevents buffer overflows.
+- Updates the admin account with a new admin Pubkey and a timestamp.
+
+Function "create_account":
+- Uses `invoke_signed` to create the user account, which is good for security because it ensures that the program's signature is required to create the account.
+- The user account's address is derived using `Pubkey::find_program_address`, which prevents users from creating accounts at arbitrary addresses.
+- Account size is calculated dynamically using `account.try_to_vec()?.len()`, which prevents buffer overflows and ensures that the account has enough space to store the user data.
+- Assigns 10 governance points when creating a new user account. Consider whether this is the desired initial amount and if it should be configurable.
+
+Function "open_proposal":
+- Checks that `user_account_dao.owner` is equal to `program_id`. This prevents other programs from modifying the user account.
+- Uses `invoke_signed` to create the proposal account, which is good for security because it ensures that the program's signature is required to create the account.
+- The proposal account's address is derived using `Pubkey::find_program_address`, which prevents users from creating proposal accounts at arbitrary addresses.
+- Account size is calculated dynamically using `proposal.try_to_vec()?.len()`, which prevents buffer overflows and ensures that the account has enough space to store the proposal data.
+- Sets a fixed proposal duration of 1 hour. Consider making this configurable.
+
+Function "vote_process":
+- Checks that `user_account_dao.owner` and `proposal_account.owner` are equal to `program_id`. This prevents other programs from modifying the user and proposal accounts.
+- Uses `invoke_signed` to create the vote record account, which is good for security because it ensures that the program's signature is required to create the account.
+- The vote record account's address is derived using `Pubkey::find_program_address`, which prevents users from creating vote record accounts at arbitrary addresses.
+- Account size is calculated dynamically using `vote_record.try_to_vec()?.len()`, which prevents buffer overflows and ensures that the account has enough space to store the vote record data.
+- The `vote_amount` in `Vote_Record` is equal to `amount_governance_points` from the user, which means users with more points have more voting power.
+
+Function "manage_governance_points":
+- Checks that `admin_account_dao.owner` and `user_account_dao.owner` are equal to `program_id`. This prevents other programs from modifying the admin and user accounts.
+- Subtracting amount without checking for underflow. This can lead to a potential vulnerability. The code uses `checked_sub`, which prevents underflows, but consider using `checked_add` to prevent overflows.
+
+Function "execute_instruction":
+- Checks that `user_account_dao.owner` is equal to `program_id`. This prevents other programs from modifying the user account.
+- The program checks the `variant_instr` and then performs different checks based on its value.
+- It validates the previous instruction using `load_instruction_at`, ensuring the current call is part of a larger, expected flow.
+- `send_create_vault_transaction`, `send_instr_to_vault_transaction` functions delegate actions to another program. This pattern adds complexity and relies on the security of the external vault program.
+
+Function "make_decision":
+- Checks that `admin_account_dao.owner` and `proposal_account.owner` are equal to `program_id`. This prevents other programs from modifying the admin and proposal accounts.
+- The proposal becomes `executed` with no turning back once this instruction is executed, even if the logic is incorrect.

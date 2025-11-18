@@ -1,0 +1,34 @@
+Function "process_instruction":
+- Unpacks instruction data using InstructionFormat::unpack
+- Matches instruction type to call appropriate handler function
+- Handles CreateAccount, IncreaseAmount, WithdrawAmount, and TransferAmount instructions
+
+Function "initialize_wallet_account":
+- Creates a PDA wallet account using find_program_address with "wallet" prefix and user account key
+- Validates that provided wallet account matches the expected PDA
+- Uses invoke_signed with system_instruction::create_account to create the account
+- Initializes wallet data with amount=0 and initialized=true
+- Serializes wallet data to account storage
+
+Function "deposit_amount":
+- Validates wallet PDA matches expected address
+- Deserializes current wallet state
+- Increases wallet amount by specified value
+- Serializes updated wallet state back to account
+- No validation of deposit source funds or transfer mechanism
+
+Function "withdraw_amount":
+- Validates wallet PDA matches expected address
+- Deserializes current wallet state
+- Checks for sufficient funds before withdrawal
+- Uses checked_sub to prevent arithmetic overflow
+- Serializes updated wallet state back to account
+- No mechanism to actually transfer funds out of the program
+
+Function "transfer_amount":
+- Validates both source and destination wallet PDAs
+- Deserializes both wallet states
+- Checks for sufficient funds in source wallet
+- Updates both wallet amounts (subtracts from source, adds to destination)
+- Serializes both updated wallet states
+- No actual token transfer mechanism between accounts

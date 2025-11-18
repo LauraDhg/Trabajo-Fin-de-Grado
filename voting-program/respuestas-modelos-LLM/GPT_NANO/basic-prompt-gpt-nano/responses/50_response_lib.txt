@@ -1,0 +1,71 @@
+Function "action_as_str":
+- Converts a numeric action code into a human-readable string description.
+
+Function "send_create_vault_transaction<'info>":
+- Creates and sends a transaction to initialize a new vault.
+- Checks the provided accounts and constructs the appropriate instruction data.
+- Uses invoke_signed for PDA authorization.
+
+Function "send_instr_to_vault_transaction<'info>":
+- Creates and sends a transaction to execute a specific instruction in the vault, such as deposit or withdraw.
+- Validates accounts, constructs instruction data, and invokes the instruction with PDA authority.
+
+Function "process_instruction":
+- Entry point for the program; dispatches instructions based on unpacked instruction data.
+- Routes to specific handlers like create_admin, update_admin, create_account, open_proposal, vote_process, manage_governance_points, execute_instruction, or make_decision.
+
+Function "create_admin":
+- Initializes an admin PDA account.
+- Checks for proper signatures and account ownership.
+- Creates account with required rent, and serializes admin data.
+
+Function "update_admin":
+- Updates the admin_id in the admin PDA.
+- Checks signatures, account ownership, and verifies current admin privileges.
+- Serializes the updated admin data.
+
+Function "create_account":
+- Initializes a user account PDA with governance points.
+- Checks signatures, account ownership, and verifies correctness of PDA.
+- Creates the account with necessary rent and serializes data.
+
+Function "open_proposal":
+- Creates a new proposal PDA account with given title and description.
+- Checks signatures, account ownership, and account existence.
+- Sets start and end times, serializes proposal data.
+
+Function "vote_process":
+- Allows a user to vote on a proposal.
+- Validates accounts, signatures, and that the vote is within allowed timeframe.
+- Creates a vote record PDA account, updates proposal votes, serializes all data.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points to a user account.
+- Checks admin privilege via admin PDA.
+- Verifies signatures and ownership, then updates and serializes user data.
+
+Function "execute_instruction":
+- Executes vault-related instructions (create, deposit, withdraw).
+- Validates accounts, signatures, and program IDs.
+- Checks previous instruction via instruction sysvar.
+- Delegates to specific send functions based on instruction variant.
+
+Function "make_decision":
+- Finalizes a proposal decision.
+- Checks signatures, ownership, and that proposal period has ended.
+- Compares yes and no votes, marks proposal as executed.
+- Serializes proposal data.
+
+Potential Risks and Vulnerabilities:
+- Missing or inadequate signature checks on critical accounts.
+- Use of unwrap() in "vault_program_id" could panic if parsing fails.
+- PDA derivation and validation logic must match in all functions to prevent misinitialization.
+- Passing unvalidated or malformed data for title and description may cause serialization issues.
+- No explicit cap or validation on governance points addition/subtraction.
+- Vote weight depends solely on user governance points, which might be manipulated if the points are less protected.
+- Re-entrancy or replay attack gaps are not fully addressed (e.g., instruction sysvar checks, but no explicit replay prevention).
+- No explicit access control mechanisms beyond signature checks; administrator validation relies on admin ID match.
+- Hardcoded program ID string and seed values may lead to incorrect derivation if not strictly aligned.
+- Potential for double vote or multiple votes if vote record account is not properly checked.
+- Overall reliance on PDA derivation correctness; errors here could lead to account hijacking.
+

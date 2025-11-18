@@ -1,0 +1,31 @@
+Function "process_instruction":
+- No direct vulnerabilities found in this routing function
+- Properly unpacks instruction data before processing
+- Correctly routes to appropriate handler functions
+
+Function "initialize_wallet_account":
+- Missing validation that user_account is signer
+- Missing validation that system_program is actually the system program
+- Uses unwrap() on try_into() conversion which could panic
+- Does not verify that wallet_account is owned by the program
+- Creates account without checking if it already exists properly (lamports check might not be sufficient)
+
+Function "deposit_amount":
+- Missing validation that user_account is signer
+- Missing validation that the deposit actually transfers funds (only updates state)
+- No access control - anyone can call this function for any user
+- Uses try_from_slice_unchecked indirectly which could deserialize malformed data
+
+Function "withdraw_amount":
+- Missing validation that user_account is signer (critical vulnerability)
+- No transfer of actual funds, only state update (users can't actually withdraw value)
+- Missing access control - anyone could withdraw from any wallet
+- Uses try_from_slice_unchecked indirectly
+
+Function "transfer_amount":
+- Missing validation that user_account is signer (critical vulnerability)
+- No actual token/lamports transfer, only state updates
+- Missing access control - anyone can transfer between any wallets
+- Arithmetic operations done in wrong order (adds to destination before checking source)
+- Uses try_from_slice_unchecked indirectly for both wallets
+- No reentrancy protection for cross-wallet operations

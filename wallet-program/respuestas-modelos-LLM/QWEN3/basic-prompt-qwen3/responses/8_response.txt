@@ -1,0 +1,44 @@
+Function "process_instruction":
+- Routes the instruction to the appropriate handler function based on the unpacked instruction data.
+- Uses `InstructionFormat::unpack` which may return an error if instruction data is malformed.
+- Does not validate ownership or authority before delegating to handler functions, relying on individual functions to perform checks.
+
+Function "initialize_wallet_account":
+- Creates a PDA (Program Derived Address) for the wallet using the user's public key and a seed.
+- Checks if the system program is correctly passed as an account.
+- Does not verify that `wallet_account` is actually the expected PDA derived from the user key and seed.
+- Checks if the wallet account already has lamports, but this is not a complete check for initialization; should also check data initialization.
+- Uses `try_to_vec` to calculate serialized size, which may fail if serialization fails.
+- Calculates rent-exemption correctly using `Rent::get()`.
+- Invokes `system_instruction::create_account` via CPI with correct seeds and bump for PDA.
+- Immediately serializes wallet data after account creation, but does so even if the account creation CPI fails (though CPI returns on error).
+- Serializes data into the wallet account without verifying that the account data length is sufficient to hold the serialized `Wallet` struct.
+- Potential vulnerability: does not confirm that `wallet_account.key` equals the derived PDA (`wallet_pda`), allowing a malicious caller to pass a different account.
+
+Function "deposit_amount":
+- Deserializes wallet data from the provided account.
+- Verifies that the wallet account is owned by the program.
+- Checks that the wallet is initialized before proceeding.
+- Uses `checked_add` to prevent arithmetic overflow, correctly returning a custom error if overflow occurs.
+- Serializes updated wallet data back to account.
+- Does not verify that the user_account is a signer, allowing unauthorized deposits if account ownership is spoofed or misunderstood.
+
+Function "withdraw_amount":
+- Deserializes source wallet and checks ownership and initialization.
+- Validates that the user has sufficient balance before withdrawal.
+- Uses `checked_sub` to prevent underflow.
+- Serializes updated wallet state after subtraction.
+- Does not verify that the user_account is a signer, which could allow unauthorized withdrawals if the account is not properly authenticated.
+
+Function "transfer_amount":
+- Deserializes both source and destination wallets.
+- Verifies both accounts are owned by the program.
+- Checks both wallets are initialized.
+- Performs arithmetic safely using `checked_add` and `checked_sub`.
+- Validates that source wallet has sufficient funds before transferring.
+- Updates both source and destination wallet balances.
+- Serializes both accounts back to storage.
+- Critical vulnerability: does not verify that `src_wallet_account` corresponds to the user_account via PDA derivation.
+- Critical vulnerability: does not verify that `dest_wallet_account` is the correct PDA for `dest_user_account`.
+- Does not check that `user_account` or `dest_user_account` are signers, enabling unauthorized transfers.
+- Order of checks and operations may leave state inconsistent if one serialization fails after another succeeds (though Solana transactions are atomic, so partial writes won’t persist).

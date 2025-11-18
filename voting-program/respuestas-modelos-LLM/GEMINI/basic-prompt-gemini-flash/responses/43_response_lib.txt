@@ -1,0 +1,96 @@
+Function "vault_program_id":
+- Returns a Pubkey.
+- The Pubkey is hardcoded and represents the vault program ID.
+
+Function "process_instruction":
+- Unpacks the instruction data into an `InstructionFormat` enum.
+- Matches on the enum variant to call the corresponding handler function.
+- Dispatches program logic based on the unpacked instruction.
+
+Function "create_admin":
+- Creates an admin account.
+- Checks if the admin payer is a signer.
+- Checks if the admin account is already initialized.
+- Derives the admin account PDA.
+- Checks if the provided admin account key matches the derived PDA.
+- Creates an `Admin_Account` struct.
+- Serializes the account data into the admin account.
+
+Function "update_admin":
+- Updates the admin account with a new admin.
+- Checks if the admin account's owner is the program.
+- Checks if the admin payer is a signer.
+- Deserializes the admin account data.
+- Derives the admin account PDA.
+- Checks if the provided admin account key matches the derived PDA.
+- Checks if the admin payer matches the current admin.
+- Updates the admin ID and last update timestamp.
+- Serializes the updated account data back into the account.
+
+Function "create_account":
+- Creates a user account.
+- Checks if the user payer is a signer.
+- Checks if the user account is already initialized.
+- Derives the user account PDA.
+- Checks if the provided user account key matches the derived PDA.
+- Creates a `User_Account` struct.
+- Serializes the account data into the user account.
+
+Function "open_proposal":
+- Opens a new proposal account.
+- Checks if the user account's owner is the program.
+- Checks if the user payer is a signer.
+- Checks if the proposal account is already initialized.
+- Derives the proposal account PDA.
+- Checks if the provided proposal account key matches the derived PDA.
+- Deserializes the user account data.
+- Creates a `Proposal` struct.
+- Serializes the proposal data into the proposal account.
+
+Function "vote_process":
+- Processes a vote on a proposal.
+- Checks if the user account and proposal account's owner is the program.
+- Checks if the user payer is a signer.
+- Checks if the vote record account is already initialized.
+- Derives the vote record account PDA.
+- Checks if the provided vote record account key matches the derived PDA.
+- Deserializes the proposal and user account data.
+- Creates a `Vote_Record` struct.
+- Checks if the proposal is still open for voting.
+- Updates the proposal's vote count (yes or no).
+- Serializes the vote record, proposal, and user account data.
+
+Function "manage_governance_points":
+- Manages governance points for a user.
+- Checks if the admin account and user account's owner is the program.
+- Checks if the admin payer is a signer.
+- Derives the admin account PDA.
+- Checks if the provided admin account key matches the derived PDA.
+- Deserializes the admin account data.
+- Checks if the admin payer matches the current admin.
+- Deserializes the user account data.
+- Adds or subtracts governance points from the user's account.
+- Serializes the updated user account data.
+
+Function "execute_instruction":
+- Executes an instruction related to a vault program.
+- Checks if the user account's owner is the program.
+- Checks if the user payer is a signer.
+- Checks if the user account has been initialized.
+- Performs different checks based on the `variant_instr` value.
+- Loads the current instruction index and checks the previous instruction.
+- Calls `send_create_vault_transaction` or `send_instr_to_vault_transaction` based on the `variant_instr` value.
+
+Function "make_decision":
+- Makes a decision on a proposal based on the votes.
+- Checks if the admin account and proposal account's owner is the program.
+- Checks if the admin payer is a signer.
+- Derives the admin account PDA.
+- Checks if the provided admin account key matches the derived PDA.
+- Deserializes the admin account data.
+- Checks if the admin payer matches the current admin.
+- Deserializes the proposal data.
+- Checks if the proposal voting period has ended.
+- Determines if the proposal is approved or denied based on the vote counts.
+- Sets the proposal's `executed` flag.
+- Serializes the updated proposal data.

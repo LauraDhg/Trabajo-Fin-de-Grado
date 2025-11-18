@@ -1,0 +1,71 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program ID changes or is incorrect
+- No validation that the returned Pubkey is actually a valid program on-chain
+
+Function "send_create_vault_transaction":
+- Uses hardcoded vault_program_id without validation
+- No validation that vault_account is properly derived
+- No validation that admin_account_dao is properly derived
+- No validation that the vault_bump matches the actual derivation
+
+Function "send_instr_to_vault_transaction":
+- Missing system_program account in CPI invocation for deposit/withdraw operations
+- No validation that user_account_dao is properly derived
+- No validation that vault_account is properly derived
+- No validation that the vault_bump matches the actual derivation
+
+Function "process_instruction":
+- No validation of account ordering or required accounts for each instruction
+- No validation that program_id matches expected program ID
+- No validation of instruction data length before unpacking
+
+Function "create_admin":
+- No validation that admin_account_dao is uninitialized beyond lamports check
+- No validation that system_program is actually the system program
+- No validation that clock_sysvar is actually the clock sysvar
+- Potential rent calculation issues if account size changes
+
+Function "update_admin":
+- No access control - any signer can update admin without checking if they are current admin
+- No validation that clock_sysvar is actually the clock sysvar
+- Missing signer validation for admin authority
+
+Function "create_account":
+- No validation that system_program is actually the system program
+- Hardcoded initial governance points (10) without configuration
+- Potential rent calculation issues if account size changes
+
+Function "open_proposal":
+- No validation that system_program is actually the system program
+- No validation that clock_sysvar is actually the clock sysvar
+- Fixed 1-hour proposal duration without configuration
+- Proposal title used in PDA derivation without length validation
+- Potential rent calculation issues if account size changes
+
+Function "vote_process":
+- No validation that system_program is actually the system program
+- No validation that clock_sysvar is actually the clock sysvar
+- Arithmetic overflow risk in vote counting (yes_votes += amount)
+- User can vote multiple times by creating multiple vote records
+- No validation that user hasn't already voted on this proposal
+- Potential rent calculation issues if account size changes
+
+Function "manage_governance_points":
+- No access control - any signer can modify governance points if they pass admin account check
+- Missing validation that admin_payer is actually the current admin
+- Arithmetic underflow risk in subtraction operation
+- No validation of amount limits or constraints
+
+Function "execute_instruction":
+- No validation that vault_program is actually the vault program
+- No validation that system_program is actually the system program
+- No validation that ix_sysvar is actually the instructions sysvar
+- Instruction sysvar usage for security checks is unreliable and can be bypassed
+- Missing proper authorization checks for different instruction types
+- Incomplete account validation in match branches
+
+Function "make_decision":
+- No validation that clock_sysvar is actually the clock sysvar
+- Missing validation that admin_payer is actually the current admin
+- Decision logic only checks if yes_votes >= no_votes without quorum requirements
+- No validation that proposal hasn't already been executed

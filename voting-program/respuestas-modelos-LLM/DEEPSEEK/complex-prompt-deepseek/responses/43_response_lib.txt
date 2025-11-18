@@ -1,0 +1,63 @@
+Function "vault_program_id":
+- Hardcodes a specific program address which may be incorrect if the program is redeployed
+- Uses unwrap() which can panic if the string is invalid
+
+Function "action_as_str":
+- No apparent vulnerabilities found
+
+Function "send_create_vault_transaction":
+- Uses hardcoded seeds ("vault") which may conflict with other programs
+- No validation of account ownership or program IDs
+- Potential reentrancy risk when calling external program
+
+Function "send_instr_to_vault_transaction":
+- Missing system program account in invoke_signed call for deposit/withdraw operations
+- No validation of vault program ID
+- Uses hardcoded seeds which may cause collisions
+
+Function "process_instruction":
+- No input validation on instruction data before unpacking
+- No access control checks at entry point level
+
+Function "create_admin":
+- Uses deprecated create_program_address instead of find_program_address
+- No validation that admin_payer is the expected signer
+- Potential rent calculation issues with account size
+- Missing validation that system_program is actually the system program
+
+Function "update_admin":
+- No authorization check to ensure only current admin can update
+- Missing validation that new_admin is a valid pubkey
+- No protection against admin lockout
+
+Function "create_account":
+- Hardcodes initial governance points (10) without configurable mechanism
+- Uses create_program_address instead of find_program_address
+- No validation of user account uniqueness
+
+Function "open_proposal":
+- Fixed 1-hour voting period (3600 seconds) without configurability
+- Uses title as seed which may cause collisions with similar titles
+- No validation of title/description length limits
+
+Function "vote_process":
+- Arithmetic overflow risk in vote counting (yes_votes += amount)
+- No check for duplicate votes from same user
+- No validation that user hasn't already voted
+- Missing overflow protection in timestamp calculations
+
+Function "manage_governance_points":
+- Arithmetic underflow risk when subtracting points
+- No validation that amount is reasonable or within bounds
+- Admin can arbitrarily manipulate any user's points without restrictions
+
+Function "execute_instruction":
+- Complex control flow with multiple match statements
+- Uses instruction sysvar for validation which can be manipulated
+- Missing proper validation of vault program ID
+- Inconsistent account validation across different instruction variants
+
+Function "make_decision":
+- Integer comparison vulnerability (yes_votes >= no_votes) may not handle tie-breakers correctly
+- No mechanism for proposal execution beyond setting executed flag
+- Missing validation that proposal hasn't already been decided

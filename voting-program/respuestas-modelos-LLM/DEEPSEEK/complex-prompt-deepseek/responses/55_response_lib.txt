@@ -1,0 +1,69 @@
+Function "vault_program_id":
+- Hardcoded program ID which may be incorrect if the vault program is redeployed
+- No validation that the provided program ID matches the expected vault program
+
+Function "action_as_str":
+- No security vulnerabilities identified in this helper function
+
+Function "send_create_vault_transaction":
+- Missing validation that vault_program is the expected program (should compare with vault_program_id())
+- Uses hardcoded seeds "vault" which may conflict with other programs
+- No validation of account ownership or types before CPI
+
+Function "send_instr_to_vault_transaction":
+- Missing validation that vault_program is the expected program
+- Uses hardcoded seeds "vault" which may conflict
+- Missing system program account for transfer operations
+- No validation of account ownership
+
+Function "process_instruction":
+- No input validation on instruction data before unpacking
+- No access control checks before routing to specific functions
+
+Function "create_admin":
+- Missing rent exemption check before account creation
+- No validation that system_program is actually the system program
+- Uses create_program_address without fallback for invalid bumps
+- Potential reinitialization attack if account has data but zero lamports
+
+Function "update_admin":
+- No authorization check beyond signer being current admin
+- No validation that new_admin is a valid pubkey
+- Missing rent exemption check
+- No validation of clock sysvar account
+
+Function "create_account":
+- Hardcoded initial governance points (10) without justification
+- Missing rent exemption check
+- No validation that system_program is actually system program
+- Uses user-provided bump without validation
+
+Function "open_proposal":
+- Fixed 1-hour voting period without configurability
+- Title used in PDA seeds without length validation
+- Missing validation that user_account_dao belongs to the signer
+- No maximum length checks on title/description
+
+Function "vote_process":
+- User can vote multiple times by creating new vote records
+- No check if user has already voted on this proposal
+- Missing validation that user_account_dao belongs to the signer
+- Arithmetic overflow protection but uses unchecked subtraction elsewhere
+
+Function "manage_governance_points":
+- Admin can arbitrarily modify any user's points without restrictions
+- Uses unchecked subtraction (user.amount_governance_points -= amount) which can underflow
+- No validation that user_account_dao belongs to the intended user
+
+Function "execute_instruction":
+- Complex logic with multiple code paths increases attack surface
+- Uses instruction sysvar without proper validation
+- Missing validation that vault_program is the expected program
+- No validation of system_program account
+- Instruction sysvar usage may be vulnerable to front-running
+
+Function "make_decision":
+- Admin can execute decision before end time if they control clock
+- No validation of clock sysvar account
+- Decision execution doesn't enforce any on-chain actions
+- Missing validation that proposal hasn't already been executed

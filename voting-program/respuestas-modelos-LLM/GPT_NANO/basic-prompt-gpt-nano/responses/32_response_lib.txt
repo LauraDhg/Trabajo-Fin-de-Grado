@@ -1,0 +1,92 @@
+Function "process_instruction":
+- Acts as the entry point for the program.
+- Unpacks the instruction data to determine which specific instruction to execute.
+- Routes to different functions based on the instruction type.
+- Handles the main control flow for processing program instructions.
+
+Function "create_admin":
+- Creates an admin account with a specific PDA.
+- Checks the signature of the admin payer.
+- Ensures the admin account is not already initialized.
+- Sets the admin ID and last update timestamp.
+- Allocates and creates the admin account with the correct size and rent exemption.
+- Serializes and saves the admin account data.
+
+Function "update_admin":
+- Updates the admin account with a new admin ID.
+- Validates the owner of the admin account.
+- Checks the signature of the admin payer.
+- Loads current admin data and updates it with new admin ID and timestamp.
+- Serializes and saves updated admin data.
+
+Function "create_account":
+- Creates a new user account with a specific PDA.
+- Checks for signer signature.
+- Validates account is not already initialized.
+- Initializes the user account with default governance points.
+- Creates the account with correct size and rent exemption.
+- Serializes and saves the user account.
+
+Function "open_proposal":
+- Creates a proposal account with a PDA based on its title.
+- Checks for signer and owner correctness.
+- Validates account is not already initialized.
+- Loads user account and verifies user type.
+- Sets proposal start and end time.
+- Creates the proposal account with rent exemption.
+- Serializes and stores the proposal data.
+
+Function "vote_process":
+- Processes a vote on a proposal.
+- Validates owner and signer.
+- Checks if vote record account is already initialized.
+- Checks that the proposal and user accounts are correctly owned.
+- Loads proposal and user data.
+- Checks if voting is still open based on current time.
+- Updates the proposal's yes or no votes based on the vote answer.
+- Creates a vote record account.
+- Serializes and updates proposal, vote record, and user data.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user account.
+- Validates owner and signer.
+- Loads user account data.
+- Checks account type.
+- Updates governance points based on instruction.
+- Serializes updated user data.
+
+Function "execute_instruction":
+- Executes a vault-related instruction (create, deposit, withdraw).
+- Validates owner and signer.
+- Checks account balance.
+- Depending on instruction type, verifies the PDA correctness.
+- Checks the previous instruction in the instruction sysvar.
+- Calls functions to send transactions to vault program.
+
+Function "make_decision":
+- Finalizes a proposal decision.
+- Checks owner and signer.
+- Validates proposal account PDA.
+- Checks if the proposal period has ended.
+- Compares yes and no votes to determine the outcome.
+- Marks the proposal as executed.
+- Serializes and saves the proposal.
+
+Potential Risks and Vulnerabilities:
+- Undefined behavior or panics with unwrap() in "vault_program_id" if the string is invalid.
+- No explicit checks for account data size conformance before deserialization which could cause panics.
+- Use of `unwrap()` in "vault_program_id" may cause runtime panic if the string is invalid.
+- No checks for maximum governance points when adding in "manage_governance_points".
+- Race conditions in account creation when multiple transactions attempt to create the same account simultaneously.
+- No explicit access control beyond owner/signature checks, potential to overwrite accounts if PDAs are compromised.
+- "MyError" conversions to ProgramError may limit error reporting detail.
+- No validation that the "title" or "description" strings conform to expected lengths, which could cause serialization issues.
+- In "execute_instruction", only minimal PDA correctness is checked, no validation for the actual state of vault or other logic.
+- Potential for replay attacks if instruction sysvar is manipulated or the instructions are not properly validated for uniqueness.
+- Heavy reliance on correct PDA derivation, any mistake in seed derivation could lead to wrong accounts or security issues.
+- No explicit check or limits on the number of proposals or votes, which could be exploited to cause issues.
+- No explicit checks for malicious instruction data; invalid data could cause panics.
+- Missing validation for the authority or permission checks beyond the admin owner pattern.
+- No fallback or security measures if account data is corrupted or deserialized incorrectly.
+- No rate limiting or anti-spam controls for proposals, votes, or governance updates.
+

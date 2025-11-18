@@ -1,0 +1,70 @@
+Function "vault_program_id":
+- Hardcoded program ID, which reduces flexibility and reusability.
+- If the Vault program ID changes, this program will need to be redeployed.
+
+Function "send_create_vault_transaction":
+- Uses `invoke_signed` which requires providing the correct seeds. Incorrect seeds will cause the transaction to fail.
+- The `variant_instr` is not validated.
+- The function name does not match the instruction name inside the vault program.
+
+Function "send_instr_to_vault_transaction":
+- Uses `invoke_signed` which requires providing the correct seeds. Incorrect seeds will cause the transaction to fail.
+- The `variant_instr` is not validated.
+- The function name does not match the instruction name inside the vault program.
+
+Function "process_instruction":
+- This is the main entry point, uses a match statement to route instructions.
+- Relies on the `InstructionFormat::unpack` function to correctly deserialize the instruction data, which can be a source of errors if the data is malformed.
+
+Function "create_admin":
+- Checks if the admin account has already been initialized, preventing accidental overwrites.
+- Employs `Pubkey::create_program_address` for address derivation, reducing the risk of address collisions.
+- Creates account using `invoke_signed` with the admin seed.
+- Serializes the admin account data using `serialize`.
+
+Function "update_admin":
+- Verifies the admin payer's signature and checks if the account owner is the program itself, ensuring that only the program can modify the account.
+- Checks if the admin trying to update is the current admin.
+- Updates the admin account with a new admin and updates the timestamp.
+
+Function "create_account":
+- Checks if the user account has already been initialized, preventing accidental overwrites.
+- Employs `Pubkey::create_program_address` for address derivation, reducing the risk of address collisions.
+- Creates account using `invoke_signed` with the user account seed.
+- Serializes the user account data using `serialize`.
+- Gives 10 governance points to the user when created.
+
+Function "open_proposal":
+- Checks if the proposal account has already been initialized, preventing accidental overwrites.
+- Employs `Pubkey::create_program_address` for address derivation, reducing the risk of address collisions.
+- Checks user account and updates it.
+- Sets a fixed time for the proposal.
+- Creates account using `invoke_signed` with the proposal account seed.
+- Serializes the proposal account data using `serialize`.
+
+Function "vote_process":
+- Checks if the vote account has already been initialized, preventing accidental overwrites.
+- Employs `Pubkey::create_program_address` for address derivation, reducing the risk of address collisions.
+- Checks user and proposal account.
+- The `vote_answer` determines if votes are added to yes_votes or no_votes, and it is not validated.
+- Creates account using `invoke_signed` with the vote account seed.
+- Serializes the vote record and proposal account data using `serialize`.
+- There is no check to prevent double voting.
+
+Function "manage_governance_points":
+- Checks admin account and if the admin has correct privileges.
+- Can add or substract governance points. If the substract instruction is used, the amount could go below zero, causing an overflow.
+
+Function "execute_instruction":
+- This function acts as a dispatcher to call other programs (CPI).
+- Checks user authority by validating the admin.
+- Instruction 0, 1 and 2 check a PDA account and unpacks an admin account. This could cause confusion and is a risk.
+- The current index instruction uses load_current_index and load_instruction_at that can cause an error if used incorrectly.
+- The `variant_instr` is not validated.
+- Uses `send_create_vault_transaction` and `send_instr_to_vault_transaction` to create the instruction.
+
+Function "make_decision":
+- This function sets the `executed` variable of the proposal to true.
+- Only an admin can execute this function.
+- Checks that the proposal is not active.
+- Votes are compared, but no further action is taken.

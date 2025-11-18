@@ -1,0 +1,111 @@
+Function "vault_program_id":
+- Returns a hardcoded `Pubkey` representing the ID of the vault program.
+
+Function "action_as_str":
+- Takes a `u8` representing an action and returns a string slice describing the action.
+- Maps 0 to "Create", 1 to "Deposit", 2 to "Withdraw", and anything else to "Unknown".
+
+Function "send_create_vault_transaction":
+- Sends a CPI (Cross-Program Invocation) to the vault program to create a vault.
+- Takes parameters including the instruction variant, ID pubkey, vault bump seed, and several account infos.
+- Constructs an instruction with the provided data and accounts.
+- Uses `invoke_signed` to execute the CPI with the vault seeds as a signer.
+
+Function "send_instr_to_vault_transaction":
+- Sends a CPI to the vault program to perform an action on a vault (deposit or withdraw).
+- Takes parameters including the instruction variant, ID pubkey, amount, vault bump seed, and several account infos.
+- Constructs an instruction with the provided data and accounts.
+- Uses `invoke_signed` to execute the CPI with the vault seeds as a signer.
+
+Function "process_instruction":
+- The main entrypoint of the program.
+- Deserializes the instruction data using `InstructionFormat::unpack`.
+- Matches on the unpacked instruction and calls the appropriate handler function.
+
+Function "create_admin":
+- Creates an admin account.
+- Takes the program ID, an array of `AccountInfo`s, and the admin bump seed as input.
+- Checks that the admin payer is a signer.
+- Checks that the admin account has not been initialized.
+- Derives the admin PDA.
+- Checks that the provided admin account matches the derived PDA.
+- Creates the admin account using `invoke_signed` with the admin bump seed.
+- Serializes the admin account data.
+
+Function "update_admin":
+- Updates the admin account with a new admin.
+- Takes the program ID, an array of `AccountInfo`s, the new admin `Pubkey`, and the admin bump seed as input.
+- Checks that the admin payer is a signer.
+- Deserializes the existing admin account.
+- Derives the admin PDA.
+- Checks that the provided admin account matches the derived PDA.
+- Checks that the current admin is the one updating the account.
+- Updates the admin ID and last update timestamp.
+- Serializes the updated admin account data.
+
+Function "create_account":
+- Creates a user account.
+- Takes the program ID, an array of `AccountInfo`s, and the user bump seed as input.
+- Checks that the user payer is a signer.
+- Checks that the user account has not been initialized.
+- Derives the user PDA using `Pubkey::create_program_address`.
+- Checks that the provided user account matches the derived PDA.
+- Creates the user account using `invoke_signed` with the user bump seed.
+- Serializes the user account data.
+
+Function "open_proposal":
+- Creates a proposal account.
+- Takes the program ID, an array of `AccountInfo`s, the proposal title, description, and proposal bump seed as input.
+- Checks that the user payer is a signer.
+- Checks that the proposal account has not been initialized.
+- Derives the proposal PDA.
+- Checks that the provided proposal account matches the derived PDA.
+- Creates the proposal account using `invoke_signed` with the proposal bump seed.
+- Serializes the proposal account data.
+
+Function "vote_process":
+- Processes a user's vote on a proposal.
+- Takes the program ID, an array of `AccountInfo`s, the vote answer (yes/no), and the vote bump seed as input.
+- Checks that the user payer is a signer.
+- Checks that the vote record account has not been initialized.
+- Derives the vote PDA.
+- Checks that the provided vote record account matches the derived PDA.
+- Deserializes the proposal and user accounts.
+- Creates a vote record.
+- Checks that the voting is still open.
+- Updates the yes/no vote count on the proposal.
+- Creates the vote record account using `invoke_signed` with the vote bump seed.
+- Serializes the vote record, proposal, and user accounts.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user account.
+- Takes the program ID, an array of `AccountInfo`s, the amount of points to add/subtract, the admin bump seed, and a boolean indicating whether to add or subtract as input.
+- Checks that the admin payer is a signer.
+- Deserializes the admin and user accounts.
+- Derives the admin PDA.
+- Checks that the provided admin account matches the derived PDA.
+- Checks that the current admin is the one managing the points.
+- Adds or subtracts the specified amount of governance points from the user account.
+- Serializes the updated user account data.
+
+Function "execute_instruction":
+- Executes an instruction by sending a CPI to another program (vault program).
+- Takes the program ID, accounts, instruction variant, amount, vault bump seed and user bump seed as input.
+- Checks that the user payer is a signer and the user account belongs to the DAO.
+- Performs different actions based on the instruction variant: 0 (CREATE), 1 (DEPOSIT), 2 (WITHDRAW).
+- Validates the admin account based on the variant instruction.
+- Checks the target vault program ID.
+- Calls `send_create_vault_transaction` or `send_instr_to_vault_transaction` to perform the CPI.
+
+Function "make_decision":
+- Makes a decision on a proposal based on the votes.
+- Takes the program ID, an array of `AccountInfo`s, and the admin bump seed as input.
+- Checks that the admin payer is a signer.
+- Deserializes the admin and proposal accounts.
+- Derives the admin PDA.
+- Checks that the provided admin account matches the derived PDA.
+- Checks that the current admin is the one making the decision.
+- Checks that the proposal is no longer active.
+- Checks if yes votes are greater or equal than no votes.
+- Sets the `executed` flag on the proposal.
+- Serializes the updated proposal account data.

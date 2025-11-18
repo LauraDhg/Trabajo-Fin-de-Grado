@@ -1,0 +1,92 @@
+Function "vault_program_id":
+- Hardcoded program ID, can be changed and lead to unintended behavior.
+
+Function "send_create_vault_transaction":
+- Sends instruction to another program, which can be a security risk if the other program has vulnerabilities.
+- The `vault_seeds` is hardcoded, it must match with the other program's implementation.
+
+Function "send_instr_to_vault_transaction":
+- Sends instruction to another program, which can be a security risk if the other program has vulnerabilities.
+- The `vault_seeds` is hardcoded, it must match with the other program's implementation.
+
+Function "process_instruction":
+- Entry point of the program, matches the instruction based on `InstructionFormat`.
+
+Function "create_admin":
+- Creates an admin account.
+- Checks if the `admin_payer` is a signer.
+- Checks if the account is already initialized.
+- Derives a program address (PDA) for the admin account based on the seed "admin" and the `admin_bump`.
+- Creates the admin account using `invoke_signed`.
+- Serializes the admin account data.
+
+Function "update_admin":
+- Updates the admin account.
+- Checks if the `admin_account_dao` owner is the program ID.
+- Checks if the `admin_payer` is a signer.
+- Derives a program address (PDA) for the admin account based on the seed "admin" and the `admin_bump`.
+- Updates the admin account data and serializes it.
+
+Function "create_account":
+- Creates a user account.
+- Checks if the `user_payer` is a signer.
+- Checks if the account is already initialized.
+- Derives a program address (PDA) for the user account based on the seed "userAccount", the user's pubkey, and the `user_bump`.
+- Creates the user account using `invoke_signed`.
+- Assigns initial governance points (10).
+- Serializes the user account data.
+
+Function "open_proposal":
+- Opens a new proposal.
+- Checks if the `user_account_dao` owner is the program ID.
+- Checks if the `user_payer` is a signer.
+- Checks if the `proposal_account` is already initialized.
+- Derives a program address (PDA) for the proposal account based on the seed "proposal", the title, and the `proposal_bump`.
+- Retrieves the user account and checks its type.
+- Sets the proposal end time to 1 hour after the start time.
+- Creates the proposal account using `invoke_signed`.
+- Serializes the proposal account data.
+
+Function "vote_process":
+- Processes a vote for a proposal.
+- Checks if the `user_account_dao` and `proposal_account` owners are the program ID.
+- Checks if the `user_payer` is a signer.
+- Checks if the `vote_record_account` is already initialized.
+- Derives a program address (PDA) for the vote record account based on the seed "vote", the user's pubkey, the proposal's pubkey, and the `vote_bump`.
+- Retrieves the proposal and user account.
+- Checks if the user account type is valid.
+- Checks if the voting time limit has expired.
+- Updates the yes/no votes based on the user's governance points.
+- Creates the vote record account using `invoke_signed`.
+- Serializes the vote record and proposal account data.
+- Serializes the user account data.
+
+Function "manage_governance_points":
+- Manages (adds/subtracts) governance points for a user.
+- Checks if the `admin_account_dao` and `user_account_dao` owners are the program ID.
+- Checks if the `admin_payer` is a signer.
+- Derives a program address (PDA) for the admin account based on the seed "admin" and the `admin_bump`.
+- Retrieves the user account and checks its type.
+- Adds or subtracts the specified amount of governance points from the user account.
+- Uses `checked_sub` to prevent underflow when subtracting points.
+- Serializes the user account data.
+
+Function "execute_instruction":
+- Executes an instruction related to a vault program.
+- Checks if the `user_account_dao` owner is the program ID.
+- Checks if the `user_payer` is a signer.
+- Checks if the `user_account_dao` has lamports.
+- Performs different actions based on the `variant_instr` value (0: CREATE, 1: DEPOSIT, 2: WITHDRAW).
+- Checks for Cross-Program Invocation (CPI) using `load_current_index` and `load_instruction_at` which can be used as a security measure.
+- Calls `send_create_vault_transaction` or `send_instr_to_vault_transaction` based on the `variant_instr`.
+
+Function "make_decision":
+- Makes a decision on a proposal based on the votes.
+- Checks if the `admin_account_dao` and `proposal_account` owners are the program ID.
+- Checks if the `admin_payer` is a signer.
+- Derives a program address (PDA) for the admin account based on the seed "admin" and the `admin_bump`.
+- Retrieves the proposal account.
+- Checks if the proposal end time has passed.
+- Determines if the proposal is approved based on the yes/no votes.
+- Sets the `executed` flag on the proposal.
+- Serializes the proposal account data.

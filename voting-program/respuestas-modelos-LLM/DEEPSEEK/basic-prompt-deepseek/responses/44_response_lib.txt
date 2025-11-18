@@ -1,0 +1,73 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for the vault program
+- Uses unwrap which can panic if the string is invalid
+
+Function "action_as_str":
+- Converts a u8 action code to a string representation
+- Handles cases 0, 1, 2 with corresponding strings
+- Returns "Unknown" for any other value
+
+Function "send_create_vault_transaction":
+- Constructs instruction data for vault creation
+- Uses invoke_signed to call an external vault program
+- Includes system program in account metas
+- Uses vault_bump for PDA signing
+
+Function "send_instr_to_vault_transaction":
+- Constructs instruction data for vault operations (deposit/withdraw)
+- Uses invoke_signed to call an external vault program
+- Handles amount conversion to little-endian bytes
+- Uses vault_bump for PDA signing
+
+Function "process_instruction":
+- Main entry point that unpacks instruction data
+- Routes to different functions based on instruction variant
+- Handles all supported instruction types
+
+Function "create_admin":
+- Creates admin PDA account
+- Checks signer and account initialization status
+- Uses system_instruction::create_account with invoke_signed
+- Stores admin ID and timestamp in account data
+
+Function "update_admin":
+- Updates admin account with new admin ID
+- Verifies current admin privileges
+- Updates timestamp
+- Validates PDA address
+
+Function "create_account":
+- Creates user PDA account
+- Initializes with 10 governance points
+- Uses system_instruction::create_account with invoke_signed
+- Validates PDA address using user's public key
+
+Function "open_proposal":
+- Creates proposal PDA account
+- Sets 1-hour voting period from current time
+- Stores proposal metadata and voting state
+- Uses title bytes for PDA derivation
+
+Function "vote_process":
+- Records user vote on proposal
+- Creates vote record PDA account
+- Checks voting period validity
+- Updates proposal vote counts with user's governance points
+
+Function "manage_governance_points":
+- Admin function to add/subtract governance points
+- Verifies admin privileges
+- Updates user's governance point balance
+- Uses boolean flag to determine add/subtract operation
+
+Function "execute_instruction":
+- Executes vault operations through CPI
+- Validates different operation types (create/deposit/withdraw)
+- Checks instruction sysvar for previous vault program call
+- Routes to appropriate vault transaction functions
+
+Function "make_decision":
+- Finalizes proposal voting after end time
+- Compares yes/no votes to determine outcome
+- Marks proposal as executed
+- Requires admin privileges to execute

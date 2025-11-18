@@ -1,0 +1,29 @@
+Function "process_instruction":
+- The `match` statement covers all possible variants of the `InstructionFormat` enum, preventing unexpected behavior if new instructions are added later without updating the processing logic.
+
+Function "initialize_wallet_account":
+- The program uses `Pubkey::find_program_address` to derive the PDA. This is the correct way to ensure that the PDA is deterministic.
+- The program checks that the `system_program` account is the correct one.
+- The program uses `invoke_signed` to create the account, which is necessary when creating accounts owned by the program.
+- The program passes the correct seeds to `invoke_signed`, including the bump seed.
+- The wallet account is initialized and the data is serialized correctly.
+- The program checks the system program id.
+- The size of the `wallet_len` is checked when converted to `u32`.
+
+Function "deposit_amount":
+- The function checks if the `wallet_account` is owned by the program.
+- The function uses `checked_add` to prevent integer overflows.
+- The function serializes the updated wallet data back to the account.
+
+Function "withdraw_amount":
+- The function checks if the `wallet_account` is owned by the program.
+- The function checks if there are sufficient funds in the wallet before withdrawing.
+- The function uses `checked_sub` to prevent integer underflows.
+- The function serializes the updated wallet data back to the account.
+
+Function "transfer_amount":
+- The function checks if both `src_wallet_account` and `dest_wallet_account` are owned by the program.
+- The function performs an overflow check using `checked_add` on the destination wallet.
+- The function checks for sufficient funds in the source wallet before transferring.
+- The function performs an underflow check using `checked_sub` on the source wallet.
+- The function serializes the updated wallet data for both source and destination accounts.

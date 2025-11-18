@@ -1,0 +1,63 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program changes or is redeployed
+- Uses unwrap() which can panic if the string is invalid
+
+Function "action_as_str":
+- No apparent vulnerabilities, but match on u8 without bounds check could return "Unknown" for unexpected values
+
+Function "send_create_vault_transaction":
+- Missing validation of account ownership and program IDs
+- Uses hardcoded seeds which might not be unique across different contexts
+- No validation that the vault_account is actually a PDA derived from the expected seeds
+
+Function "send_instr_to_vault_transaction":
+- Missing validation of account ownership and program IDs
+- No validation that the vault_account is actually a PDA derived from the expected seeds
+- Missing system program account in CPI which might be required for token transfers
+
+Function "process_instruction":
+- No input validation on instruction_data before unpacking
+- No access control checks at the entry point level
+
+Function "create_admin":
+- Missing rent exemption check before account creation
+- PDA validation doesn't verify the bump seed matches the derived address
+- No validation that system_program is actually the system program
+
+Function "update_admin":
+- No authorization check to ensure the current admin is the one making the update
+- PDA validation doesn't verify the bump seed matches the derived address
+- No validation that the new_admin is a valid pubkey
+
+Function "create_account":
+- Fixed governance points allocation (10) without configurable mechanism
+- PDA validation doesn't verify the bump seed matches the derived address
+- No validation that system_program is actually the system program
+
+Function "open_proposal":
+- Fixed proposal duration (1 hour) without configurable mechanism
+- PDA uses title as seed which might cause collisions if titles are similar
+- PDA validation doesn't verify the bump seed matches the derived address
+- No validation that system_program is actually the system program
+
+Function "vote_process":
+- Arithmetic operations without overflow checks (yes_votes +=, no_votes +=)
+- User can vote multiple times by creating multiple vote records
+- PDA validation doesn't verify the bump seed matches the derived address
+- No validation that system_program is actually the system program
+
+Function "manage_governance_points":
+- Arithmetic operations without overflow/underflow checks (+=, -=)
+- No authorization check beyond admin signature - any admin can modify any user's points
+- PDA validation doesn't verify the bump seed matches the derived address
+
+Function "execute_instruction":
+- Complex control flow with multiple validation paths
+- Uses sysvar instructions for validation which can be manipulated in certain contexts
+- PDA validation in match arms doesn't verify the bump seed matches the derived address
+- No validation that system_program is actually the system program
+
+Function "make_decision":
+- PDA validation doesn't verify the bump seed matches the derived address
+- No validation that the proposal has not already been executed
+- Decision logic is simple majority without quorum requirements

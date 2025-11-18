@@ -1,0 +1,33 @@
+Function "process_instruction":
+- Uses try_from_slice_unchecked which can lead to deserialization attacks if not properly validated
+- No validation of account ordering or expected account counts for different instructions
+
+Function "initialize_wallet_account":
+- Does not verify that wallet_account is actually a PDA derived from the program
+- Uses unwrap() on try_into() conversion which can panic
+- No validation that wallet_account is writable
+- No validation that wallet_account is not already initialized beyond lamports check
+- Missing validation that user_account owns the wallet being created
+
+Function "deposit_amount":
+- No validation that wallet_account is actually a PDA
+- No validation that wallet_account is writable
+- No overflow protection on amount addition (wallet.amount += amount)
+- Missing transfer of actual funds/tokens - only updates internal accounting
+- No validation that user_account has authority over the wallet
+
+Function "withdraw_amount":
+- No validation that wallet_account is actually a PDA
+- No validation that wallet_account is writable
+- Uses checked_sub but error handling converts to custom error instead of proper ProgramError
+- Missing actual fund transfer - only updates internal accounting
+- No validation that user_account has authority over the wallet
+
+Function "transfer_amount":
+- No validation that src_wallet_account and dest_wallet_account are PDAs
+- No validation that accounts are writable
+- No overflow protection on dest_wallet.amount addition
+- Missing actual fund transfer between accounts
+- No validation that user_account has authority over src_wallet
+- Potential reentrancy issue with multiple serialization operations
+- Missing validation that dest_user_account is the owner of dest_wallet

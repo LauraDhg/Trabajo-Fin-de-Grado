@@ -1,0 +1,31 @@
+Function "process_instruction":
+- No explicit validation of account ordering or expected accounts for each instruction variant
+- Relies on unpacked instruction data without additional validation
+- No check for program ownership of passed accounts
+
+Function "initialize_wallet_account":
+- PDA derivation uses user_account.key without verifying it matches the expected signer
+- No validation that wallet_account is actually a PDA derived from the program
+- Uses unwrap() on try_into() conversion which could panic
+- No validation that the created account has the correct owner (program_id)
+- Missing validation that wallet_account is not already initialized
+
+Function "deposit_amount":
+- No validation that wallet_account is owned by the program
+- No validation that wallet_account is a PDA or associated with the user_account
+- No overflow check on wallet.amount += amount (potential integer overflow)
+- Missing access control - any signer can deposit to any wallet
+
+Function "withdraw_amount":
+- No validation that wallet_account is owned by the program
+- No validation that wallet_account is a PDA or associated with the user_account
+- Missing authorization check - any signer can withdraw from any wallet
+- Uses checked_sub but error handling converts to custom error instead of proper ProgramError
+
+Function "transfer_amount":
+- No validation that src_wallet_account and dest_wallet_account are owned by the program
+- No validation that wallets are PDAs or associated with the respective users
+- Missing authorization check - any signer can transfer from any source wallet
+- No overflow check on dest_wallet.amount += amount (potential integer overflow)
+- Missing reentrancy protection - state changes happen after arithmetic operations
+- Transfer is not atomic - if serialization fails on second wallet, first wallet is already updated

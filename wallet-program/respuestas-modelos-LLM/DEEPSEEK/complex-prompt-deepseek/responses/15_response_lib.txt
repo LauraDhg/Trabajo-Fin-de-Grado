@@ -1,0 +1,30 @@
+Function "process_instruction":
+- Uses try_from_slice_unchecked which can lead to deserialization vulnerabilities if not properly validated
+- No validation of instruction data length before unpacking
+
+Function "initialize_wallet_account":
+- Does not verify that wallet_account is owned by the program
+- Does not check if wallet_account is already initialized before attempting to create it
+- Uses unwrap() on try_into() conversion which could panic
+- Does not validate that system_program is actually the system program
+- PDA derivation uses fixed seed "wallet" which could cause collisions if other programs use similar patterns
+
+Function "deposit_amount":
+- No overflow check on wallet.amount += amount (potential integer overflow)
+- Does not verify that wallet_account is owned by the program
+- No validation that the deposited amount comes from an actual transfer of funds
+- Missing re-entrancy protection
+
+Function "withdraw_amount":
+- Does not verify that wallet_account is owned by the program
+- Uses custom error MyError::ArithmeticError for subtraction but doesn't provide clear error context
+- No actual transfer of funds occurs - only updates internal state
+- Missing access control beyond signer check
+
+Function "transfer_amount":
+- Integer overflow vulnerability: dest_wallet.amount += amount before checking src_wallet balance
+- Does not verify that src_wallet_account and dest_wallet_account are owned by the program
+- No actual transfer of funds occurs between accounts
+- Potential re-entrancy vulnerability as both accounts are updated sequentially
+- Missing validation that dest_user_account is a valid user account
+- No cross-program invocation to actually move funds between accounts

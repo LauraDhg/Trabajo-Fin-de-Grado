@@ -1,0 +1,65 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program is redeployed or changed
+- No validation that the returned Pubkey corresponds to an actual deployed program
+
+Function "action_as_str":
+- No security vulnerabilities identified in this helper function
+
+Function "send_create_vault_transaction":
+- Uses hardcoded seeds ("vault") which may conflict with other programs
+- No validation of vault_program account ownership before invocation
+- Missing proper account validation for all passed accounts
+
+Function "send_instr_to_vault_transaction":
+- Missing system_program account in invoke_signed call for deposit/withdraw operations
+- No validation of vault_program account ownership
+- Uses hardcoded seeds ("vault") without proper validation
+
+Function "process_instruction":
+- No input validation on instruction_data before unpacking
+- Missing proper account validation for all instruction variants
+
+Function "create_admin":
+- Missing rent exemption check before account creation
+- No validation that system_program account is actually the system program
+- Potential reinitialization attack if account is not properly validated
+
+Function "update_admin":
+- Missing authorization check - any signer can update admin without verifying they are the current admin
+- No validation that the new_admin is a valid Pubkey
+- Missing rent exemption check
+
+Function "create_account":
+- Hardcoded initial governance points (10) without validation
+- Missing validation that system_program account is actually the system program
+- No prevention of duplicate account creation for same user
+
+Function "open_proposal":
+- Uses title as PDA seed without length validation, could cause hash collisions
+- Fixed 1-hour proposal duration may not be suitable for all use cases
+- Missing validation that system_program account is actually the system program
+
+Function "vote_process":
+- Allows multiple votes from same user by creating new vote record each time
+- No check if user has already voted on this proposal
+- Missing validation that system_program account is actually the system program
+- Arithmetic overflow protection only on addition, not on vote amount calculations
+
+Function "manage_governance_points":
+- Missing authorization check - any signer can manage points if they pass admin account
+- No upper bound validation on governance points
+- Subtraction operation (instruction=false) doesn't use checked_sub, allowing underflow
+- No validation that the amount being subtracted is available
+
+Function "execute_instruction":
+- Missing proper validation of all account types in different instruction variants
+- Relies on previous instruction check which can be manipulated
+- No validation that vault_program account is actually the vault program
+- Missing validation that system_program account is actually the system program
+- Instruction variant 0 and 2 both require admin but have different validations
+
+Function "make_decision":
+- Missing validation that the admin_payer is actually the current admin
+- Only checks if current time is after end_time, doesn't validate proposal hasn't been executed already
+- No actual decision execution logic, only sets executed flag
+- Missing validation that the proposal belongs to the expected program

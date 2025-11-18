@@ -1,0 +1,34 @@
+Function "process_instruction":
+- No explicit validation of account ordering or ownership in instruction dispatch
+- Relies on instruction unpacking which may fail on malformed data without proper error handling
+
+Function "initialize_wallet_account":
+- PDA derivation uses user_account.key without verifying account ownership
+- No validation that wallet_account matches the derived PDA address
+- No validation that user_account is signer
+- Uses unwrap() on try_into() conversion which could panic
+- Checks lamports > 0 but doesn't validate account is uninitialized properly
+- No validation that system_program is actually the system program
+
+Function "deposit_amount":
+- No validation that user_account owns or has authority over the wallet
+- No validation that user_account is signer
+- No overflow/underflow protection on wallet.amount += amount
+- No validation that the wallet account belongs to the program
+- Missing access control - anyone can deposit to any wallet
+
+Function "withdraw_amount":
+- No validation that user_account owns or has authority over the wallet
+- No validation that user_account is signer
+- No underflow protection on wallet.amount -= amount (can result in integer underflow)
+- No validation that the wallet account belongs to the program
+- Missing access control - anyone can withdraw from any wallet
+
+Function "transfer_amount":
+- No validation that user_account owns or has authority over the source wallet
+- No validation that user_account is signer
+- No validation that destination wallet belongs to destination user
+- No underflow protection on src_wallet.amount -= amount
+- No overflow protection on dest_wallet.amount += amount
+- No validation that either wallet account belongs to the program
+- Missing access control - anyone can transfer between any wallets

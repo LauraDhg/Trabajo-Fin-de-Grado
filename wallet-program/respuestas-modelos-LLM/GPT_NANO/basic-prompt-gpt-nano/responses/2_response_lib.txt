@@ -1,0 +1,43 @@
+Function "process_instruction":
+- Routes the incoming instruction data to the appropriate function based on the instruction variant.
+- Unpacks instruction data using a custom InstructionFormat.
+- Calls specific functions like initialize_wallet_account, deposit_amount, withdraw_amount, or transfer_amount.
+
+Function "initialize_wallet_account":
+- Creates and initializes a new wallet account with rent exemption.
+- Checks that the system program ID matches.
+- Validates the user's signature.
+- Derives the program-derived address (PDA) and checks account correctness.
+- Ensures the account is not already initialized (lamports must be zero).
+- Uses invoke_signed to create the account with the correct seed and bump.
+- Serializes the wallet data into the account.
+
+Function "deposit_amount":
+- Adds a specified amount to the wallet's balance.
+- Checks that the wallet owner is the program.
+- Validates the signer's signature.
+- Derives PDA and confirms the wallet account.
+- Deserializes the wallet data.
+- Checks that the wallet is initialized.
+- Adds the amount to wallet.amount.
+- Serializes the updated wallet data.
+
+Function "withdraw_amount":
+- Subtracts a specified amount from the wallet's balance.
+- Checks owner and signer validity.
+- Derives PDA and confirms account.
+- Deserializes wallet data.
+- Checks wallet initialized.
+- Checks for sufficient funds.
+- Uses checked_sub to prevent underflow, converting errors into custom MyError.
+- Serializes updated wallet data.
+
+Function "transfer_amount":
+- Transfers a specific amount from one wallet to another.
+- Checks owners and signers.
+- Derives PDAs for both source and destination wallets.
+- Deserializes both wallet data.
+- Checks both wallets are initialized.
+- Checks source has sufficient funds before subtraction.
+- Adds the amount to destination wallet, subtracts from source wallet.
+- Serializes both wallets' data.

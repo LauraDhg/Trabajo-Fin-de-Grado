@@ -1,0 +1,65 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey value for the vault program
+- Uses unwrap which could panic if the string is invalid
+
+Function "action_as_str":
+- Converts a u8 action code to a descriptive string
+- Handles unknown actions by returning "Unknown"
+
+Function "send_create_vault_transaction":
+- Constructs an instruction for creating a vault
+- Uses invoke_signed to call the vault program with PDA seeds
+- Includes system program in the account list
+
+Function "send_instr_to_vault_transaction":
+- Constructs instructions for deposit/withdraw operations
+- Uses invoke_signed with vault PDA seeds
+- Does not include system program in accounts
+
+Function "process_instruction":
+- Main entry point that routes to different instruction handlers
+- Unpacks instruction data using InstructionFormat
+- Matches on instruction variants to call appropriate functions
+
+Function "create_admin":
+- Creates an admin PDA account
+- Validates signer and account ownership
+- Uses invoke_signed to create account with system program
+- Stores admin ID and timestamp in account data
+
+Function "update_admin":
+- Updates the admin account with a new admin ID
+- Validates current admin is signer
+- Updates timestamp when changing admin
+
+Function "create_account":
+- Creates a user account PDA
+- Initializes with 10 governance points
+- Uses user's public key in PDA seeds
+
+Function "open_proposal":
+- Creates a proposal account with title-based PDA
+- Sets start and end times (1 hour duration)
+- Stores proposal metadata and voting counters
+
+Function "vote_process":
+- Processes user votes on proposals
+- Creates vote record PDA
+- Validates voting period is active
+- Adds vote weight based on user's governance points
+
+Function "manage_governance_points":
+- Admin function to add/subtract governance points
+- Validates admin authority
+- Uses checked arithmetic to prevent overflows
+
+Function "execute_instruction":
+- Executes vault operations (create/deposit/withdraw)
+- Validates instruction context using instruction sysvar
+- Routes to appropriate vault transaction functions
+
+Function "make_decision":
+- Finalizes proposal voting after end time
+- Compares yes/no votes to determine outcome
+- Marks proposal as executed
+- Validates admin authority for finalization

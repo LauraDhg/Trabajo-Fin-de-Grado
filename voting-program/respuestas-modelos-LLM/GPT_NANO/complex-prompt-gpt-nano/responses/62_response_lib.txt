@@ -1,0 +1,39 @@
+Function "create_admin":
+- Uses create_program_address and invoke_signed for account creation; potential risks if seeds are reused or predictable.
+- Does not verify the integrity or uniqueness of the admin account beyond address match, potentially allowing replay or replay-like attacks if seeds are predictable.
+- Lacks explicit access control; any signer could potentially call this if the seed matches, unless further constraints are imposed off-chain.
+
+Function "update_admin":
+- Unpacks account data directly without additional validation, which could cause incorrect modifications if data is corrupted or malicious.
+- Uses create_program_address with predictable seeds; may be susceptible to seed reuse or predictable address conflicts if seed management isn't strictly controlled.
+- Does not verify that the admin_id being updated is authorized for the caller, which might lead to unauthorized admin updates if access control isn't enforced at a higher level.
+
+Function "create_account":
+- Relies solely on PDA derivation for account validation; if seed derivation is predictable, it could be exploited.
+- Does not verify that the account being created isn't already initialized by other means outside of lamport balance check.
+- No explicit authorization beyond the signer; potential for misuse if account seeds are predictable and seeds are reused or compromised.
+
+Function "open_proposal":
+- Uses proposal title string directly in seed derivation, which could lead to collisions or overwriting if titles are reused.
+- No validation or sanitization of title or description, leading to potential storage or execution hazards.
+- Lacks explicit permission control; anyone with signer authority on the payer account can create proposals.
+
+Function "vote_process":
+- Creates vote record PDA based on user and proposal; if seeds are predictable, could lead to impersonation or replay attacks.
+- No checks to prevent multiple voting by the same user for a proposal, other than account exists; may require off-chain constraints.
+- Serializes vote data after proposal data modification; if concurrent or re-entrant calls are possible, race conditions could occur.
+
+Function "manage_governance_points":
+- Uses create_program_address with seeds that could be predictable, risking collision or impersonation.
+- No explicit access control beyond verifying that the account owner is the program; off-chain enforcement needed.
+- Operations infeasible to audit without off-chain verification that only authorized admins invoke this precisely.
+
+Function "execute_instruction":
+- PDA derivations for tokens based on predictable seeds; could be exploited if seed generation isn't unique or kept secret.
+- Uses load_instruction_at without verifying that the previous instruction's program_id belongs to trusted or expected programs.
+- No rollback or validation for re-entrancy, race conditions, or concurrent execution; potential for state inconsistencies.
+
+Function "make_decision":
+- Uses create_program_address with predictable seeds, which could be targeted for collisions or ambushes.
+- Compares current_time with proposal.end_time without handling potential clock skew or manipulation of sysvar.
+- The decision logic relies on off-chain governance, absent explicit on-chain validation or veto mechanisms.

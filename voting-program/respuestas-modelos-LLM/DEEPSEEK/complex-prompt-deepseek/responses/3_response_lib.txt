@@ -1,0 +1,60 @@
+Function "vault_program_id":
+- Hardcoded program ID may lead to issues if the vault program changes or is redeployed
+- No validation that the returned Pubkey is actually a valid program on-chain
+
+Function "send_create_vault_transaction":
+- Uses hardcoded seeds ("vault") which may conflict with other programs
+- No validation of vault_program account ownership before invocation
+- Missing proper error handling for invoke_signed failures
+
+Function "send_instr_to_vault_transaction":
+- Missing system_program account in invoke_signed call for deposit/withdraw operations
+- No validation of vault_program account ownership
+- Uses hardcoded seeds without proper validation
+
+Function "process_instruction":
+- No validation of program_id parameter against expected program ID
+- Missing input validation for instruction_data before unpacking
+
+Function "create_admin":
+- Missing rent exemption check before account creation
+- No validation that system_program account is actually the system program
+- Potential reinitialization attack if account is not properly initialized
+
+Function "update_admin":
+- Missing authorization check - any signer can update admin without verifying they are the current admin
+- No validation that the new_admin is a valid pubkey
+- Missing rent exemption checks
+
+Function "create_account":
+- Hardcoded initial governance points (10) without validation
+- Missing validation that system_program account is correct
+- Potential reinitialization attack vector
+
+Function "open_proposal":
+- Uses title as PDA seeds without length validation, could cause collisions
+- Fixed 1-hour duration (3600 seconds) without configurability
+- Missing validation that system_program account is correct
+
+Function "vote_process":
+- Double voting prevention only checks account initialization, not content
+- Missing validation that vote_record_account is properly derived
+- No check if user has already voted on this proposal
+- Missing validation that system_program account is correct
+
+Function "manage_governance_points":
+- Admin can arbitrarily modify any user's points without restrictions
+- No validation that admin_payer is actually the current admin
+- Missing access control checks for point management
+
+Function "execute_instruction":
+- Relies on instruction sysvar for security (previous instruction check) which can be manipulated
+- Missing proper validation of vault_program account ownership
+- Incomplete account validation in match arms (admin_bump and user__bump variables unused)
+- Instruction sysvar usage for security is deprecated and insecure
+
+Function "make_decision":
+- Time comparison uses parentheses unnecessarily, potentially confusing
+- Missing validation that proposal hasn't already been executed
+- No actual decision execution - only logs result without taking action
+- Missing validation that admin_payer is actually the current admin

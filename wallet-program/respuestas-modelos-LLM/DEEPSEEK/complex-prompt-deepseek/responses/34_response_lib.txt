@@ -1,0 +1,32 @@
+Function "process_instruction":
+- Uses try_from_slice_unchecked which can lead to deserialization attacks if not properly validated
+- No validation of account ordering or expected account counts for different instructions
+
+Function "initialize_wallet_account":
+- PDA derivation uses user_account.key but doesn't verify wallet_account matches derived PDA
+- Missing validation that wallet_account is actually uninitialized
+- Uses unwrap() on try_into() conversion which could panic
+- No validation that user_account has sufficient lamports for account creation
+- Missing rent exemption validation for the created account
+
+Function "deposit_amount":
+- Missing validation that the wallet account belongs to the user (only checks program ownership)
+- No validation that the user is authorized to deposit to this specific wallet
+- Uses checked_add for overflow protection but other functions don't
+- Missing validation that wallet is initialized
+
+Function "withdraw_amount":
+- Uses unchecked subtraction (wallet.amount -= amount) which can cause integer underflow
+- Missing validation that wallet has sufficient balance before withdrawal
+- Missing validation that the user owns the wallet they're withdrawing from
+- No validation that wallet is initialized
+- Missing transfer of lamports to user account (only updates data, no value transfer)
+
+Function "transfer_amount":
+- Uses unchecked subtraction (src_wallet.amount -= amount) which can cause integer underflow
+- Missing validation that source wallet has sufficient balance
+- Missing validation that destination wallet belongs to dest_user_account
+- Missing validation that both wallets are initialized
+- No validation that user_account owns the source wallet
+- Missing cross-program signature verification for destination account
+- Uses checked_add for destination but unchecked subtraction for source (inconsistent overflow protection)

@@ -1,0 +1,107 @@
+Function "send_create_vault_transaction":
+- Constructs and sends a transaction to create a vault using the vault program.
+- Prepares instruction data with variant, id_pubkey, and vault_bump.
+- Sets the accounts expected by the vault program, including the admin payer and system program.
+- Uses invoke_signed with seeds to sign the transaction.
+- May risk signature verification if seeds/signatures are misconfigured.
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends a transaction to interact with the vault (deposit or withdraw).
+- Prepares instruction data with variant, amount, and id_pubkey.
+- Sets accounts: user payer, user account DAO, and vault account.
+- Uses invoke_signed with seeds.
+- Risk of incorrect account ordering or seeds leading to transaction failure.
+
+Function "process_instruction":
+- Entry point for processor, dispatches instruction based on unpacked instruction data.
+- Calls other functions based on instruction variant.
+- No direct vulnerabilities but depends on correctness of instruction parsing.
+
+Function "create_admin":
+- Creates an admin account if it does not already have liquidity.
+- Validates signer and PDA correctness.
+- Serializes Admin_Account data into the account.
+- Risks: 
+  - Reinitialization if account already initialized.
+  - Panic if `.unwrap()` fails (e.g., from_str).
+  - Incorrect PDA or owner validation.
+
+Function "update_admin":
+- Updates admin_id and last_update timestamp.
+- Checks owner and PDA correctness.
+- Serializes updated admin data.
+- Risks:
+  - Owner may be incorrect.
+  - Unwrap or serializing errors.
+
+Function "create_account":
+- Creates a user account with governance points.
+- Validates signer, owner, and PDA correctness.
+- Serializes User_Account data.
+- Risks:
+  - Reinitialization if account already exists.
+  - PDA mismatch.
+  - `.unwrap()` could panic if `.try_into()` fails.
+
+Function "open_proposal":
+- Creates a proposal account with title and description.
+- Uses PDA based on proposal and title.
+- Ensures account is empty before creation.
+- Sets start and end times.
+- Serializes Proposal data.
+- Risks:
+  - Reinitialization if account exists.
+  - PDA mismatch.
+  - String serialization issues with long titles/descriptions.
+
+Function "vote_process":
+- Records a user's vote on a proposal.
+- Uses PDA for vote record.
+- Checks if proposal is still open.
+- Adds governance points to proposal votes.
+- Creates a vote record account.
+- Serializes proposal, vote record, and user data.
+- Risks:
+  - Double voting if vote record account not checked properly.
+  - PDA mismatch.
+  - Race conditions if multiple votes are concurrent.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user.
+- Validates admin signer, owner, and PDA.
+- Uses instruction boolean to decide add or subtract.
+- Checks for arithmetic overflow/underflow.
+- Risks:
+  - Negative governance points if subtraction exceeds current.
+  - Owner or PDA mismatch.
+  - Signer not authorized.
+
+Function "execute_instruction":
+- Executes different vault instructions based on variant.
+- Validates user and vault accounts, owner and signer.
+- Uses load_current_index and load_instruction_at for instruction tracking.
+- Calls send_create_vault_transaction or send_instr_to_vault_transaction.
+- Risks:
+  - Incorrect handling of program IDs and account matching.
+  - Possible replay or race conditions if instructions are reordered.
+  - Misuse of seeds for invoke_signed.
+
+Function "make_decision":
+- Finalizes a proposal.
+- Validates owner, signer, and PDA.
+- Checks if proposal is expired.
+- Determines approval based on votes.
+- Sets executed flag.
+- Risks:
+  - Race condition if multiple decisions processed concurrently.
+  - Incorrect time validation.
+  - PDA mismatch.
+- Potential for logic issues if votes are not properly tallied.
+
+General Risks and Vulnerabilities:
+- Signature checks are correctly enforced in critical functions.
+- PDA and owner validation are consistent but depend on correct seeds and account management.
+- Potential race conditions and reentrancy issues if multiple instructions modify shared data simultaneously.
+- Use of unwrap() in certain places (e.g., from_str) might panic if invalid data.
+- No explicit overflow protections in governance points management beyond checked_sub.
+- Overall reliance on correct account management, PDA derivation, and instruction parsing.

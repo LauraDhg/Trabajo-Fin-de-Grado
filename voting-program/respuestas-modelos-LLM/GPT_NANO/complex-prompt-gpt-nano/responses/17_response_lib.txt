@@ -1,0 +1,45 @@
+Function "create_admin":
+- Uses `unwrap()` on `Pubkey::from_str()`, which can cause a panic if the string is invalid.
+- No validation to prevent re-creation of an already initialized admin account, potentially overwriting existing data.
+- Lacks explicit access control; any signer can create the admin account if not previously initialized.
+
+Function "update_admin":
+- Reads `admin_account_dao.data` without checking if the account data size matches expected, risking incorrect deserialization.
+- No validation to ensure only authorized personnel can perform the update, leading to potential unauthorized modifications.
+- Uses `Clock::from_account_info()` without handling potential errors properly, risking panics if the sysvar is incorrect.
+
+Function "create_account":
+- Uses `unwrap()` on `try_to_vec()?.len()`, which could panic if serialization fails.
+- No check to verify account data size matches the expected size before deserialization, risking data corruption.
+- Potentially vulnerable to re-creation if the lamports check does not conclusively prevent re-initialization.
+- No explicit access control; any signer can invoke it if conditions are met.
+
+Function "open_proposal":
+- Unpacks `title` and `description` directly, which could include malicious or oversized data inputs.
+- Uses `unwrap()` on serialization size calculations, risking panic if serialization fails.
+- No validation to prevent duplicate proposals with the same title, potentially overwriting or duplicating.
+- Lacks access control; any signed user can create proposals.
+
+Function "vote_process":
+- Uses `try_from_slice()` without comprehensive error handling, risking panics on invalid data.
+- Does not verify that `vote_record_account` is already uninitialized before creating a new vote record (though it checks lamports > 0).
+- Potentially allows multiple votes from the same user by creating multiple vote records; no measure to prevent duplicate voting on the same proposal.
+- Serializes vote and proposal data without atomic checks ensuring consistency.
+
+Function "manage_governance_points":
+- Uses `try_from_slice()` without validating data size or integrity before mutation.
+- Lacks role validation; any account with correct owner can modify governance points, creating potential for unauthorized alterations.
+- No upper or lower bounds on `amount`, risking overflow or negative values if not validated externally.
+- Uses `checked_sub()` which could result in `ArithmeticError` if subtraction underflows, but no custom handling beyond error propagation.
+
+Function "execute_instruction":
+- Relies on `load_current_index()` and `load_instruction_at()` without verifying data size or correctness, risking unsafe access.
+- Does not validate the consistency or correctness of the previous instruction; assumes correctness based on program id.
+- No explicit access control; any signer with required lamports may invoke arbitrary vault instructions.
+- Implements multiple matching branches with no bounds check against `variant_instr`; invalid values return an error, but no sanitization or fallback.
+
+Function "make_decision":
+- Uses `try_from_slice()` for proposal deserialization without confirming size, risking panics.
+- Ensures only owners can execute decisions and that proposals have ended, but lacks explicit checks preventing multiple executions on the same proposal.
+- No mechanism to prevent replay attacks or multiple calls on the same proposal after `executed = true`.
+- Does not verify the integrity of proposal data before making a decision, potentially acting on corrupt data.

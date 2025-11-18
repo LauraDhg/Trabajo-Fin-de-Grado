@@ -1,0 +1,63 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program changes or is redeployed
+- No validation that the returned Pubkey is actually a valid program
+
+Function "send_create_vault_transaction":
+- Uses hardcoded vault program ID without validation
+- No validation of account ownership or program IDs
+- Potential reentrancy risk through CPI calls
+
+Function "send_instr_to_vault_transaction":
+- Missing system program account in CPI for deposit/withdraw operations
+- No validation of vault program ID or account ownership
+- Potential reentrancy risk through CPI calls
+
+Function "process_instruction":
+- No validation that program_id matches expected program ID
+- No access control checks at entry point level
+
+Function "create_admin":
+- Uses create_program_address without proper error handling for bump seeds
+- No validation that system_program is actually the system program
+- Potential rent calculation issues with account size
+
+Function "update_admin":
+- No authorization check beyond current admin signature
+- Allows any admin to transfer admin privileges without additional safeguards
+- No time-based cooldown or multi-sig requirement for admin changes
+
+Function "create_account":
+- Hardcodes initial governance points (10) without configurable mechanism
+- Uses create_program_address without proper error handling
+- No validation that system_program is actually the system program
+
+Function "open_proposal":
+- Fixed 1-hour proposal duration (3600 seconds) without configurability
+- Uses title bytes directly in PDA derivation without length validation
+- No maximum length checks for title and description strings
+
+Function "vote_process":
+- Arithmetic overflow protection only for addition, not for subtraction
+- No check if user has already voted on this proposal
+- Vote weight based on current governance points, which can be manipulated
+
+Function "manage_governance_points":
+- Subtraction operation (instruction=false) lacks overflow protection
+- Admin can arbitrarily modify any user's governance points without restrictions
+- No logging or event emission for governance point changes
+
+Function "execute_instruction":
+- Instruction validation logic is duplicated and inconsistent across variants
+- Uses deprecated load_current_index and load_instruction_at functions
+- Instruction sysvar validation is incomplete and potentially insecure
+
+Function "make_decision":
+- Proposal execution only checks time limit, no quorum or threshold requirements
+- Admin can execute any proposal regardless of vote distribution
+- No validation that proposal hasn't already been executed
+
+Function "action_as_str":
+- No security vulnerabilities identified (helper function)
+
+Function "From<MyError> for ProgramError":
+- No security vulnerabilities identified (trait implementation)

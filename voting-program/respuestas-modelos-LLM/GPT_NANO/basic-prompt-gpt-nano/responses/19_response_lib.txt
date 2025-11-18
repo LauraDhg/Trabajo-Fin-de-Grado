@@ -1,0 +1,96 @@
+Function "send_create_vault_transaction":
+- Constructs and sends a create vault instruction to an external vault program
+- Prepares instruction data including variant, pubkey, and bump
+- Sets the accounts expected by the vault program
+- Uses invoke_signed to perform a cross-program invocation with signed seeds
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends an instruction to deposit or withdraw from the vault
+- Builds instruction data with variant, amount, and pubkey
+- Sets the necessary accounts
+- Performs invoke_signed with the vault seeds
+
+Function "process_instruction":
+- Entry point for the program, dispatches based on the instruction unpacked
+- Calls specific functions like create_admin, update_admin, etc. based on instruction type
+
+Function "create_admin":
+- Creates and initializes an admin account associated with the caller
+- Checks signer signature and lamports for account existence
+- Derives program address for admin account
+- Checks the clock sysvar
+- Uses invoke_signed to create the account with rent exemption
+- Serializes admin data to account
+
+Function "update_admin":
+- Updates the admin account with a new admin ID and timestamp
+- Checks owner, signer, and correct admin account
+- Deserializes, updates, and serializes back admin data
+- Checks clock sysvar
+
+Function "create_account":
+- Creates a user account with a specified bump
+- Checks signer and lamports
+- Derives program address for user account
+- Uses invoke_signed to allocate account with rent exemption
+- Initializes user account data and serializes it
+
+Function "open_proposal":
+- Creates a proposal account with provided title and description
+- Checks owner, signer, and account lamports
+- Derives program address for proposal
+- Loads and verifies user account
+- Sets start and end times based on system clock
+- Uses invoke_signed to create proposal account
+- Serializes proposal data
+
+Function "vote_process":
+- Processes a vote on a proposal
+- Checks owner, signer, and vote record account
+- Derives program address for vote record
+- Loads and verifies proposal and user accounts
+- Checks if voting period is active based on clock
+- Updates proposal votes based on vote answer and user's governance points
+- Creates vote record account with invoke_signed
+- Serializes vote, proposal, and user data
+
+Function "manage_governance_points":
+- Adjusts governance points of a user by adding or subtracting
+- Checks owner, signer, and correct admin privileges
+- Loads admin and user accounts
+- Updates user governance points accordingly
+- Serializes updated user data
+
+Function "execute_instruction":
+- Executes actions based on variant instruction (create vault, deposit, withdraw)
+- Checks owner, signer, and account lamports
+- Derives program addresses for admin or user accounts as needed
+- Validates and updates accounts accordingly
+- Checks vault program ID and instructions sysvar
+- Loads previous instructions if any
+- Calls send_create_vault_transaction or send_instr_to_vault_transaction
+
+Function "make_decision":
+- Finalizes a proposal decision
+- Checks owner, signer, and accounts
+- Loads admin and proposal accounts
+- Checks clock to ensure proposal period has ended
+- Determines and logs whether the proposal was approved or denied
+- Marks proposal as executed and serializes it
+
+Potential Risks and Vulnerabilities:
+- Unwrap errors on str parsing in "vault_program_id" can panic if str is invalid
+- No explicit checks on account sizes before deserialization
+- Potential reentrancy issues if external vault program is malicious or buggy
+- No authorization beyond signature checks for critical functions (like transfer of governance points)
+- Check for account ownership is minimal; some functions assume accounts are correctly initialized
+- Temporal logic relies on clock sysvar; if sysvar is manipulated or delayed, timing checks could be bypassed
+- Use of unchecked conversions with try_into().unwrap() may panic on unexpected data
+- No explicit limit on proposal or vote account creation, could lead to DOS if many accounts are created
+- No rate limiting or validation to prevent spam or malicious actions
+- If the vault program has vulnerabilities, the invoke_signed calls could be exploited
+- Missing explicit checks for duplicate votes or multiple voting attempts
+- No explicit encryption or privacy measures for sensitive data (titles, descriptions)
+- Pseudo-randomness and entropy from sysvar unchecked, but not directly relevant here
+- If "instruction" enum variants are expanded without proper handling, might cause incorrect behavior
+- No fallback handling for "MyError" conversions other than for TimeLimit, which may cause issues if other errors occur

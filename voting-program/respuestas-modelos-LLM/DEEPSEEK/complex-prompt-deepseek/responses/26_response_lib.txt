@@ -1,0 +1,70 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program changes or is redeployed
+- No validation that the returned Pubkey is actually a valid program address
+
+Function "action_as_str":
+- No security vulnerabilities identified in this helper function
+
+Function "send_create_vault_transaction":
+- Missing proper validation of account ownership and types
+- No checks to ensure vault_program is actually a program account
+- Potential reentrancy risk through CPI calls
+- No validation that the provided bump seed is correct
+
+Function "send_instr_to_vault_transaction":
+- Missing proper validation of account ownership and types
+- No checks to ensure vault_program is actually a program account
+- Potential reentrancy risk through CPI calls
+- No validation that the provided bump seed is correct
+
+Function "process_instruction":
+- No input validation on instruction_data before unpacking
+- Potential denial-of-service if malformed instruction data is provided
+
+Function "create_admin":
+- Uses deprecated try_from_slice_unchecked pattern (should use try_from_slice)
+- Missing rent exemption check before account creation
+- No validation that system_program is actually the system program
+- Potential signature verification bypass if admin_payer is not properly validated
+
+Function "update_admin":
+- Missing access control checks beyond signature verification
+- No validation that the new_admin address is valid
+- Potential privilege escalation if admin validation is bypassed
+
+Function "create_account":
+- Hardcoded initial governance points (10) without validation
+- Missing rent exemption check before account creation
+- No validation that system_program is actually the system program
+
+Function "open_proposal":
+- Uses title as PDA seed which could lead to collisions if titles are similar
+- Fixed 1-hour voting period without configurability
+- Missing rent exemption check before account creation
+- No validation that system_program is actually the system program
+
+Function "vote_process":
+- Missing check for duplicate votes (user can vote multiple times)
+- No validation that user has sufficient governance points
+- Missing rent exemption check before account creation
+- Arithmetic overflow risk in vote counting (though checked_add is used)
+- Potential double voting if user acquires more governance points
+
+Function "manage_governance_points":
+- Missing access control beyond admin signature
+- Unsafe subtraction without overflow check (user.amount_governance_points -= amount)
+- Potential arbitrary governance point manipulation by admin
+- No validation that amount is reasonable or within bounds
+
+Function "execute_instruction":
+- Complex control flow with multiple validation paths
+- Uses instruction sysvar for validation which can be manipulated
+- Missing proper validation of vault program account
+- Potential reentrancy through CPI calls
+- Inconsistent validation logic across different instruction variants
+
+Function "make_decision":
+- Missing validation that proposal hasn't already been executed
+- No threshold configuration for proposal approval
+- Time validation only checks if current time is after end_time
+- Missing validation that all votes have been properly counted

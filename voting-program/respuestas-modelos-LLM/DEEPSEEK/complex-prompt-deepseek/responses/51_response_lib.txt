@@ -1,0 +1,72 @@
+Function "vault_program_id":
+- Hardcoded program ID which may be incorrect if the vault program is redeployed
+- Uses unwrap() which can panic if the string is invalid
+
+Function "action_as_str":
+- No vulnerabilities identified
+
+Function "send_create_vault_transaction":
+- Missing validation of account ownership for vault_program and system_program
+- Uses clone() on account infos which may be unnecessary
+- No validation that vault_program is the expected program
+
+Function "send_instr_to_vault_transaction":
+- Missing validation of account ownership for vault_program
+- No validation that vault_program is the expected program
+- Uses clone() on account infos which may be unnecessary
+
+Function "process_instruction":
+- No vulnerabilities identified
+
+Function "create_admin":
+- Uses create_program_address without verifying the bump seed matches
+- Checks lamports > 0 for account initialization but should use data length or initialized flag
+- Missing rent exemption check after account creation
+- No validation that system_program is actually the system program
+
+Function "update_admin":
+- Missing validation that clock_sysvar is actually the clock sysvar
+- No access control beyond admin check (no timelocks or multi-sig)
+- Uses create_program_address without verifying the bump seed matches
+
+Function "create_account":
+- Uses create_program_address without verifying the bump seed matches
+- Missing rent exemption check after account creation
+- No validation that system_program is actually the system program
+- Hardcoded initial governance points (10) without configuration
+
+Function "open_proposal":
+- Uses create_program_address without verifying the bump seed matches
+- Missing rent exemption check after account creation
+- No validation that system_program is actually the system program
+- No validation that clock_sysvar is actually the clock sysvar
+- Hardcoded proposal duration (1 hour) without configuration
+
+Function "vote_process":
+- Uses create_program_address without verifying the bump seed matches
+- Missing rent exemption check after account creation
+- No validation that system_program is actually the system program
+- No validation that clock_sysvar is actually the clock sysvar
+- Potential arithmetic overflow in vote counting (unchecked addition)
+- User can vote multiple times by creating multiple vote records
+
+Function "manage_governance_points":
+- Uses create_program_address without verifying the bump seed matches
+- Admin can arbitrarily modify user points without restrictions
+- No validation of amount limits or rate limiting
+- Potential arithmetic underflow in subtraction (checked but error handling is basic)
+
+Function "execute_instruction":
+- Uses create_program_address without verifying the bump seed matches
+- No validation that ix_sysvar is actually the instructions sysvar
+- No validation that vault_program is actually the expected vault program
+- No validation that system_program is actually the system program
+- Relies on previous instruction check which can be bypassed
+- Missing proper access control for different instruction variants
+
+Function "make_decision":
+- Uses create_program_address without verifying the bump seed matches
+- No validation that clock_sysvar is actually the clock sysvar
+- Admin can execute decision regardless of vote outcome (just logs result)
+- Missing actual execution logic for approved proposals
+- No validation that proposal hasn't already been executed

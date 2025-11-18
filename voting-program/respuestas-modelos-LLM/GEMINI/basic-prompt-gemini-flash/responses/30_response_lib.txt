@@ -1,0 +1,78 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for the vault program.
+
+Function "process_instruction":
+- Unpacks the instruction data into an `InstructionFormat` enum.
+- Matches on the enum variant to call the appropriate handler function.
+- This function serves as the main dispatcher for the program's instructions.
+
+Function "create_admin":
+- Creates an admin account.
+- Checks if the `admin_payer` is a signer.
+- Checks if the admin account has already been initialized.
+- Derives the PDA for the admin account.
+- Creates the admin account using `invoke_signed` and the `system_instruction::create_account` instruction.
+- Serializes the `Admin_Account` struct into the newly created account.
+
+Function "update_admin":
+- Updates the admin account with a new admin.
+- Checks if the `admin_payer` is a signer.
+- Checks if the admin account is owned by the program.
+- Deserializes the `Admin_Account` struct from the account data.
+- Checks if the current admin is the one attempting to update the account.
+- Updates the admin id and last update timestamp.
+- Serializes the updated `Admin_Account` struct back into the account data.
+
+Function "create_account":
+- Creates a user account.
+- Checks if the `user_payer` is a signer.
+- Checks if the user account has already been initialized.
+- Derives the PDA for the user account.
+- Creates the user account using `invoke_signed` and the `system_instruction::create_account` instruction.
+- Serializes the `User_Account` struct into the newly created account.
+
+Function "open_proposal":
+- Creates a proposal account.
+- Checks if the `user_payer` is a signer.
+- Checks if the proposal account has already been initialized.
+- Derives the PDA for the proposal account.
+- Deserializes the user account.
+- Checks if the user account is of the correct type.
+- Creates the proposal account using `invoke_signed` and the `system_instruction::create_account` instruction.
+- Serializes the `Proposal` struct into the newly created account.
+
+Function "vote_process":
+- Processes a user's vote on a proposal.
+- Checks if the `user_payer` is a signer.
+- Checks if the vote record account has already been initialized.
+- Derives the PDA for the vote record account.
+- Deserializes the proposal and user accounts.
+- Checks if the user account is of the correct type.
+- Creates a vote record account using `invoke_signed` and the `system_instruction::create_account` instruction.
+- Serializes the `Vote_Record` struct into the newly created account.
+- Updates the proposal's vote counts based on the user's vote and governance points.
+
+Function "manage_governance_points":
+- Manages the governance points of a user account.
+- Checks if the `admin_payer` is a signer.
+- Deserializes the admin and user accounts.
+- Checks if the admin account has admin privileges.
+- Adds or subtracts governance points from the user account based on the `instruction` boolean.
+- Serializes the updated `User_Account` struct back into the account data.
+- Returns an error if the subtraction results in an arithmetic underflow.
+
+Function "execute_instruction":
+- Executes an instruction on the vault program.
+- Checks if the `user_payer` is a signer.
+- Performs different checks based on the `variant_instr`.
+- Loads the previous instruction from the instruction sysvar.
+- Calls `send_create_vault_transaction` or `send_instr_to_vault_transaction` based on the `variant_instr`.
+
+Function "make_decision":
+- Finalizes a proposal based on the votes.
+- Checks if the `admin_payer` is a signer.
+- Deserializes the admin and proposal accounts.
+- Checks if the admin account has admin privileges.
+- Determines whether the proposal is approved based on the vote counts.
+- Sets the `executed` flag on the proposal.
+- Serializes the updated `Proposal` struct back into the account data.

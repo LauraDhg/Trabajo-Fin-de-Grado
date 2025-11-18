@@ -1,0 +1,48 @@
+Function "vault_program_id":
+- Hardcoded program ID can be changed, leading to unexpected behavior.
+
+Function "process_instruction":
+- This function is the entry point of the program and matches instructions to their corresponding handlers.
+- A vulnerability could arise if InstructionFormat::unpack() fails to correctly deserialize the instruction data, potentially leading to unexpected behavior.
+
+Function "create_admin":
+- Checks for admin_payer signature, but no checks on admin_account_dao lamports before creation.
+- Creates Admin_Account, serializes, and stores it. No checks on the size of the account data being written to.
+
+Function "update_admin":
+- Checks admin_payer signature and admin_account_dao ownership.
+- Updates admin_id and last_update, serializes, and stores it. No checks on the size of the account data being written to.
+
+Function "create_account":
+- Checks user_payer signature and user_account_dao lamports.
+- Creates User_Account with initial governance points and serializes it.
+
+Function "open_proposal":
+- Checks user_payer signature and user_account_dao ownership.
+- Computes start and end times. End time is set to 1 hour after start.
+- Creates a Proposal account and stores proposal data in it. No checks on the size of the account data being written to.
+
+Function "vote_process":
+- Checks user_payer signature and ownership of user_account_dao and proposal_account.
+- Reads proposal and user account data, updates vote counts, and creates a vote_record account.
+- No overflow checks when adding votes.
+- Serializes proposal and user accounts after modification. No checks on the size of the account data being written to.
+
+Function "manage_governance_points":
+- Checks admin_payer signature and ownership of admin_account_dao and user_account_dao.
+- Adds or subtracts governance points from a user account.
+- Uses checked_sub to prevent underflow. No overflow protection when adding points.
+
+Function "execute_instruction":
+- Checks user_payer signature and user_account_dao ownership.
+- It performs different actions based on variant_instr (0, 1, or 2).
+- The validations based on bump seeds in the match statement are not correctly implemented. They validate the user_account_dao key against what appears to be hardcoded PDA derivation logic for both admin and user accounts based on different instruction variants and bumps, which makes no sense.
+- Loads previous instruction using ix_sysvar and checks if it came from the vault program.
+- Calls send_create_vault_transaction or send_instr_to_vault_transaction based on variant_instr.
+- The vulnerability is that an attacker can bypass the seed check by providing different values for the instruction variant, which skips the validation.
+
+Function "make_decision":
+- Checks admin_payer signature and ownership of admin_account_dao and proposal_account.
+- Checks if current time is after proposal end time.
+- Determines if proposal is approved based on yes/no votes.
+- Sets proposal.executed to true and serializes the updated proposal data. No checks on the size of the account data being written to.

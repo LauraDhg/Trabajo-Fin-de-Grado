@@ -1,0 +1,74 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for the vault program
+- Uses from_str and unwrap which could panic if the string is invalid
+
+Function "action_as_str":
+- Converts a u8 action code to a string representation
+- Returns "Create" for 0, "Deposit" for 1, "Withdraw" for 2, "Unknown" for other values
+
+Function "send_create_vault_transaction":
+- Constructs and sends a cross-program invocation to create a vault
+- Uses invoke_signed with vault seeds for PDA signing
+- Creates instruction data with variant_instr, id_pubkey, and vault_bump
+- Includes system program in account metas
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends a cross-program invocation for vault operations
+- Uses invoke_signed with vault seeds for PDA signing
+- Creates instruction data with variant_instr, amount, and id_pubkey
+- Does not include system program in account metas
+
+Function "process_instruction":
+- Main entry point that unpacks instruction data and routes to appropriate handler
+- Matches on InstructionFormat enum variants to call corresponding functions
+- Handles all program instruction types
+
+Function "create_admin":
+- Creates an admin account PDA with "admin" seeds
+- Checks for signer and account initialization status
+- Stores admin_id and current timestamp
+- Uses invoke_signed to create account with system program
+
+Function "update_admin":
+- Updates the admin account with a new admin public key
+- Verifies account ownership and signer status
+- Updates last_update timestamp with current time
+- Validates PDA address matches expected derivation
+
+Function "create_account":
+- Creates a user account PDA with "userAccount" seeds including user pubkey
+- Initializes user with 10 governance points
+- Uses invoke_signed to create account with system program
+- Validates PDA derivation matches expected address
+
+Function "open_proposal":
+- Creates a proposal account PDA with "proposal" seeds including title
+- Sets start time to current time and end time to 1 hour later
+- Initializes vote counts to zero and executed to false
+- Uses invoke_signed to create account with system program
+
+Function "vote_process":
+- Processes a vote on a proposal
+- Creates a vote record account PDA
+- Checks if proposal is still active based on end time
+- Adds user's governance points to yes/no votes based on vote_answer
+- Updates proposal vote counts and serializes changes
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user account
+- Requires admin signer authorization
+- Uses checked_sub to prevent underflow
+- Updates user account with new governance points value
+
+Function "execute_instruction":
+- Executes cross-program invocations to vault program
+- Validates user account type based on instruction variant
+- Checks previous instruction to verify vault program interaction
+- Routes to appropriate send transaction function based on variant_instr
+
+Function "make_decision":
+- Finalizes a proposal after voting period ends
+- Checks if current time is after proposal end time
+- Compares yes_votes vs no_votes to determine outcome
+- Marks proposal as executed regardless of outcome
+- Requires admin authorization to execute

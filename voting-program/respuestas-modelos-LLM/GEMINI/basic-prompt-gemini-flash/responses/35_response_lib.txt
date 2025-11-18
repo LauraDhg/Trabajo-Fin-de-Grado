@@ -1,0 +1,88 @@
+```
+Function "vault_program_id":
+- Returns a hardcoded Pubkey.
+
+Function "send_create_vault_transaction":
+- Sends a CPI (Cross-Program Invocation) to the vault program to create a vault.
+- Takes the admin payer, the admin account, the vault account, the vault program, and the system program as accounts.
+- Signs the CPI with the vault's seeds.
+
+Function "send_instr_to_vault_transaction":
+- Sends a CPI to the vault program to execute an instruction on the vault.
+- Takes the user payer, the user account, the vault account, and the vault program as accounts.
+- Signs the CPI with the vault's seeds.
+
+Function "process_instruction":
+- The main entry point of the program.
+- Unpacks the instruction data using `InstructionFormat::unpack`.
+- Matches the instruction and calls the corresponding function.
+
+Function "create_admin":
+- Creates an admin account.
+- Checks if the admin payer is a signer.
+- Checks if the admin account is already initialized.
+- Derives the admin PDA (Program Derived Address).
+- Creates the admin account using `system_instruction::create_account`.
+- Serializes the admin account data.
+
+Function "update_admin":
+- Updates the admin account with a new admin.
+- Checks if the admin account belongs to the program.
+- Checks if the admin payer is a signer.
+- Derives the admin PDA.
+- Checks if the current admin is the payer.
+- Updates the admin account data.
+
+Function "create_account":
+- Creates a user account.
+- Checks if the user payer is a signer.
+- Checks if the account is already initialized.
+- Derives the user PDA.
+- Creates the user account using `system_instruction::create_account`.
+- Serializes the user account data.
+
+Function "open_proposal":
+- Opens a new proposal.
+- Checks if the user account belongs to the program.
+- Checks if the user payer is a signer.
+- Checks if the proposal account is already initialized.
+- Derives the proposal PDA.
+- Creates the proposal account using `system_instruction::create_account`.
+- Serializes the proposal data.
+
+Function "vote_process":
+- Processes a vote for a proposal.
+- Checks if the user and proposal accounts belong to the program.
+- Checks if the user payer is a signer.
+- Checks if the vote record account is already initialized.
+- Derives the vote PDA.
+- Checks if the proposal is still open.
+- Updates the proposal's vote counts.
+- Creates the vote record account using `system_instruction::create_account`.
+- Serializes the vote record and proposal data.
+
+Function "manage_governance_points":
+- Manages the governance points of a user.
+- Checks if the admin and user accounts belong to the program.
+- Checks if the admin payer is a signer.
+- Derives the admin PDA.
+- Checks if the current admin is the payer.
+- Adds or subtracts governance points from the user's account.
+
+Function "execute_instruction":
+- Executes an instruction to interact with a Vault program.
+- Checks the account ownership and signer status.
+- Validates the admin or user based on the instruction type.
+- Checks if the previous instruction was a Vault program confirmation (potentially vulnerable).
+- Sends a CPI to the Vault program based on the instruction type.
+
+Function "make_decision":
+- Makes a decision on a proposal.
+- Checks if the admin account and proposal accounts belong to the program.
+- Checks if the admin payer is a signer.
+- Derives the admin PDA.
+- Checks if the current admin is the payer.
+- Checks if the proposal is still active.
+- Determines if the proposal is approved or denied based on the vote counts.
+- Updates the proposal's executed status.
+```

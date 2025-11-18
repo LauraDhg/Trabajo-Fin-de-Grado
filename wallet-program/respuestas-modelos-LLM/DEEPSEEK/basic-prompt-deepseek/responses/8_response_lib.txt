@@ -1,0 +1,48 @@
+Function "process_instruction":
+- Unpacks instruction data using InstructionFormat::unpack
+- Matches instruction variants to appropriate handler functions
+- Routes CreateAccount to initialize_wallet_account
+- Routes IncreaseAmount to deposit_amount with amount parameter
+- Routes WithdrawAmount to withdraw_amount with amount parameter
+- Routes TransferAmount to transfer_amount with amount parameter
+
+Function "initialize_wallet_account":
+- Creates a PDA wallet account using find_program_address with "wallet" prefix and user key
+- Checks if system_program account is valid
+- Validates wallet account has zero lamports before initialization
+- Creates Wallet struct with zero amount and initialized flag
+- Calculates required rent using Rent::get() and wallet serialized length
+- Uses invoke_signed with PDA bump seed for account creation
+- Serializes initialized wallet data into account storage
+- Returns error if account already has lamports (already initialized)
+
+Function "deposit_amount":
+- Increases wallet amount by specified value
+- Validates wallet account is owned by the program
+- Deserializes wallet data from account storage
+- Checks if wallet is initialized before operation
+- Uses checked_add to prevent integer overflow
+- Serializes updated wallet data back to account
+- Returns arithmetic error on overflow
+
+Function "withdraw_amount":
+- Decreases wallet amount by specified value
+- Validates wallet account is owned by the program
+- Deserializes wallet data from account storage
+- Checks if wallet is initialized before operation
+- Validates sufficient funds before withdrawal
+- Uses checked_sub to prevent integer underflow
+- Serializes updated wallet data back to account
+- Returns insufficient funds error if amount > current balance
+- Returns arithmetic error on underflow
+
+Function "transfer_amount":
+- Transfers amount from source wallet to destination wallet
+- Validates both wallet accounts are owned by the program
+- Deserializes both source and destination wallet data
+- Checks both wallets are initialized before operation
+- Adds amount to destination wallet first (potential reentrancy issue)
+- Validates source wallet has sufficient funds
+- Subtracts amount from source wallet
+- Serializes both updated wallets back to their accounts
+- Vulnerable to race conditions as it doesn't use proper atomic operations

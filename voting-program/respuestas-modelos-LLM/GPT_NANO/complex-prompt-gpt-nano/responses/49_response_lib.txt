@@ -1,0 +1,46 @@
+Function "create_admin": 
+- Checks if admin_account_dao has non-zero lamports to prevent re-initialization; may prevent legitimate re-allocations.
+- Uses `unwrap()` on `Pubkey::from_str`, which can panic if the string is invalid, leading to potential runtime panics.
+- Does not verify if the caller is authorized to create or initialize an admin account, which might pose a permission risk.
+
+Function "update_admin": 
+- Does not verify that the caller is the current admin, enabling any signer with correct signatures to update admin without authorization check.
+- Uses `unwrap()` on `try_from_slice`, risking panic if the data format is incorrect or corrupted.
+- Checks owner of admin_account_dao against `program_id`, but does not check the signer’s authority against current admin, exposing a privilege escalation risk.
+
+Function "create_account": 
+- Checks lamports for > 0 to prevent reinitialization but does not verify if the caller is authorized to create accounts for others.
+- Uses `unwrap()` on `try_from_slice`, risking panic if data is malformed.
+- Uses `unwrap()` for `try_into()` conversions, risking panics if account size calculations are incorrect.
+- Does not verify that the caller has authority over the specific account being created, potentially allowing unauthorized account creation.
+
+Function "open_proposal": 
+- Does not verify if the proposer is authorized to open the proposal; no permission checks.
+- Uses `unwrap()` on `try_from_slice`, which risks panics if account data is corrupted.
+- Uses `unwrap()` on `try_into()` conversions, which could panic on size mismatch.
+- Accepts arbitrary strings for title and description; no length validations, risking buffer overflows or oversized storage.
+
+Function "vote_process": 
+- Does not prevent double voting explicitly; relies on lamports being zero to check account initialization but does not prevent vote manipulation.
+- Uses `unwrap()` on `try_from_slice({})`, risking panic on malformed data.
+- Uses `unwrap()` on `try_into()` for size conversions, risking panics.
+- Assumes mutable access to proposal and user accounts without concurrent safety considerations.
+- Does not verify if voting period is active beyond current time, but relies on proposal end_time.
+
+Function "manage_governance_points": 
+- Does not verify that the caller has admin privileges or is authorized to change points; only owner check is performed.
+- Uses `unwrap()` on `try_from_slice`, risking panics if data is malformed.
+- Arithmetic operations on governance points are unchecked; subtracting more points than exist can cause underflow panic.
+- Uses `unwrap()` during serialization, risking panics if data serialization fails.
+
+Function "execute_instruction": 
+- Does not verify whether the user_payer has appropriate permissions to execute certain instructions; only owner checks are performed.
+- Uses `unwrap()` on `try_borrow_data()` and `try_from_slice`, risking runtime panics.
+- Validation of previous instruction relies on instruction history but can be manipulated if instruction sysvar is inconsistent.
+- No checks against re-entrancy or malicious instruction sequences, potentially exposing re-entrancy vulnerabilities.
+
+Function "make_decision": 
+- No check to ensure only authorized accounts can execute decisions; anyone with signer rights could invoke.
+- Uses `unwrap()` on `try_from_slice`, risking panic if data is malformed.
+- No validation that the proposal is in a state suitable for decision making, e.g., whether voting has concluded.
+- Uses time comparison without considering potential clock skew or clock sysvar inaccuracies, which may lead to incorrect approvals or denials.

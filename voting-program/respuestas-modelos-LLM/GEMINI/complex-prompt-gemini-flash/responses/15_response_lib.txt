@@ -1,0 +1,79 @@
+Function "vault_program_id":
+- Hardcoded program ID, which is generally not recommended for production code due to lack of flexibility and potential upgrade issues.
+
+Function "action_as_str":
+- This function is safe as it only returns a string literal based on the input.
+
+Function "send_create_vault_transaction":
+- It constructs and invokes a cross-program invocation (CPI) to the vault program.
+- Uses `invoke_signed` with seeds related to the vault.
+- The function's parameters include all necessary accounts to make the invoked call safe.
+
+Function "send_instr_to_vault_transaction":
+- It constructs and invokes a cross-program invocation (CPI) to the vault program.
+- Uses `invoke_signed` with seeds related to the vault.
+- The function's parameters include all necessary accounts to make the invoked call safe.
+
+Function "process_instruction":
+- Entrypoint of the program.
+- Unpacks the instruction data using `InstructionFormat::unpack`.
+- Calls different functions based on the unpacked instruction.
+
+Function "create_admin":
+- Creates an admin account.
+- Checks if the admin payer is a signer.
+- Checks if the admin account has already been initialized.
+- Derives a program address (PDA) for the admin account.
+- Creates the admin account using `invoke_signed`.
+- Serializes the admin account data.
+
+Function "update_admin":
+- Updates the admin account with a new admin.
+- Checks if the admin payer is a signer.
+- Checks if the account owner is the program.
+- Checks if the admin account passed is the correct PDA.
+- Checks if the admin payer is the current admin.
+- Updates the admin account data.
+
+Function "create_account":
+- Creates a user account.
+- Checks if the user payer is a signer.
+- Checks if the user account has already been initialized.
+- Derives a PDA for the user account.
+- Creates the user account using `invoke_signed`.
+- Serializes the user account data.
+
+Function "open_proposal":
+- Allows a user to open a new proposal.
+- Checks if the user payer is a signer.
+- Checks if the proposal account has already been initialized.
+- Derives a PDA for the proposal account using the proposal title.
+- Sets a fixed proposal duration of 1 hour.
+
+Function "vote_process":
+- Allows a user to vote on a proposal.
+- Checks if the user payer is a signer.
+- Checks if the proposal's voting period has ended.
+- Derives a PDA for the vote record account.
+- Updates the proposal's vote counts.
+- Creates the vote record account using `invoke_signed`.
+
+Function "manage_governance_points":
+- Allows the admin to add or subtract governance points from a user's account.
+- Checks if the admin payer is a signer.
+- Checks if the admin payer is the current admin.
+- Adds or subtracts governance points based on the `instruction` flag.
+
+Function "execute_instruction":
+- This function seems to be designed to execute different instructions related to a vault program.
+- It checks if the user_payer is a signer and performs some checks based on the `variant_instr`.
+- Uses `load_current_index` and `load_instruction_at` to introspect the current and previous instructions, which adds complexity and potential attack surface.
+- Performs CPI to another program ("vault_program") based on `variant_instr`.
+- The checks performed in the match statement only validate that the user account matches the expected PDA depending on the instruction and does not enforce any authorization policy based on the instruction being executed. For example, any user could call the instruction "CREAR VAULT" if they provide the correct PDA derived from admin.
+
+Function "make_decision":
+- Allows the admin to execute a proposal after the voting period has ended.
+- Checks if the admin payer is a signer.
+- Checks if the admin payer is the current admin.
+- Determines if the proposal is approved based on the vote counts.
+- Sets the proposal's `executed` flag to true.

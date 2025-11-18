@@ -1,0 +1,47 @@
+Function "process_instruction":
+- Unpacks the instruction data into an `InstructionFormat` enum.
+- Matches the unpacked instruction and calls the appropriate handler function: `initialize_wallet_account`, `deposit_amount`, `withdraw_amount`, or `transfer_amount`.
+
+Function "initialize_wallet_account":
+- Initializes a new wallet account.
+- Retrieves accounts from the `accounts` slice using an iterator.
+- Checks if the provided system program account is the actual system program.
+- Derives the PDA (Program Derived Address) for the wallet account.
+- Checks if the provided wallet account matches the derived PDA.
+- Checks if the wallet account has already been initialized by checking lamports.
+- Creates a `Wallet` struct with initial values (amount: 0, initialized: true).
+- Calculates the rent-exempt minimum balance for the wallet account.
+- Invokes the system program to create the account, using the derived PDA as the account address and passing the wallet bump seed.
+- Serializes the `Wallet` struct into the wallet account's data.
+
+Function "deposit_amount":
+- Deposits funds into the wallet account.
+- Retrieves the user and wallet accounts from the `accounts` slice.
+- Checks if the wallet account's owner is the program itself.
+- Derives the PDA for the wallet account and validates if it matches.
+- Deserializes the `Wallet` struct from the wallet account's data.
+- Checks if the wallet has been initialized.
+- Increases the `amount` field of the `Wallet` struct by the provided amount.
+- Serializes the updated `Wallet` struct back into the wallet account's data.
+
+Function "withdraw_amount":
+- Withdraws funds from the wallet account.
+- Retrieves the user and wallet accounts.
+- Validates the wallet account's owner and PDA.
+- Deserializes the `Wallet` struct.
+- Checks if the wallet is initialized.
+- Checks for sufficient funds before withdrawing.
+- Subtracts the specified amount from the `Wallet`'s `amount` field, using `checked_sub` to prevent underflow. Returns an ArithmeticError if an underflow happens.
+- Serializes the updated `Wallet` struct.
+
+Function "transfer_amount":
+- Transfers funds from one wallet to another.
+- Retrieves accounts: user, source wallet, destination user, and destination wallet.
+- Checks if the source and destination wallet account owners are the program.
+- Derives the PDAs for both source and destination wallets and validates.
+- Deserializes both source and destination `Wallet` structs.
+- Checks if both wallets are initialized.
+- Adds the transfer amount to the destination wallet's amount without checking for overflow.
+- Checks if the source wallet has sufficient funds.
+- Subtracts the amount from the source wallet's amount, using `checked_sub` to prevent underflow. Returns an ArithmeticError if an underflow happens.
+- Serializes both updated `Wallet` structs back into their respective account data.

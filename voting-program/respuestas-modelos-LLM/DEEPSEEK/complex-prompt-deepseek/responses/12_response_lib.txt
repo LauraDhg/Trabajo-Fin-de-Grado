@@ -1,0 +1,58 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program changes or is redeployed
+- No validation that the provided program ID is correct or owned by expected program
+
+Function "send_create_vault_transaction":
+- Uses hardcoded seeds "vault" which may conflict with other programs using same seeds
+- No validation that vault_account is derived from expected seeds
+- Missing validation that vault_program is the expected program
+
+Function "send_instr_to_vault_transaction":
+- Missing system_program account in instruction accounts for deposit/withdraw operations
+- No validation that vault_account is properly derived
+- Missing rent exemption checks for vault operations
+
+Function "process_instruction":
+- No access control validation at the entry point level
+- Missing validation that program_id matches expected program ID
+
+Function "create_admin":
+- Uses create_program_address without verifying the bump seed is correct
+- Missing validation that admin_account_dao is empty/uninitialized beyond lamports check
+- No check that system_program is actually the system program
+
+Function "update_admin":
+- Missing validation that the current admin is the signer (allows any signer to update admin)
+- No access control - any signer can change the admin
+- Missing validation that new_admin is a valid pubkey
+
+Function "create_account":
+- Hardcodes 10 governance points without any minting mechanism
+- Missing validation that system_program is the actual system program
+- No prevention of duplicate user accounts
+
+Function "open_proposal":
+- Uses title as part of PDA seeds which could cause collisions with similar titles
+- Fixed 1-hour duration (3600 seconds) without configurability
+- Missing validation that user has sufficient governance points to create proposal
+
+Function "vote_process":
+- Allows multiple votes from same user by creating new vote record each time
+- No check if user has already voted on this proposal
+- Missing validation that vote_record_account is empty/uninitialized
+
+Function "manage_governance_points":
+- Admin can arbitrarily add/subtract any amount without limits
+- No validation that admin is authorized beyond being a signer
+- Missing overflow/underflow protection beyond checked operations
+
+Function "execute_instruction":
+- Complex branching logic with multiple security critical paths
+- Uses user_bump parameter for different purposes (admin validation in some cases, user validation in others)
+- Missing proper validation of vault_account derivation
+- Instruction sysvar check is incomplete and doesn't prevent replay attacks
+
+Function "make_decision":
+- Allows any admin to execute decision without proper authorization
+- Missing validation that proposal hasn't already been executed
+- No threshold or quorum requirements for proposal execution

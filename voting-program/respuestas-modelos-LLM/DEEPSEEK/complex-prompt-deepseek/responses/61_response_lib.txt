@@ -1,0 +1,62 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program changes or is redeployed
+- No validation that the returned Pubkey corresponds to an actual deployed program
+
+Function "send_create_vault_transaction":
+- Missing validation of account ownership and program IDs
+- Potential for incorrect account ordering in cross-program invocation
+- No validation that vault_bump is correct for the generated PDA
+
+Function "send_instr_to_vault_transaction":
+- Missing system program account in CPI accounts for vault operations
+- No validation of account ownership before invocation
+- Potential for incorrect account ordering in cross-program invocation
+
+Function "process_instruction":
+- No input validation on instruction data before unpacking
+- No access control checks before routing to specific functions
+
+Function "create_admin":
+- Uses deprecated try_to_vec() instead of try_to_vec()?
+- Missing rent exemption check before account creation
+- No validation that admin_bump produces the expected PDA
+- Potential arithmetic overflow in account_len.try_into().unwrap()
+
+Function "update_admin":
+- Missing authorization check - any signer can update admin without verifying they are current admin
+- No validation that new_admin is a valid Pubkey
+- Missing rent exemption checks
+
+Function "create_account":
+- Hardcoded initial governance points (10) without validation
+- Missing validation that user_bump produces the expected PDA
+- Potential arithmetic overflow in account_len.try_into().unwrap()
+
+Function "open_proposal":
+- Uses title as PDA seed which may cause collisions with long titles
+- Fixed 1-hour voting period without configurability
+- Missing validation that proposal_bump produces the expected PDA
+- Potential arithmetic overflow in proposal_len.try_into().unwrap()
+
+Function "vote_process":
+- Arithmetic overflow risk in yes_votes/no_votes addition without overflow checks
+- User can vote multiple times by creating different vote records
+- Missing validation that vote_bump produces the expected PDA
+- Potential arithmetic overflow in vote_len.try_into().unwrap()
+
+Function "manage_governance_points":
+- No overflow/underflow protection in governance points arithmetic
+- Admin can arbitrarily modify any user's points without restrictions
+- Missing validation that admin_bump produces the expected PDA
+
+Function "execute_instruction":
+- Complex branching logic with potential state inconsistencies
+- Incomplete PDA validation for different instruction variants
+- Relies on instruction sysvar for security checks which can be manipulated
+- Missing proper authorization checks for different instruction types
+
+Function "make_decision":
+- Missing validation that admin_bump produces the expected PDA
+- No mechanism to prevent repeated execution of the same proposal
+- Simple majority voting without quorum requirements
+- Time comparison uses parentheses unnecessarily which may cause confusion

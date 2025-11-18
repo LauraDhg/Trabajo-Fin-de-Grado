@@ -1,0 +1,62 @@
+Function "send_create_vault_transaction":
+- Constructs and sends a create vault transaction with the provided parameters
+- Sets up instruction data and account metas for the vault creation
+- Invokes the instruction with signing seeds
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends a transaction to perform deposit or withdrawal actions on the vault
+- Sets up instruction data and account metas based on the action
+- Invokes the instruction with signing seeds
+
+Function "process_instruction":
+- Entry point for processing incoming instructions
+- Deserializes instruction data into known instruction formats
+- Routes to specific functions based on instruction type
+
+Function "create_admin":
+- Initializes an admin account, setting the caller as the admin
+- Checks if account already exists (lamports > 0)
+- Creates account with appropriate rent and seeds
+- Stores admin info with timestamp
+
+Function "update_admin":
+- Updates the admin authority
+- Checks account ownership and signer status
+- Verifies current admin privileges
+- Updates admin ID and timestamp
+
+Function "create_account":
+- Creates a user account with governance points
+- Checks if account already exists
+- Creates associated account with seeds and rent
+- Initializes governance points
+
+Function "open_proposal":
+- Creates a new proposal with a title and description
+- Checks ownership and signer status
+- Creates account with seeds, rent, and proposal data
+- Sets start and end time for voting
+
+Function "vote_process":
+- Records a vote on a proposal by a user
+- Checks ownership, signer, and previous existence of vote record
+- Verifies proposal is still open
+- Adds governance points to votes (yes or no)
+- Creates vote record account and serializes proposal, user, and vote data
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user by admin
+- Checks account ownership and admin privileges
+- Updates user governance points
+
+Function "execute_instruction":
+- Executes specific instructions (create vault, deposit, withdraw)
+- Checks ownership and signer
+- Validates previous instruction via sysvar
+- Calls specific send functions based on instruction variant
+
+Function "make_decision":
+- Finalizes a proposal, executing the decision process
+- Checks ownership, signer, and proposal status
+- Determines proposal outcome based on votes
+- Marks proposal as executed

@@ -1,0 +1,131 @@
+Function "vault_program_id":
+- Returns a Pubkey.
+- The Pubkey is hardcoded as "6dVLkpmd5BvVQF7oXpipnQFtKwba2uQkMMwzHnaqf8Gr".
+- Panics if the hardcoded string is not a valid Pubkey.
+
+Function "action_as_str":
+- Takes a `u8` representing an action.
+- Returns a `&'static str` describing the action.
+- Matches the input `u8` to predefined actions (0: "Create", 1: "Deposit", 2: "Withdraw").
+- Returns "Unknown" for any other input value.
+
+Function "send_create_vault_transaction":
+- Sends a transaction to a vault program to create a vault.
+- Takes several account infos: admin_payer (signer), admin_account_dao, vault_account, vault_program, and system_program.
+- Constructs the instruction data with a variant instruction, id_pubkey and vault_bump.
+- Creates an instruction targeting the vault program with the provided accounts and data.
+- Invokes the vault program using `invoke_signed` with the vault seeds for signing.
+
+Function "send_instr_to_vault_transaction":
+- Sends a transaction to a vault program to perform an action (deposit/withdraw).
+- Takes several account infos: user_payer (signer), user_account_dao, and vault_account.
+- Constructs the instruction data with a variant instruction, amount, and id_pubkey.
+- Creates an instruction targeting the vault program with the provided accounts and data.
+- Invokes the vault program using `invoke_signed` with the vault seeds for signing.
+
+Function "process_instruction":
+- Entrypoint to the program.
+- Unpacks the instruction data into an `InstructionFormat` enum.
+- Matches on the unpacked instruction and calls the corresponding handler function.
+- Dispatches to functions like `create_admin`, `update_admin`, `create_account`, `open_proposal`, `vote_process`, `manage_governance_points`, `execute_instruction`, and `make_decision`.
+
+Function "create_admin":
+- Creates an admin account.
+- Takes the program ID, account slice, and admin bump seed as input.
+- Checks if the admin payer is a signer.
+- Checks if the admin account has already been initialized.
+- Derives the admin PDA.
+- Compares the derived PDA with the provided admin account.
+- Gets the clock sysvar.
+- Creates an `Admin_Account` struct.
+- Calculates the rent required for the account.
+- Invokes the system program to create the account using `create_account`.
+- Serializes the `Admin_Account` into the newly created account.
+
+Function "update_admin":
+- Updates the admin account.
+- Takes the program ID, account slice, new admin Pubkey, and admin bump seed as input.
+- Checks if the admin account owner is the program.
+- Checks if the admin payer is a signer.
+- Deserializes the admin account data into an `Admin_Account` struct.
+- Derives the admin PDA.
+- Compares the derived PDA with the provided admin account.
+- Checks if the current admin is the one updating.
+- Updates the admin ID with the new admin's Pubkey.
+- Serializes the updated `Admin_Account` back into the account data.
+
+Function "create_account":
+- Creates a user account.
+- Takes the program ID, account slice, and user bump seed as input.
+- Checks if the user payer is a signer.
+- Checks if the account has already been initialized.
+- Derives the user PDA.
+- Compares the derived PDA with the provided user account.
+- Creates a `User_Account` struct and initializes the `amount_governance_points` to 10.
+- Calculates the rent required for the account.
+- Invokes the system program to create the account using `create_account`.
+- Serializes the `User_Account` into the newly created account.
+
+Function "open_proposal":
+- Opens a new proposal.
+- Takes the program ID, account slice, title, description, and proposal bump seed as input.
+- Checks if the user account owner is the program.
+- Checks if the user payer is a signer.
+- Checks if the proposal account has already been initialized.
+- Derives the proposal PDA.
+- Compares the derived PDA with the provided proposal account.
+- Gets the clock sysvar.
+- Sets the start and end times for the proposal.
+- Creates a `Proposal` struct.
+- Calculates the rent required for the account.
+- Invokes the system program to create the account using `create_account`.
+- Serializes the `Proposal` into the newly created account.
+
+Function "vote_process":
+- Processes a user's vote on a proposal.
+- Takes the program ID, account slice, vote answer (yes/no), and vote bump seed as input.
+- Checks if the user and proposal accounts owners are the program.
+- Checks if the user payer is a signer.
+- Checks if the vote record account has already been initialized.
+- Derives the vote PDA.
+- Compares the derived PDA with the provided vote record account.
+- Deserializes the proposal and user account data.
+- Creates a `Vote_Record` struct.
+- Gets the clock sysvar and checks if the proposal is still open.
+- Updates the proposal's yes/no votes based on the user's vote and governance points.
+- Calculates the rent required for the vote record account.
+- Invokes the system program to create the vote record account using `create_account`.
+- Serializes the `Vote_Record`, updated `Proposal`, and `User_Account` into their respective accounts.
+
+Function "manage_governance_points":
+- Manages (adds or subtracts) governance points for a user.
+- Takes the program ID, account slice, amount, admin bump seed, and an instruction boolean (add/subtract) as input.
+- Checks if the admin and user accounts owners are the program.
+- Checks if the admin payer is a signer.
+- Derives the admin PDA.
+- Compares the derived PDA with the provided admin account.
+- Deserializes the admin and user account data.
+- Checks if the admin ID matches the admin payer.
+- Adds or subtracts the specified amount from the user's governance points.
+- Serializes the updated `User_Account` into the account data.
+
+Function "execute_instruction":
+- Executes an instruction based on the provided `variant_instr`.
+- Takes the program ID, accounts, variant instruction, amount, vault bump, and user bump.
+- Checks the ownership of `user_account_dao` and that the `user_payer` is a signer.
+- A match statement checks the `variant_instr`.
+- Cases 0 and 2 expect the user account to be an admin account and check for admin privileges. Case 1 checks if the user account is a valid user account.
+- Fetches the previous instruction using `load_instruction_at` to check if it's a vault program confirmation.
+- Finally, calls `send_create_vault_transaction` or `send_instr_to_vault_transaction` based on the `variant_instr`.
+
+Function "make_decision":
+- Makes a decision on a proposal based on the votes.
+- Takes the program ID, accounts, and admin bump as input.
+- Checks if the admin and proposal accounts owners are the program.
+- Checks if the admin payer is a signer.
+- Derives the admin PDA and compares it with the provided admin account.
+- Deserializes the admin and proposal account data.
+- Checks if the admin has the right privileges.
+- Checks if the proposal is still active.
+- Checks if the yes votes are greater than or equal to the no votes and logs if the proposal is approved or denied.
+- Sets the proposal as executed and serializes it.

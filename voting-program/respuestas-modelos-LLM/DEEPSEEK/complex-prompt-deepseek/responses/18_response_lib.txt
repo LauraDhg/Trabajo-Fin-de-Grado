@@ -1,0 +1,58 @@
+Function "vault_program_id":
+- Hardcoded program ID string which may be incorrect if the vault program ID changes
+- Uses unwrap() which will panic if the string is invalid, causing program failure
+
+Function "send_create_vault_transaction":
+- Does not validate that vault_program key matches the hardcoded vault_program_id()
+- Uses hardcoded seeds "vault" without proper validation
+- No validation of account ownership or program IDs
+
+Function "send_instr_to_vault_transaction":
+- Missing system_program account in invoke_signed call for deposit/withdraw operations
+- No validation that vault_program key matches expected program ID
+- Uses hardcoded seeds without proper validation
+
+Function "process_instruction":
+- No validation of instruction data length before unpacking
+- No access control checks at the entry point level
+
+Function "create_admin":
+- Uses try_to_vec() without proper error handling for length conversion
+- Does not verify that system_program is actually the system program
+- No rent exemption validation after account creation
+
+Function "update_admin":
+- No timestamp validation to prevent rapid admin changes
+- No protection against admin locking themselves out
+- Missing validation that new_admin is a valid pubkey
+
+Function "create_account":
+- Hardcodes initial governance points (10) without configurable mechanism
+- No maximum limit on governance points allocation
+- Uses try_to_vec() without proper error handling
+
+Function "open_proposal":
+- Fixed 1-hour proposal duration (3600 seconds) without configurability
+- Proposal title used in PDA without length validation or sanitization
+- No maximum length checks for title and description strings
+
+Function "vote_process":
+- Does not check if user has already voted on this proposal
+- No validation that vote_record_account is uninitialized beyond lamports check
+- Arithmetic overflow protection only on addition, not on vote counting
+
+Function "manage_governance_points":
+- Subtraction operation (instruction = false) does not use checked_sub, allowing underflow
+- No validation that amount is reasonable or within bounds
+- Admin can arbitrarily modify any user's governance points without restrictions
+
+Function "execute_instruction":
+- Instruction verification only checks PDA matches but doesn't validate account contents properly
+- Uses load_instruction_at which is deprecated and insecure for instruction verification
+- No proper cross-program invocation security validation
+- Missing validation that vault_program is the expected program
+
+Function "make_decision":
+- Uses parentheses in condition (current_time < proposal.end_time) which is unnecessary and potentially confusing
+- No validation that proposal hasn't already been executed
+- Decision logic only compares yes_votes >= no_votes without considering quorum or minimum vote requirements

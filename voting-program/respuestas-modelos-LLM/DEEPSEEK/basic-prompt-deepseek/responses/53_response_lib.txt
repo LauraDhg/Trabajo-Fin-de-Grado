@@ -1,0 +1,72 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for the vault program
+- Uses unwrap which may panic if the string is invalid
+
+Function "action_as_str":
+- Converts a u8 action code to a string representation
+- Handles unknown actions by returning "Unknown"
+
+Function "send_create_vault_transaction":
+- Constructs an instruction for creating a vault
+- Uses invoke_signed to call an external program
+- Includes system program in account metas
+- Uses vault_bump for PDA derivation
+
+Function "send_instr_to_vault_transaction":
+- Constructs instructions for vault operations (deposit/withdraw)
+- Uses invoke_signed to call an external program
+- Does not include system program in account metas
+- Uses vault_bump for PDA derivation
+
+Function "process_instruction":
+- Entry point that unpacks instruction data
+- Routes to different functions based on instruction variant
+- Handles multiple instruction types including admin operations and voting
+
+Function "create_admin":
+- Creates an admin account PDA
+- Checks for signer and account initialization
+- Uses system_instruction::create_account
+- Stores admin ID and timestamp
+
+Function "update_admin":
+- Updates admin account with new admin ID
+- Verifies account ownership and signer
+- Updates timestamp on change
+- Validates PDA address
+
+Function "create_account":
+- Creates user account PDA
+- Initializes with 10 governance points
+- Uses system_instruction::create_account
+- Validates PDA derivation
+
+Function "open_proposal":
+- Creates proposal account PDA
+- Sets 1-hour voting period from current time
+- Stores proposal metadata and voting state
+- Uses title bytes for PDA derivation
+
+Function "vote_process":
+- Processes user votes on proposals
+- Checks voting period validity
+- Creates vote record PDA
+- Updates proposal vote counts with user's governance points
+
+Function "manage_governance_points":
+- Modifies user governance points
+- Requires admin privileges
+- Supports both adding and subtracting points
+- Uses unchecked subtraction which may underflow
+
+Function "execute_instruction":
+- Executes vault operations through CPI
+- Validates account types based on instruction variant
+- Checks previous instruction for security validation
+- Routes to appropriate vault transaction functions
+
+Function "make_decision":
+- Finalizes proposal voting after end time
+- Compares yes/no votes to determine outcome
+- Marks proposal as executed
+- Requires admin privileges to execute

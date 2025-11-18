@@ -1,0 +1,40 @@
+Function "create_admin":
+- Uses create_program_address to generate PDA and compares with provided account; if the PDA derivation is incorrect or compromised, it could lead to incorrect account associations.
+- Does not verify the ownership of the created account beyond matching PDA, which could lead to misconfiguration if address derivation is manipulated or incorrect.
+- Assumes system instructions like create_account are safe; missing explicit checks for duplicate accounts or tampering before creation.
+
+Function "update_admin":
+- Reads and serializes Admin_Account data without additional validation; if data is corrupted or tampered, this could cause inconsistent admin state.
+- No checks on the age or timestamp validity of the last_update, which might allow replay or outdated updates.
+- Assumes the account owner is the program, but no explicit signature verification on the admin account (though signers are checked).
+
+Function "create_account":
+- Uses create_program_address with user’s public key; if address derivation is faulty, this could misassign ownership.
+- Does not verify if the account already exists before attempting creation, potential for overwriting or duplication.
+- No validation on the data being assigned, such as ensuring initial governance points are within an acceptable range.
+
+Function "open_proposal":
+- Derives PDA using the proposal title as seed; if the title is predictable or reused, it might lead to collision or unauthorized overwriting.
+- Does not validate or sanitize inputs like title and description, possibly leading to storage bloat or execution issues.
+- Uses create_account without checking if the account already exists, risking overwrite of existing proposal data.
+
+Function "vote_process":
+- Does not verify if the proposal is already executed or if voting is still open aside from time check, enabling multiple votes or replay attacks.
+- Creates a vote record for every vote without consuming or updating previous votes, potentially allowing vote spamming.
+- No cryptographic proof or signature validation, relying solely on signer status; may permit vote forgery if account controls are compromised.
+- Uses checked_add on vote counts; overflow is checked, but no other validation ensures votes are legitimate or authorized.
+
+Function "manage_governance_points":
+- Allows arbitrary addition or subtraction of governance points assuming the admin is verified by PDA; PDA derivation must be correct.
+- No restrictions or validation on the maximum or minimum governance points, risking overflow or negative balances.
+- Does not implement any audit trail or logging for governance point modifications.
+
+Function "execute_instruction":
+- Relies on instruction load and previous instruction index, but no validation that instructions are temporally consistent or authorized.
+- Basic PDA derivation confirms identity, but no explicit authorization checks beyond ownership and signer status.
+- Assumes instruction data and parameters are valid; no checks on overflows or state consistency post execution.
+
+Function "make_decision":
+- Approves or denies proposals solely based on vote counts without additional validation or stakeholder approval.
+- Time checks rely on clock account but do not confirm if the proposal has been intentionally accepted or rejected via an off-chain process.
+- Changes executed flag without safeguards against multiple calls, which could lead to re-decisions or state inconsistencies.

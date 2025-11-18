@@ -1,0 +1,76 @@
+Function "send_create_vault_transaction":
+- Constructs and sends a create vault instruction to an external vault program.
+- Prepares instruction data with the provided variant, id, and vault bump.
+- Sets up the correct account metas and seeds for signed invocation.
+- Uses `invoke_signed` to perform a cross-program invocation with signer seeds.
+- Returns `Ok(())` on success or propagates errors.
+
+Function "send_instr_to_vault_transaction":
+- Builds and dispatches instructions for deposit or withdrawal in the vault.
+- Prepares instruction data with the variant, amount, and id.
+- Sets account metas for signer and non-signer accounts.
+- Uses `invoke_signed` with signer seeds to invoke the vault program instruction.
+- Returns `Ok(())` if successful, otherwise propagates errors.
+
+Function "process_instruction":
+- Entry point that unpacks the instruction data into a specific enum.
+- Routes execution to specific functions based on the instruction variant.
+- Handles multiple instruction types: create admin, update admin, create account, open proposal, vote, manage points, execute instruction, make decision.
+
+Function "create_admin":
+- Creates and initializes an admin account with given admin signer.
+- Checks if account is already initialized.
+- Uses `invoke_signed` to create a new account with proper rent exemption.
+- Serializes admin data into the account.
+- Validates the admin account address and owner.
+
+Function "update_admin":
+- Updates the admin account with a new admin pubkey and current timestamp.
+- Checks account ownership and signer status.
+- Deserializes existing admin data.
+- Serializes updated data back into the account.
+
+Function "create_account":
+- Creates and initializes a user account with governance points.
+- Checks if account is already initialized.
+- Uses `invoke_signed` to create an account with rent exemption.
+- Serializes user data into account.
+
+Function "open_proposal":
+- Creates and initializes a proposal account with title, description, and timestamps.
+- Checks account ownership and signer status.
+- Uses `invoke_signed` to create a new proposal account.
+- Sets start and end times based on current clock.
+- Serializes proposal data into account.
+
+Function "vote_process":
+- Processes voting on a proposal with the user's governance points.
+- Checks owner and signer status, account initialization.
+- Deserializes proposal and user data.
+- Checks if voting period is active.
+- Adds votes to the proposal based on vote answer.
+- Creates a vote record account with `invoke_signed`.
+- Serializes updated proposal, vote record, and user accounts.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user account.
+- Checks owner and signer status.
+- Deserializes user data.
+- Adds or subtracts points based on instruction flag.
+- Serializes updated user data.
+
+Function "execute_instruction":
+- Performs different actions based on instruction variant to interact with Vault program.
+- Checks owner and signer status.
+- Validates accounts for admin or user.
+- Loads current instruction index from sysvar and logs previous instruction info.
+- Calls specific functions to send instructions to vault program based on variant.
+- Ultimately calls either `send_create_vault_transaction` or `send_instr_to_vault_transaction`.
+
+Function "make_decision":
+- Finalizes a proposal after voting ends.
+- Checks owner and signer status of admin and proposal accounts.
+- Loads and checks proposal's timing.
+- Determines if proposal is approved or denied based on votes.
+- Marks the proposal as executed.
+- Serializes proposal back into account.

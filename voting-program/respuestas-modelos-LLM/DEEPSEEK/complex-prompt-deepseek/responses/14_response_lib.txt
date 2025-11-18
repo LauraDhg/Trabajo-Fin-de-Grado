@@ -1,0 +1,64 @@
+Function "vault_program_id":
+- Hardcoded program ID which may be incorrect if the vault program is redeployed
+- Uses unwrap() which will panic if the string is invalid
+
+Function "action_as_str":
+- No security vulnerabilities identified
+
+Function "send_create_vault_transaction":
+- Missing proper validation of account ownership for vault_program and system_program
+- No validation that the provided vault_bump is correct for the vault_account
+- Potential reentrancy risk through CPI calls
+
+Function "send_instr_to_vault_transaction":
+- Missing proper validation of account ownership for vault_program
+- No validation that the provided vault_bump is correct for the vault_account
+- Potential reentrancy risk through CPI calls
+
+Function "process_instruction":
+- No security vulnerabilities identified in the dispatch function itself
+
+Function "create_admin":
+- Uses create_program_address without verifying the bump seed matches the provided admin_bump
+- Missing rent exemption check before account creation
+- No validation that system_program is actually the system program
+
+Function "update_admin":
+- Missing rent exemption check
+- No validation that the new_admin pubkey is valid or owned by the system program
+- Allows arbitrary admin replacement without additional safeguards
+
+Function "create_account":
+- Hardcodes initial governance points (10) without configurable mechanism
+- Uses create_program_address without verifying the bump seed matches the provided user_bump
+- Missing rent exemption check before account creation
+
+Function "open_proposal":
+- Uses title as part of PDA seeds which could lead to collisions if titles are similar
+- Fixed 1-hour voting period without configurability
+- Missing validation that user_account_dao actually belongs to the user_payer
+- Uses create_program_address without verifying the bump seed matches the provided proposal_bump
+
+Function "vote_process":
+- Allows multiple votes from the same user by creating new vote records each time
+- Missing check if user has already voted on this proposal
+- Uses create_program_address without verifying the bump seed matches the provided vote_bump
+- No validation that the vote amount doesn't exceed user's available governance points
+
+Function "manage_governance_points":
+- Admin can arbitrarily add/subtract any amount of governance points without limits
+- No validation that the amount being subtracted doesn't make the balance negative
+- Missing access control beyond admin check
+
+Function "execute_instruction":
+- Complex branching logic with multiple security critical paths
+- Uses instruction sysvar to check previous instruction, which can be manipulated
+- Missing proper validation of vault program ownership
+- Inconsistent account validation across different instruction variants
+- Potential for incorrect bump seed usage across different account types
+
+Function "make_decision":
+- Only checks if yes_votes >= no_votes, which means ties result in approval
+- No mechanism to handle proposals with zero votes
+- Missing validation that the proposal hasn't already been executed
+- No threshold requirements for proposal approval beyond simple majority

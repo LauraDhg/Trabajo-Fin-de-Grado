@@ -1,0 +1,62 @@
+Function "vault_program_id":
+- Hardcoded program ID which may cause issues if the vault program changes
+- Uses unwrap() which can panic if the string is invalid
+
+Function "send_create_vault_transaction":
+- Missing proper validation of account ownership and types
+- Uses hardcoded seeds which may not be consistent with the vault program
+- No validation that the vault_account is properly derived
+
+Function "send_instr_to_vault_transaction":
+- Missing system program account in instruction accounts for deposit/withdraw operations
+- No validation of account ownership and types
+- Uses hardcoded seeds which may not match vault program expectations
+
+Function "process_instruction":
+- No validation of program_id ownership
+- Missing input validation for instruction parameters
+
+Function "create_admin":
+- Uses deprecated try_from_slice_unchecked pattern
+- Missing rent exemption check after account creation
+- No validation that system_program is actually the system program
+- Potential reinitialization attack vector
+
+Function "update_admin":
+- Missing rent exemption check
+- No validation that the new_admin is a valid pubkey
+- Missing authorization checks beyond current admin
+
+Function "create_account":
+- Hardcoded initial governance points (10) without validation
+- Missing rent exemption check after account creation
+- No validation that system_program is actually the system program
+
+Function "open_proposal":
+- Fixed 1-hour voting period without configurability
+- Title used in PDA derivation without length validation
+- Missing rent exemption check after account creation
+- No validation that system_program is actually the system program
+
+Function "vote_process":
+- Missing check for duplicate votes (only checks if vote account exists)
+- No validation that user has sufficient governance points
+- Missing rent exemption check after account creation
+- Arithmetic operations without proper overflow protection in all cases
+
+Function "manage_governance_points":
+- Subtraction operation without underflow protection
+- Admin can arbitrarily modify any user's points without restrictions
+- No validation of amount limits or constraints
+
+Function "execute_instruction":
+- Missing proper CPI validation and security checks
+- Uses deprecated sysvar instruction loading methods
+- No validation that the vault program matches expected program
+- Incomplete account validation in match branches
+
+Function "make_decision":
+- Missing validation that proposal hasn't already been executed
+- No minimum vote threshold requirement
+- Simple majority voting without quorum requirements
+- Missing validation of vote results before execution

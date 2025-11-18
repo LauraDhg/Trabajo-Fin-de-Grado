@@ -1,0 +1,23 @@
+Function "process_instruction":
+- It uses a `match` statement on the unpacked instruction. If a new instruction is added to `InstructionFormat` but not handled in this function, the program will panic.
+
+Function "initialize_wallet_account":
+- Checks if the wallet account has lamports greater than 0, indicating it is already initialized. However, it does not check if the account data is already initialized via the `Wallet::initialized` field.
+- The size of the `wallet_len` is converted to `u32` without any checks. This can cause an issue if the size of wallet exceeds the max value of `u32`.
+- The rent exemption calculation is performed using `Rent::get()` and `rent.minimum_balance(wallet_len)`. If the rent changes in the future, existing wallets might become non-rent-exempt. Consider using a fixed rent exemption amount.
+- The bump seed is not validated within the instruction. A malicious user could potentially create a wallet at a different address if this is not properly validated on chain.
+
+Function "deposit_amount":
+- The function retrieves the `Wallet` data using `Wallet::try_from_slice(&wallet_account.data.borrow())?`. If the account data is corrupted or not a valid `Wallet` struct, this will cause the program to error.
+- There are no checks to prevent integer overflow when adding to `wallet.amount`.
+
+Function "withdraw_amount":
+- The function retrieves the `Wallet` data using `Wallet::try_from_slice(&wallet_account.data.borrow())?`. If the account data is corrupted or not a valid `Wallet` struct, this will cause the program to error.
+- There are no checks to prevent integer underflow when subtracting from `wallet.amount`.
+
+Function "transfer_amount":
+- The function retrieves the `Wallet` data using `Wallet::try_from_slice(&src_wallet_account.data.borrow())?` and `Wallet::try_from_slice(&dest_wallet_account.data.borrow())?`. If the account data is corrupted or not a valid `Wallet` struct, this will cause the program to error.
+- There are no checks to prevent integer overflow when adding to `dest_wallet.amount`.
+- There are no checks to prevent integer underflow when subtracting from `src_wallet.amount`.
+- The bump seeds are not validated within the instruction. A malicious user could potentially transfer from/to wallets at a different address if this is not properly validated on chain.
+- There is no check to ensure that the destination user account passed in is actually associated with the destination wallet account. A malicious user could potentially send funds to a wallet not owned by `dest_user_account`.

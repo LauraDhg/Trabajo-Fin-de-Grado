@@ -1,0 +1,59 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey which may lead to inflexibility or incorrect assumptions if the Vault program address changes; consider making it configurable or verifying it at runtime.
+
+Function "send_create_vault_transaction":
+- Constructs an instruction to invoke another program (Vault) without validating that `vault_program.key` matches the expected Vault program ID (`vault_program_id()`), enabling potential CPI to malicious programs.
+- Uses `invoke_signed` with signer seeds but does not verify that `vault_account` is a valid PDA derived from the expected seeds, risking unauthorized account usage.
+- Does not validate that `system_program` is the actual Solana system program, which could allow spoofing.
+
+Function "send_instr_to_vault_transaction":
+- Similar to `send_create_vault_transaction`, it does not validate that `vault_program.key` matches the expected Vault program ID, risking CPI to unintended programs.
+- Missing validation of `vault_account` as a correct PDA; allows potential misuse if incorrect accounts are passed.
+- No check that `user_payer` owns or controls the funds being used in the CPI.
+
+Function "process_instruction":
+- Dispatches instructions based on unpacked data but does not validate instruction boundaries or input lengths, potentially leading to deserialization errors or exploits via malformed data.
+- Relies on `InstructionFormat::unpack` without handling possible buffer overruns or incomplete data.
+
+Function "create_admin":
+- Creates a PDA account using `admin_bump` without confirming it's the correct bump for the seed `[b"admin", &[admin_bump]]`, allowing potential invalid PDAs.
+- Uses `try_to_vec` for serialization length calculation but does not enforce maximum data size limits, risking large allocations.
+- Does not verify that `system_program` is the actual system program.
+
+Function "update_admin":
+- Deserializes `admin_account_dao` without checking if data length matches expected struct size, risking partial or corrupted reads.
+- Allows admin update only by current admin but does not validate clock sysvar ownership, enabling potential manipulation if fake clock is passed.
+
+Function "create_account":
+- Derives PDA using user key in seed (`b"userAccount", user_payer.key.as_ref()`), which is acceptable, but does not validate `system_program`.
+- No check on `user_bump` validity; could accept invalid bump values unless enforced off-chain.
+- Potential for frontrunning if user PDA can be predicted.
+
+Function "open_proposal":
+- Derives PDA using `title.as_bytes()` in seed, which may cause collision if titles are not unique or normalized.
+- Sets proposal duration to 1 hour; no configurability and may be too short for fair voting.
+- Does not limit length of `title` or `description`, risking large account allocations and high rent costs.
+
+Function "vote_process":
+- Deserializes `proposal_account` and `user_account_dao` without validating data size first, risking deserialization from truncated buffers.
+- Increments vote counts using unchecked arithmetic (`+=`), though protected by `checked_sub` elsewhere; should use checked arithmetic here too.
+- Allows voting after proposal end time only through timestamp check, but does not prevent double voting beyond PDA enforcement.
+- Derives vote record PDA using `proposal_account.key`, which if not validated as owned by this program, could allow spoofing.
+
+Function "manage_governance_points":
+- Performs unchecked addition (`+= amount`) which could overflow; should use `checked_add`.
+- Uses `checked_sub` correctly with custom error, but does not validate that admin has authority beyond signature and PDA.
+- Does not validate that `user_account_dao` belongs to the same program, relying only on owner check.
+
+Function "execute_instruction":
+- Matches `variant_instr` and performs logic based on value, but after matching, returns `Ok(())` instead of continuing execution; the `?` operator is misused here as the match arm itself does not return an error but wraps in `Result` unnecessarily.
+- For `variant_instr == 0` and `2`, checks if `user_account_dao` is an admin PDA using `user_bump`, but the seed `[b"admin", &[user_bump]]` is incorrect — should use `admin_bump`, not `user_bump`, leading to potential logic flaw and security vulnerability.
+- Incorrect bump usage may allow unauthorized users to simulate admin privileges.
+- Relies on checking previous instruction via `Instructions` sysvar to confirm Vault interaction, but this is easily bypassed since clients can include arbitrary prior instructions; not a secure authorization mechanism.
+- Does not validate that `vault_program.key` equals `vault_program_id()`, enabling CPI redirection attack.
+- Calls `send_create_vault_transaction` or `send_instr_to_vault_transaction` without validating inputs again, trusting prior checks.
+
+Function "make_decision":
+- Checks proposal end time but does not verify that proposal has not already been executed (`executed` flag is updated after check), preventing re-execution.
+- Allows decision-making by admin without requiring quorum or minimum participation, which may violate governance principles.
+- No validation that `proposal_account` is owned by this program beyond owner check at start.

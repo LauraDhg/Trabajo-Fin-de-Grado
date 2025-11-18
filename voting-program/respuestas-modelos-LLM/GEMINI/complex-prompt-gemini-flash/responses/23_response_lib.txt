@@ -1,0 +1,51 @@
+Function "vault_program_id":
+- Hardcodes a program ID, which might cause issues if the target program changes its ID.
+
+Function "process_instruction":
+- This is the main entry point, dispatching instructions based on `InstructionFormat`. It's crucial that `InstructionFormat::unpack` is robust and handles invalid data correctly to prevent unexpected behavior.
+
+Function "create_admin":
+- Checks if the `admin_account_dao` already has lamports, preventing reinitialization.
+- Uses `find_program_address` to derive the admin PDA, ensuring the account belongs to the program.
+- Serializes the `Admin_Account` struct into the account data.
+- The PDA account size should be checked for sufficient size.
+
+Function "update_admin":
+- Checks that the `admin_account_dao` is owned by the program.
+- Verifies the `admin_payer` is a signer.
+- Deserializes and updates the `Admin_Account`.
+- Checks that the `admin_payer` is the current admin.
+
+Function "create_account":
+- Similar to `create_admin`, it checks for account reinitialization and uses `find_program_address` to derive the user PDA.
+- Assigns a fixed amount of governance points (10) during account creation.
+- The PDA account size should be checked for sufficient size.
+
+Function "open_proposal":
+- Checks for account reinitialization and uses `find_program_address` to derive the proposal PDA.
+- Sets a fixed proposal duration of 1 hour.
+
+Function "vote_process":
+- Checks that the `user_account_dao` and `proposal_account` are owned by the program.
+- Uses `find_program_address` to derive the vote record PDA.
+- Checks if the proposal is still open based on the current time.
+- Adds governance points to either `yes_votes` or `no_votes` based on the `vote_answer`.
+
+Function "manage_governance_points":
+- Allows an admin to add or subtract governance points from a user account.
+- Checks that the `admin_account_dao` is owned by the program and the `admin_payer` is the current admin.
+- Missing an overflow/underflow check. If amount is a very big number, adding it to user.amount_governance_points may lead to overflow. Similary, if amount is a very big number, substracting it from user.amount_governance_points may lead to underflow.
+
+Function "execute_instruction":
+- Dispatches to different vault instruction based on `variant_instr`.
+- Includes checks to ensure the user has the required privileges.
+- Uses CPI (Cross-Program Invocation) to call the vault program.
+- Checks the previous instruction was the Vault program confirmation but doesn't handle the case where it isn't, potentially leading to unexpected behavior.
+- The match arm 0, 1 and 2 does not have any logic, only checks. This may lead to confusion as the code does nothign.
+- The validation to find the admin or user PDA inside the match arm may be redundant.
+
+Function "make_decision":
+- Allows an admin to finalize a proposal and set its `executed` status.
+- Checks that the `admin_account_dao` is owned by the program and the `admin_payer` is the current admin.
+- Determines the outcome of the proposal based on the number of `yes_votes` and `no_votes`.
+- Checks that the proposal is not longer active.

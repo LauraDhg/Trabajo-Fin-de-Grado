@@ -1,0 +1,39 @@
+Function "vault_program_id":
+- Hardcoded program ID, which should be configurable or stored on-chain for flexibility and upgradability.
+
+Function "process_instruction":
+- This is the main entry point, and it uses a simple match statement. If a new instruction is added to InstructionFormat, it must also be added here. Consider using a macro or a more generic dispatch mechanism to avoid this boilerplate and potential omissions.
+
+Function "create_admin":
+- Checks for account already initialized, but not if the account data has been tampered with.
+- It would be beneficial to check also if the account has the correct size, to prevent possible tampering with account data.
+
+Function "update_admin":
+- There isn't a time limit to update the Admin.
+- Admin update does not implement any form of multi-sig approval or timelock before execution.
+
+Function "create_account":
+- Assigns a fixed amount of governance points (10) upon account creation, which might not be ideal for all scenarios. Consider making this configurable.
+
+Function "open_proposal":
+- Uses title as part of the seed, but there isn't any length limit to the "title" variable which can lead to issues creating the PDA.
+- Calculating the end time adding a fixed value (3600) to the start time could be problematic. Use a configurable value.
+- The program lacks validation of the title and description fields.
+
+Function "vote_process":
+- Deserializes the user account but doesn't verify that the user account belongs to the voter (user_payer).
+- The user can vote even with 0 governance points. This can be changed.
+- The user can vote more than once if somehow the Vote_Record account is closed (or the lamports are drained).
+
+Function "manage_governance_points":
+- There is no limit on how many governance points an admin can add or subtract. This could lead to unintended consequences.
+
+Function "execute_instruction":
+- The "variant_instr" value, that indicates the instruction to be executed, comes directly from the instruction data. There is no validation to check that the user has the correct permissions to execute such instruction.
+- Inside the match statement, the first and third cases (0 and 2) are checking the admin PDA address and deserializing the Admin_Account data. This is duplicated code and can be improved.
+- Checks the previous instruction using sysvar::instructions. This check might not be reliable as instructions can be reordered or dropped in certain scenarios.
+- The program does not validate the Vault program ID on-chain, which could lead to using an incorrect program.
+
+Function "make_decision":
+- The proposal outcome depends solely on a simple majority (yes_votes >= no_votes). Consider adding more sophisticated decision-making mechanisms, such as quorum requirements or weighted voting.
+- Once a decision is made (proposal.executed = true), there isn't a way to change the outcome. It might be needed a mechanism to re-evaluate the proposal.

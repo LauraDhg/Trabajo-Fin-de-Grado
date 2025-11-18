@@ -1,0 +1,27 @@
+Function "process_instruction":
+- Uses `InstructionFormat::unpack` which may fail if instruction data is malformed; proper error handling should be ensured.
+- Matches on deserialized instruction without validating account ownership or authority prior to dispatching, increasing risk of unauthorized access.
+- Does not validate the number of accounts passed in, which could lead to runtime errors or potential exploitation if fewer accounts than expected are provided.
+
+Function "initialize_wallet_account":
+- Compares `**wallet_account.lamports.borrow()` to check if account is already initialized, but this is not a reliable method—should instead check if account owner is the program or use a state flag.
+- Uses `try_to_vec` on a `Wallet` struct before allocation, but does not enforce that the account being created matches the expected PDA—this could allow front-running or spoofing if the wrong account is targeted.
+- Calls `invoke_signed` to create a new account, but passes `user_account.key` as the funding account without verifying it is a signer—this could allow unauthorized account creation.
+- Serializes the `Wallet` struct into the newly created account without first confirming that `wallet_account.key == wallet_pda`—this is a critical security flaw allowing creation of non-PDA accounts.
+- Does not verify that `system_program` is the actual Solana system program, enabling potential malicious program injection.
+
+Function "deposit_amount":
+- Deserializes `Wallet` from account data using `try_from_slice`, but does not verify that the account is owned by the current program, allowing manipulation of arbitrary accounts.
+- Does not check that `user_account` is a signer, meaning anyone can trigger deposits without authorization.
+- Performs arithmetic with `checked_add` and maps overflow to `MyError::ArithmeticError`, which is properly handled.
+
+Function "withdraw_amount":
+- Deserializes `Wallet` without validating account ownership by the program, risking manipulation of unauthorized accounts.
+- Does not confirm that `user_account` is a signer, allowing unauthorized withdrawal attempts.
+- Checks `wallet.amount < amount` before subtraction, which is correct, and uses `checked_sub`, providing safe arithmetic.
+
+Function "transfer_amount":
+- Deserializes both source and destination wallets without verifying either account is owned by the program, enabling potential manipulation of arbitrary accounts.
+- Does not verify that `user_account` is a signer, allowing unauthorized transfers.
+- Performs arithmetic operations with `checked_add` and `checked_sub`, which is safe.
+- Does not validate that `dest_wallet_account` corresponds to the correct PDA for `dest_user_account`, enabling potential misrouting of funds.

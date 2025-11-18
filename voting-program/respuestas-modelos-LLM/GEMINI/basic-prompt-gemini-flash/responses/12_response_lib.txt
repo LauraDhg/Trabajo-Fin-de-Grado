@@ -1,0 +1,110 @@
+Function "vault_program_id":
+- Returns the hardcoded `Pubkey` for the vault program.
+
+Function "process_instruction":
+- Unpacks the instruction data into an `InstructionFormat` enum.
+- Matches on the enum variant to call the appropriate handler function.
+- Dispatches to different instruction handlers based on the unpacked instruction.
+
+Function "create_admin":
+- Creates an admin account.
+- Checks if the admin payer is a signer.
+- Checks if the admin account has already been initialized.
+- Derives the admin account PDA.
+- Checks if the provided admin account matches the derived PDA.
+- Checks if the clock sysvar account is valid.
+- Creates an `Admin_Account` struct with the admin's `Pubkey` and current timestamp.
+- Calculates the rent required for the account.
+- Invokes the system program to create the admin account with the derived PDA as the signer.
+- Serializes the `Admin_Account` data into the newly created account.
+
+Function "update_admin":
+- Updates the admin account.
+- Checks if the admin account's owner is the program.
+- Checks if the admin payer is a signer.
+- Deserializes the `Admin_Account` from the account data.
+- Derives the admin account PDA.
+- Checks if the provided admin account matches the derived PDA.
+- Checks if the clock sysvar account is valid.
+- Updates the `admin_id` and `last_update` fields of the `Admin_Account`.
+- Serializes the updated `Admin_Account` data back into the account.
+
+Function "create_account":
+- Creates a user account.
+- Checks if the user payer is a signer.
+- Checks if the user account has already been initialized.
+- Derives the user account PDA.
+- Checks if the provided user account matches the derived PDA.
+- Creates a `User_Account` struct with the user's `Pubkey` and initial governance points.
+- Calculates the rent required for the account.
+- Invokes the system program to create the user account with the derived PDA as the signer.
+- Serializes the `User_Account` data into the newly created account.
+
+Function "open_proposal":
+- Creates a proposal account.
+- Checks if the user account's owner is the program.
+- Checks if the user payer is a signer.
+- Checks if the proposal account has already been initialized.
+- Derives the proposal account PDA.
+- Checks if the provided proposal account matches the derived PDA.
+- Deserializes the `User_Account` from the user account data.
+- Validates that the account is indeed a user account
+- Serializes the `User_Account` back into the user account.
+- Checks if the clock sysvar account is valid.
+- Creates a `Proposal` struct with the provided title, description, and start/end times.
+- Calculates the rent required for the account.
+- Invokes the system program to create the proposal account with the derived PDA as the signer.
+- Serializes the `Proposal` data into the newly created account.
+
+Function "vote_process":
+- Processes a user's vote on a proposal.
+- Checks if the user account's and proposal account's owner is the program.
+- Checks if the user payer is a signer.
+- Checks if the vote record account has already been initialized.
+- Derives the vote record account PDA.
+- Checks if the provided vote record account matches the derived PDA.
+- Deserializes the `Proposal` and `User_Account` from their respective account data.
+- Validates that the account is indeed a user account
+- Creates a `Vote_Record` struct.
+- Checks if the clock sysvar account is valid.
+- Checks if the current time is within the proposal's voting period.
+- Updates the `yes_votes` or `no_votes` field of the `Proposal` based on the user's vote.
+- Calculates the rent required for the vote record account.
+- Invokes the system program to create the vote record account with the derived PDA as the signer.
+- Serializes the `Vote_Record` data into the newly created account.
+- Serializes the updated `Proposal` and `User_Account` data back into their accounts.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user account.
+- Checks if the admin account's and user account's owner is the program.
+- Checks if the admin payer is a signer.
+- Derives the admin account PDA.
+- Checks if the provided admin account matches the derived PDA.
+- Deserializes the `User_Account` from the account data.
+- Validates that the account is indeed a user account
+- Adds or subtracts the specified amount of governance points from the user account.
+- Serializes the updated `User_Account` data back into the account.
+
+Function "execute_instruction":
+- Executes an instruction by calling another program (CPI).
+- Checks if the user account's owner is the program.
+- Checks if the user payer is a signer.
+- Validates the user account.
+- Validates the Vault program.
+- Checks if the ix_sysvar account is valid.
+- Loads the previous instruction and checks if it was a call to the Vault program.
+- Calls either `send_create_vault_transaction` or `send_instr_to_vault_transaction` based on the instruction variant.
+- CPI to another program.
+
+Function "make_decision":
+- Finalizes a proposal and determines whether it passes or fails.
+- Checks if the admin account's and proposal account's owner is the program.
+- Checks if the admin payer is a signer.
+- Derives the admin account PDA.
+- Checks if the provided admin account matches the derived PDA.
+- Deserializes the `Proposal` from the account data.
+- Checks if the clock sysvar account is valid.
+- Checks if the current time is after the proposal's end time.
+- Determines whether the proposal passes or fails based on the number of yes and no votes.
+- Updates the `executed` field of the `Proposal`.
+- Serializes the updated `Proposal` data back into the account.

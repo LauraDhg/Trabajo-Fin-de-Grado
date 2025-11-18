@@ -1,0 +1,26 @@
+Function "process_instruction":
+- The function uses a match statement to dispatch instructions based on the `InstructionFormat`. Ensure that all possible instruction variants are handled correctly and that there is no possibility of unhandled variants that could lead to unexpected behavior.
+
+Function "initialize_wallet_account":
+- The program uses `invoke_signed` to create a new account. Ensure that the signature check in `invoke_signed` is sufficient for the intended security model.
+- The account size is determined by serializing a `Wallet` struct. Ensure that the serialized size remains consistent with the allocated size. If the struct is changed in the future, this could lead to buffer overflows.
+- The function checks if the `user_account` is a signer. Missing this check would allow anyone to initialize the wallet.
+- The function checks that the derived `wallet_pda` matches the `wallet_account` key. Missing this check would allow anyone to pass in an arbitrary account to be initialized.
+- The program uses `try_into()` to convert the `wallet_len` to `u64`. The `unwrap()` call can panic if the conversion fails. Handle the error case instead of unwrapping.
+
+Function "deposit_amount":
+- The function checks if the `user_account` is a signer. Missing this check would allow anyone to deposit into the wallet.
+- The function checks that the derived `wallet_pda` matches the `wallet_account` key. Missing this check would allow anyone to pass in an arbitrary account to deposit into.
+- The function uses `checked_add` to prevent arithmetic overflows when adding the amount to the wallet.
+
+Function "withdraw_amount":
+- The function checks if the `user_account` is a signer. Missing this check would allow anyone to withdraw from the wallet.
+- The function checks that the derived `wallet_pda` matches the `wallet_account` key. Missing this check would allow anyone to pass in an arbitrary account to withdraw from.
+- The function checks for sufficient funds before withdrawing. Missing this check would allow the wallet amount to go negative.
+- The function uses `checked_sub` to prevent arithmetic overflows when subtracting the amount from the wallet.
+
+Function "transfer_amount":
+- The function checks if the `user_account` is a signer. Missing this check would allow anyone to transfer from the wallet.
+- The function checks that the derived `src_wallet_pda` and `dest_wallet_pda` matches the `src_wallet_account` and `dest_wallet_account` keys respectively. Missing this check would allow anyone to pass in arbitrary accounts to transfer between.
+- The function checks for sufficient funds before withdrawing from the source wallet. Missing this check would allow the source wallet amount to go negative.
+- The function uses `checked_add` and `checked_sub` to prevent arithmetic overflows when adding to the destination wallet and subtracting from the source wallet, respectively.

@@ -1,0 +1,86 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for the vault program.
+
+Function "MyError::from":
+- Converts the custom error type `MyError` to `ProgramError`.
+
+Function "action_as_str":
+- Converts a u8 action code to a string representation for logging purposes.
+
+Function "send_create_vault_transaction":
+- Constructs and sends a CPI (Cross-Program Invocation) to the vault program to create a vault.
+- Includes the instruction variant, ID pubkey, and vault bump seed in the instruction data.
+- Signs the instruction with the vault's seed.
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends a CPI to the vault program for deposit or withdraw instructions.
+- Includes the instruction variant, amount, and ID pubkey in the instruction data.
+- Signs the instruction with the vault's seed.
+
+Function "process_instruction":
+- The main entrypoint of the program.
+- Unpacks the instruction data and calls the appropriate handler function based on the instruction type.
+
+Function "create_admin":
+- Creates an admin account.
+- Checks if the admin payer is a signer.
+- Derives the admin account's PDA (Program Derived Address).
+- Creates the admin account using `invoke_signed`.
+- Serializes the admin account data.
+
+Function "update_admin":
+- Updates the admin account with a new admin.
+- Checks if the admin payer is a signer and if the account owner is the program.
+- Deserializes the admin account data.
+- Checks if the current admin is the one updating.
+- Updates the admin ID and last update timestamp.
+- Serializes the updated admin account data.
+
+Function "create_account":
+- Creates a user account.
+- Checks if the user payer is a signer.
+- Derives the user account's PDA.
+- Creates the user account using `invoke_signed`.
+- Initializes the user account with a default amount of governance points (10).
+- Serializes the user account data.
+
+Function "open_proposal":
+- Creates a new proposal account.
+- Checks if the user payer is a signer and if the account owner is the program.
+- Derives the proposal account's PDA.
+- Creates the proposal account using `invoke_signed`.
+- Sets the proposal's start and end times.
+- Serializes the proposal data.
+
+Function "vote_process":
+- Processes a user's vote on a proposal.
+- Checks if the user payer is a signer and if the account owner is the program.
+- Derives the vote record account's PDA.
+- Deserializes the proposal and user account data.
+- Creates a vote record account.
+- Updates the proposal's vote counts based on the user's governance points.
+- Serializes the vote record, proposal, and user account data.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user's account.
+- Checks if the admin payer is a signer and if the account owner is the program.
+- Deserializes the admin and user account data.
+- Checks if the admin has privileges.
+- Adds or subtracts the specified amount from the user's governance points.
+- Serializes the updated user account data.
+
+Function "execute_instruction":
+- Executes instructions related to the vault program, such as creating, depositing, or withdrawing.
+- Delegates the specific action to the Vault program via CPI.
+- Checks if the user payer is a signer and if the account owner is the program.
+- Performs different checks based on the `variant_instr`.
+- Invokes the vault program with the appropriate parameters.
+
+Function "make_decision":
+- Executes a proposal based on the vote outcome.
+- Checks if the admin payer is a signer and if the account owner is the program.
+- Deserializes the admin and proposal account data.
+- Checks if the admin has privileges.
+- Determines the outcome of the proposal based on the yes/no vote counts.
+- Sets the proposal's `executed` flag.
+- Serializes the updated proposal data.

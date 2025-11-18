@@ -1,0 +1,74 @@
+Function "vault_program_id":
+- It uses `Pubkey::from_str`, which can panic if the string is not a valid Pubkey.
+
+Function "process_instruction":
+- This function acts as the main dispatcher for instructions. It's crucial to ensure all possible instruction variants are handled correctly to avoid unexpected behavior.
+
+Function "create_admin":
+- Checks if the `admin_payer` is a signer.
+- Checks if the `admin_account_dao` account has already been initialized (lamports > 0).
+- Uses `Pubkey::create_program_address` to derive the PDA for the admin account, ensuring that the account belongs to the program.
+- Checks if the provided `clock_sysvar` account is the correct Clock sysvar.
+- Creates an `Admin_Account` struct with the admin's public key and the current timestamp.
+- Serializes the account data into the `admin_account_dao`.
+
+Function "update_admin":
+- Checks if the `admin_payer` is a signer.
+- Deserializes the `Admin_Account` from the `admin_account_dao`.
+- Uses `Pubkey::create_program_address` to derive the PDA for the admin account, ensuring that the account belongs to the program.
+- Checks if the current admin ID in the account matches the `admin_payer`'s key.
+- Updates the admin ID with the `new_admin` and updates the timestamp.
+- Serializes the updated account data back into the `admin_account_dao`.
+
+Function "create_account":
+- Checks if the `user_payer` is a signer.
+- Checks if the `user_account_dao` account has already been initialized.
+- Derives a PDA for the user account using `Pubkey::create_program_address` with "userAccount", the user's key, and a bump seed.
+- Creates a `User_Account` struct, setting the account type to User and initializing governance points to 10.
+- Serializes the account data into the `user_account_dao`.
+
+Function "open_proposal":
+- Checks if the `user_payer` is a signer.
+- Checks if the `proposal_account` has already been initialized.
+- Derives a PDA for the proposal account using `Pubkey::create_program_address` with "proposal", the proposal title, and a bump seed.
+- Deserializes the `User_Account` to verify the account type.
+- Sets the `start_time` using the `Clock` sysvar and calculates the `end_time` as one hour later.
+- Creates a `Proposal` struct with the provided details, setting initial votes to zero and `executed` to false.
+- Serializes the `Proposal` data into the `proposal_account`.
+- The proposal title is included directly in the seed, which may be limited by the maximum seed size.
+
+Function "vote_process":
+- Checks if the `user_payer` is a signer.
+- Checks if the `vote_record_account` has already been initialized.
+- Derives a PDA for the vote record using `Pubkey::create_program_address` with "vote", the user's key, the proposal's key, and a bump seed.
+- Deserializes the `Proposal` and `User_Account` to verify account types and retrieve voting power.
+- Checks if the current time is within the proposal's voting window using the `Clock` sysvar.
+- Updates the `yes_votes` or `no_votes` count in the `Proposal` based on the `vote_answer`.
+- Creates a `Vote_Record` struct, recording the user's vote and voting power.
+- Serializes the vote record, proposal, and user account data.
+
+Function "manage_governance_points":
+- Checks if the `admin_payer` is a signer.
+- Derives a PDA for the admin account using `Pubkey::create_program_address` with "admin" and a bump seed.
+- Deserializes the `Admin_Account` to verify admin privileges.
+- Deserializes the `User_Account` to update governance points.
+- Adds or subtracts the specified `amount` from the user's `amount_governance_points`.
+- Serializes the updated user account data.
+- Includes an overflow check when subtracting points.
+
+Function "execute_instruction":
+- Checks if the `user_payer` is a signer.
+- Validates that the `user_account_dao` account exists (lamports > 0).
+- The initial match statement validates the instruction, depending on `variant_instr`, with different conditions.
+- It checks if `vault_program` key is correct and `ix_sysvar` is the Instructions sysvar.
+- Loads the current instruction index and the previous instruction. It checks if the previous instruction was a Vault program confirmation.
+- Calls either `send_create_vault_transaction` or `send_instr_to_vault_transaction` based on the `variant_instr`.
+
+Function "make_decision":
+- Checks if the `admin_payer` is a signer.
+- Derives a PDA for the admin account using `Pubkey::create_program_address` with "admin" and a bump seed.
+- Deserializes the `Admin_Account` to verify admin privileges.
+- Deserializes the `Proposal` to check the vote counts.
+- Checks if the current time is past the proposal's `end_time`.
+- Determines if the proposal is approved based on `yes_votes` vs `no_votes`.
+- Sets the `executed` flag in the `Proposal` and serializes the updated data.

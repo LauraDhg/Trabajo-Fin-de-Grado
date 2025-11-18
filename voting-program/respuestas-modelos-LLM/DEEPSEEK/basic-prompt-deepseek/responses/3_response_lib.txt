@@ -1,0 +1,70 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for the vault program
+- Uses unwrap which could panic if the string is invalid
+
+Function "action_as_str":
+- Converts a u8 action code to a string description
+- Returns "Create" for 0, "Deposit" for 1, "Withdraw" for 2, "Unknown" for other values
+
+Function "send_create_vault_transaction":
+- Constructs and sends a CPI instruction to create a vault
+- Uses invoke_signed with vault seeds for PDA signing
+- Includes system program in account metas
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends CPI instructions for deposit/withdraw operations
+- Uses invoke_signed with vault seeds for PDA signing
+- Does not include system program in account metas
+
+Function "process_instruction":
+- Main entry point that unpacks instruction data
+- Routes to appropriate handler functions based on instruction format
+- Handles all instruction variants defined in InstructionFormat
+
+Function "create_admin":
+- Creates the admin PDA account
+- Validates signer and account ownership
+- Initializes admin account with current timestamp
+- Uses invoke_signed for PDA creation
+
+Function "update_admin":
+- Updates the admin account with a new admin pubkey
+- Validates current admin is signer
+- Updates timestamp when admin changes
+
+Function "create_account":
+- Creates a user account PDA
+- Initializes with 10 governance points
+- Uses user's pubkey in PDA seeds
+- Validates signer and account ownership
+
+Function "open_proposal":
+- Creates a proposal account with title and description
+- Sets 1-hour voting window from current time
+- Uses proposal title in PDA seeds
+- Validates user account ownership
+
+Function "vote_process":
+- Processes a vote on a proposal
+- Creates vote record account
+- Adds voting power based on user's governance points
+- Validates voting period is active
+- Uses arithmetic checks to prevent overflow
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from user accounts
+- Only callable by admin
+- Uses checked arithmetic to prevent overflow/underflow
+- Validates account types and ownership
+
+Function "execute_instruction":
+- Executes CPI calls to vault program
+- Validates instruction type and account permissions
+- Checks previous instruction for vault program confirmation
+- Routes to appropriate send transaction functions
+
+Function "make_decision":
+- Finalizes proposal voting and determines outcome
+- Validates voting period has ended
+- Compares yes/no votes and marks proposal as executed
+- Only callable by admin

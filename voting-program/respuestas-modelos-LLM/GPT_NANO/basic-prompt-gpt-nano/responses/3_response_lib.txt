@@ -1,0 +1,87 @@
+Function "vault_program_id":
+- Returns the hardcoded public key of the vault program as a Pubkey object.
+
+Function "MyError":
+- Defines custom error types for the program (TimeLimit, ArithmeticError).
+- Implements conversion from MyError to ProgramError.
+
+Function "AccountType":
+- Enumerates account types (Vote, User).
+
+Function "From<MyError> for ProgramError":
+- Converts MyError enum variants into ProgramError with custom errors.
+
+Function "Vote_Record":
+- Data structure for recording votes, including account type, proposal id, and vote amount.
+
+Function "User_Account":
+- Data structure for user account info with account type, user id, and governance points.
+
+Function "Admin_Account":
+- Data structure for admin account info with admin id and last update timestamp.
+
+Function "Proposal":
+- Data structure for proposals including user id, title, description, votes, executed status, start and end times.
+
+Function "action_as_str":
+- Maps action byte to corresponding string description.
+
+Function "send_create_vault_transaction":
+- Builds and signs instruction to create a vault.
+- Checks account ownership, signs transaction with vault seed, sends instruction.
+
+Function "send_instr_to_vault_transaction":
+- Builds and signs instruction to interact with vault (deposit/withdraw).
+- Checks account ownership, signs transaction with vault seed, sends instruction.
+
+Function "process_instruction":
+- Entry point; dispatches to corresponding function based on instruction unpacked.
+
+Function "create_admin":
+- Creates admin account with a PDA.
+- Checks for existing account, verifies owner and sysvar.
+- Initializes admin data, allocates rent-exempt balance, serializes.
+
+Function "update_admin":
+- Updates admin account with new admin id and last update time.
+- Checks ownership, owner of account, sysvar, and owner correctness, serializes updates.
+
+Function "create_account":
+- Creates user account with a PDA.
+- Checks for existing account, verifies owner, initializes with governance points, serializes.
+
+Function "open_proposal":
+- Creates a new proposal account with PDA.
+- Checks ownership, verifies signer, initializes proposal data with timestamps, serializes.
+
+Function "vote_process":
+- Handles voting on proposals, records vote, updates proposal votes.
+- Checks account owners, signer, duplicate votes, proposal open status, serializes updates.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points for a user.
+- Checks ownership, signer, account type, updates and serializes user record.
+
+Function "execute_instruction":
+- Executes deposit, withdrawal, or vault creation instructions.
+- Checks account owners, signer, instruction validity, verifies previous instruction via load_current_index, calls helper functions.
+
+Function "make_decision":
+- Finalizes a proposal, determining if approved or denied.
+- Checks ownership, signer, ensures proposal is past end time, updates executed status.
+
+Potential Risks and Vulnerabilities:
+- Unwrap calls (e.g., Pubkey::from_str, try_from_slice, try_to_vec) may panic if data is invalid.
+- No explicit access control beyond owner checks; assumes proper PDA and signer checks.
+- No validation of instruction data content beyond format, risking malformed inputs.
+- Re-entrancy or duplicate transaction issues not explicitly prevented.
+- Cross-program invocation (invoke_signed) requires correct seeds; seeds must be correct to avoid runtime errors.
+- The process_instruction dispatch pattern relies on correct instruction unpacking, susceptible to invalid data.
+- No explicit handling of overflow in vote tallying — although checked with checked_add, errors are propagated.
+- Mounting and serializing data: if data sizes are not managed carefully, could lead to data corruption or misinterpretation.
+- State data (like proposals) is mutable but no explicit versioning or locking to prevent race conditions.
+- The code assumes all account data is correctly initialized and formatted, without thorough validation.
+- Hardcoded program ID and authority derivation could be a risk if not secured properly.
+- Lack of explicit event logging for critical state changes beyond simple msg! calls.
+- Potential denial-of-service if invalid accounts are provided, especially if account size is insufficient.
+

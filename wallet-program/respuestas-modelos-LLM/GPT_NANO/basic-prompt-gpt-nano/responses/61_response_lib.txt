@@ -1,0 +1,25 @@
+Function "process_instruction":
+- Routes incoming instructions to corresponding functions based on instruction type
+- Handles serialization/deserialization of instruction data
+- Uses pattern matching to identify instruction variants
+
+Function "initialize_wallet_account":
+- Creates a new wallet account with rent exemption using `create_account`
+- Finds program-derived address (PDA) for wallet
+- Checks signer status of user account
+- Serializes wallet data into the newly created account
+
+Function "deposit_amount":
+- Adds specified amount to wallet balance
+- Checks signer status
+- Deserializes wallet data, updates amount, and serializes it back
+
+Function "withdraw_amount":
+- Subtracts specified amount from wallet balance
+- Checks signer status
+- Deserializes wallet data, updates amount, and serializes it back
+
+Function "transfer_amount":
+- Transfers specified amount from source wallet to destination wallet
+- Checks signer status of initiating user
+- Deserializes both wallets, updates their balances, and serializes them back

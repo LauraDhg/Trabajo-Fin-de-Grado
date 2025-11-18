@@ -1,0 +1,32 @@
+Function "vault_program_id":
+- Hardcoded program ID, which might be vulnerable if the intention is to interact with different vault programs dynamically.
+
+Function "process_instruction":
+- The `instruction` variable is unpacked without checking the length of `instruction_data`, which could lead to a denial of service or unexpected behavior if the data is malformed or truncated.
+
+Function "create_admin":
+- No check to ensure that the admin account has enough balance to pay for rent-exemption of the created account.
+
+Function "update_admin":
+- Potential vulnerability if the new admin key is the same as the program ID, which could brick the program.
+
+Function "create_account":
+- No check to ensure that the user account has enough balance to pay for rent-exemption of the created account.
+
+Function "open_proposal":
+- The `title` and `description` strings are not validated for length, potentially leading to excessive storage costs or denial-of-service vulnerabilities.
+- The user account is deserialized and serialized back even if not mutated, which is unnecessary and consumes gas.
+- No check to ensure that the user account has enough balance to pay for rent-exemption of the created account.
+
+Function "vote_process":
+- No check to ensure that the user account has enough balance to pay for rent-exemption of the created account.
+
+Function "manage_governance_points":
+- If `instruction` is false, governance points are directly subtracted using `-` operator instead of `checked_sub`. This can cause underflow and unexpected behavior if `amount` is greater than `user.amount_governance_points`.
+
+Function "execute_instruction":
+- The initial match statement for validating account ownership does nothing other than validating the user account's existence and admin status based on `variant_instr`, and always returns `Ok(())` when validation passes. This could lead to bypassing important checks if the subsequent code relies on these validations.
+- The program ID is being cloned for the `id_pubkey` variable without any apparent reason.
+
+Function "make_decision":
+- The admin account is deserialized and serialized back even if not mutated, which is unnecessary and consumes gas.

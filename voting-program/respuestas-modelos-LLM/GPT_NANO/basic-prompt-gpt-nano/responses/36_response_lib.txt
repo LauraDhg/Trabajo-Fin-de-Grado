@@ -1,0 +1,64 @@
+Function "send_create_vault_transaction":
+- Constructs and sends an instruction to create a vault through a cross-program invocation (CPI).
+- Prepares instruction data with variant, id_pubkey, and vault_bump.
+- Sets up account metas, including the admin payer, dao account, vault account, and system program.
+- Invokes the vault program with signed seeds.
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends an instruction for deposit or withdrawal to the vault.
+- Prepares instruction data with variant instruction, amount, and id_pubkey.
+- Sets up account metas with user payer, dao, and vault account.
+- Invokes the vault program with signed seeds.
+
+Function "process_instruction":
+- Entry point that unpacks and dispatches instructions based on the instruction type.
+- Uses a match statement to call specific functions for each instruction variant.
+
+Function "create_admin":
+- Creates an admin account if it does not exist.
+- Checks that the account is owned by the program and has zero lamports.
+- Derives PDA for admin account and verifies it.
+- Creates and serializes the Admin_Account struct into the account data.
+
+Function "update_admin":
+- Updates the admin account with a new admin ID.
+- Checks owner, signer status, and correct PDA.
+- Deserializes, modifies, and re-serializes the admin account.
+
+Function "create_account":
+- Creates a user account with governance points.
+- Checks owner, signer status, and PDA correctness.
+- Creates and serializes the User_Account struct.
+
+Function "open_proposal":
+- Creates a proposal account with title and description.
+- Checks owner, signer, and PDA correctness.
+- Pays rent and creates account via CPI.
+- Creates a Proposal struct, serializes, and stores it.
+
+Function "vote_process":
+- Processes a vote from a user for a proposal.
+- Checks owners, signatures, and PDA correctness.
+- Deserializes proposal and user accounts.
+- Checks vote time window.
+- Updates proposal votes, creates a Vote_Record, and serializes all.
+- Creates Vote_Record account via CPI.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points for a user.
+- Checks owners, PDA correctness, and signer.
+- Deserializes user account, updates governance points, and serializes.
+
+Function "execute_instruction":
+- Executes vault-related instructions based on variant.
+- Checks owners, signatures, and correct account PDAs.
+- Loads previous instruction from sysvar.
+- Calls specific send_* functions depending on the instruction variant.
+- Uses invoke_signed for CPI.
+
+Function "make_decision":
+- Finalizes a proposal by checking votes.
+- Checks owners, signer, and PDA correctness.
+- Deserializes proposal.
+- Checks if proposal period is over.
+- Compares votes, logs decision, marks as executed, and serializes.

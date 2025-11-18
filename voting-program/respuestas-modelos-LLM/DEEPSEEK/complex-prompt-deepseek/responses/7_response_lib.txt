@@ -1,0 +1,78 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program ID changes or differs between environments
+- No validation that the returned Pubkey is actually a valid program ID
+
+Function "send_create_vault_transaction":
+- Uses hardcoded vault program ID instead of validating the provided vault_program account
+- No validation that vault_program account actually contains the expected program
+- Seeds derivation uses vault_bump but doesn't verify it matches the actual vault account derivation
+
+Function "send_instr_to_vault_transaction":
+- Missing system_program account in CPI invocation which may be required by the vault program
+- No validation that vault_program account actually contains the expected program
+- Seeds derivation uses vault_bump but doesn't verify it matches the actual vault account derivation
+
+Function "process_instruction":
+- No instruction data validation beyond basic unpacking
+- No access control checks at the entry point level
+
+Function "create_admin":
+- PDA derivation uses hardcoded "admin" seeds without program-specific context
+- No rent exemption check before account creation
+- Missing validation that system_program account is actually the system program
+
+Function "update_admin":
+- Allows any current admin to transfer admin privileges without additional safeguards
+- No timestamp validation to prevent rapid admin changes
+- Missing validation that the new_admin Pubkey is valid and not a PDA
+
+Function "create_account":
+- Automatically grants 10 governance points without any validation or limits
+- PDA derivation includes user_payer.key which could be manipulated
+- No validation that system_program account is actually the system program
+
+Function "open_proposal":
+- Uses title as PDA seeds which could lead to collisions if titles are similar
+- Fixed 1-hour proposal duration may not be appropriate for all use cases
+- No validation that system_program account is actually the system program
+
+Function "vote_process":
+- Allows multiple votes from the same user if they create new vote records
+- No check if user has already voted on this proposal
+- Arithmetic operations on vote counts without overflow checks
+- No validation that system_program account is actually the system program
+
+Function "manage_governance_points":
+- Admin can arbitrarily modify any user's governance points without restrictions
+- No limits on the amount that can be added or subtracted
+- No event logging for governance point changes
+
+Function "execute_instruction":
+- Instruction variant validation is duplicated in match statements
+- Uses ix_sysvar to check previous instruction but doesn't properly validate the sysvar account
+- Missing validation that vault_program and system_program accounts are actually the expected programs
+- No proper access control for different instruction variants
+
+Function "make_decision":
+- Only checks if yes_votes >= no_votes, doesn't consider quorum requirements
+- No validation that the proposal hasn't already been executed
+- Admin can execute decision regardless of voting results interpretation
+- Missing validation that the proposal end_time has actually been reached
+
+Function "action_as_str":
+- No security vulnerabilities identified (helper function)
+
+Function "try_from_slice_unchecked" (imported):
+- Using unchecked deserialization which could lead to malformed data processing
+- Should use checked deserialization with proper error handling
+
+Function "invoke_signed" (imported):
+- Proper usage but depends on correct seeds derivation in calling functions
+
+Function "load_current_index" (imported):
+- Used without proper validation of the instructions sysvar account
+- Previous instruction check may not provide sufficient security guarantees
+
+Function "load_instruction_at" (imported):
+- Index manipulation without bounds checking could cause panics
+- Previous instruction validation may be bypassable

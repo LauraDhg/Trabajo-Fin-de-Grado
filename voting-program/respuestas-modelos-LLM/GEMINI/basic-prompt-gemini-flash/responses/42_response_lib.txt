@@ -1,0 +1,90 @@
+Function "vault_program_id":
+- Returns a hardcoded `Pubkey` representing the ID of the vault program.
+
+Function "MyError::from":
+- Converts the custom error type `MyError` to `ProgramError`.
+
+Function "action_as_str":
+- Takes a `u8` representing an action and returns a string slice describing the action.
+- Returns "Create", "Deposit", "Withdraw", or "Unknown" based on the input.
+
+Function "send_create_vault_transaction":
+- Sends a cross-program invocation (CPI) to the vault program to create a vault.
+- Constructs an instruction with the specified parameters, including the variant instruction, ID pubkey, and vault bump seed.
+- Invokes the vault program using `invoke_signed` with the provided accounts and seeds.
+
+Function "send_instr_to_vault_transaction":
+- Sends a cross-program invocation (CPI) to the vault program for deposit or withdraw actions.
+- Constructs an instruction with the specified parameters, including the variant instruction, amount, ID pubkey, and vault bump seed.
+- Invokes the vault program using `invoke_signed` with the provided accounts and seeds.
+
+Function "process_instruction":
+- The main entrypoint function of the program.
+- Unpacks the instruction data using `InstructionFormat::unpack`.
+- Matches the unpacked instruction and calls the corresponding handler function.
+
+Function "create_admin":
+- Creates an admin account.
+- Checks that the admin payer is a signer.
+- Creates a program derived address (PDA) for the admin account.
+- Serializes the admin account data and stores it in the admin account.
+- Creates the admin account using `invoke_signed` and the system program.
+
+Function "update_admin":
+- Updates the admin account with a new admin `Pubkey`.
+- Checks that the admin account is owned by the program.
+- Checks that the admin payer is a signer.
+- Deserializes the admin account data, updates the admin `Pubkey` and last update timestamp, and serializes the updated data back into the account.
+- Uses a clock sysvar for the last update timestamp.
+
+Function "create_account":
+- Creates a user account.
+- Checks that the user payer is a signer.
+- Creates a program derived address (PDA) for the user account.
+- Serializes the user account data (including initial governance points) and stores it in the user account.
+- Creates the user account using `invoke_signed` and the system program.
+
+Function "open_proposal":
+- Creates a proposal account.
+- Checks that the user payer is a signer.
+- Creates a program derived address (PDA) for the proposal account, using the proposal title as a seed.
+- Serializes the proposal data and stores it in the proposal account.
+- Creates the proposal account using `invoke_signed` and the system program.
+- Sets the start and end times for the proposal, with the end time being one hour after the start time.
+
+Function "vote_process":
+- Processes a user's vote on a proposal.
+- Checks that the user and proposal accounts are owned by the program.
+- Checks that the user payer is a signer.
+- Creates a program derived address (PDA) for the vote record account, using the user, proposal, and vote bump as seeds.
+- Deserializes the proposal and user account data.
+- Records the vote by increasing the yes or no vote count on the proposal.
+- Creates a vote record account using `invoke_signed`.
+- Serializes the vote record, proposal, and user data.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user's account.
+- Checks that the admin and user accounts are owned by the program.
+- Checks that the admin payer is a signer.
+- Deserializes the user account data.
+- Adds or subtracts the specified amount from the user's governance points.
+- Serializes the updated user data.
+
+Function "execute_instruction":
+- Executes an instruction related to a vault program.
+- Checks that the user account is owned by the program.
+- Checks that the user payer is a signer.
+- Performs different actions based on the `variant_instr` value, but does not implement any actions.
+- Checks that the vault program ID matches the hardcoded value.
+- Calls a cross-program invocation (CPI) function based on the `variant_instr` value.
+
+Function "make_decision":
+- Determines whether a proposal is approved based on the votes and sets the proposal's `executed` flag.
+- Checks that the admin account and proposal are owned by this program.
+- Checks that the admin payer is a signer.
+- Checks the admin account PDA.
+- Deserializes the proposal account data.
+- Checks if the proposal's end time has passed.
+- Determines if the proposal is approved based on `yes_votes` vs `no_votes`.
+- Sets the `executed` flag to `true`.
+- Serializes the modified proposal data back into the account.

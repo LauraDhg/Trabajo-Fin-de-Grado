@@ -1,0 +1,38 @@
+Function "process_instruction":
+- No explicit validation of account ownership or program-derived address (PDA) verification
+- Missing checks for account mutability and signer status
+- No validation of account ordering or expected account counts for different instructions
+
+Function "initialize_wallet_account":
+- PDA derivation uses user_account.key but doesn't verify the PDA matches wallet_account
+- Missing signer check for user_account (who pays for account creation)
+- Missing ownership check that wallet_account is owned by the program
+- Uses unwrap() on try_into() conversion which could panic
+- Doesn't verify the created account has the expected PDA address
+- Missing validation that user_account is actually a signer
+
+Function "deposit_amount":
+- Missing PDA verification for wallet_account
+- Missing ownership check that wallet_account is owned by the program
+- No signer verification for user_account
+- No validation that the user has authority over this wallet
+- Missing rent exemption checks for the wallet account
+- No validation of account ordering or expected account structure
+
+Function "withdraw_amount":
+- Missing PDA verification for wallet_account
+- Missing ownership check that wallet_account is owned by the program
+- No signer verification for user_account (who should authorize withdrawal)
+- No validation that the user has authority over this wallet
+- Missing rent exemption checks for the wallet account
+- No validation of account ordering or expected account structure
+
+Function "transfer_amount":
+- Missing PDA verification for both src_wallet_account and dest_wallet_account
+- Missing ownership checks that both wallet accounts are owned by the program
+- No signer verification for user_account (who should authorize transfer)
+- No validation that the user has authority over the source wallet
+- Missing rent exemption checks for both wallet accounts
+- Transfer operation is not atomic - if serialization fails on second wallet, first wallet is already modified
+- No validation of account ordering or expected account structure
+- Missing cross-program invocation checks for proper fund transfers

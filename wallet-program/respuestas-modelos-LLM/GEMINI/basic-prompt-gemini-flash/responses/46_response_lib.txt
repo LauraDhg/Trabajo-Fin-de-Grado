@@ -1,0 +1,36 @@
+Function "process_instruction":
+- Unpacks the instruction data into an `InstructionFormat` enum.
+- Matches on the unpacked instruction to call the appropriate handler function: `initialize_wallet_account`, `deposit_amount`, `withdraw_amount`, or `transfer_amount`.
+
+Function "initialize_wallet_account":
+- Retrieves account information from the `accounts` slice using an iterator. It expects a user account, a wallet account, and the system program account.
+- Derives the Program Derived Address (PDA) for the wallet account using `Pubkey::find_program_address`. The seed is "wallet" and the user account's public key.
+- Checks if the provided wallet account matches the derived PDA. Returns `ProgramError::InvalidAccountData` if they don't match.
+- Creates a new `Wallet` struct with an initial amount of 0 and sets `initialized` to `true`.
+- Calculates the rent-exempt minimum balance for the wallet account.
+- Invokes the system program to create the wallet account using `invoke_signed`. It uses the derived PDA and the bump seed as the signer seeds.
+- Serializes the `Wallet` struct into the wallet account's data.
+
+Function "deposit_amount":
+- Retrieves account information for the user and wallet accounts.
+- Derives the wallet PDA and verifies that the provided wallet account matches it.
+- Deserializes the `Wallet` data from the wallet account.
+- Increases the wallet's `amount` by the specified `amount`. This operation is not checked for overflow errors.
+- Serializes the updated `Wallet` data back into the wallet account.
+
+Function "withdraw_amount":
+- Retrieves account information for the user and wallet accounts.
+- Derives the wallet PDA and verifies that the provided wallet account matches it.
+- Deserializes the `Wallet` data from the wallet account.
+- Checks if the wallet's `amount` is sufficient for the withdrawal. Returns `ProgramError::InsufficientFunds` if it's not.
+- Decreases the wallet's `amount` by the specified `amount` using `checked_sub` to prevent underflow. Returns a custom `ArithmeticError` if an underflow occurs.
+- Serializes the updated `Wallet` data back into the wallet account.
+
+Function "transfer_amount":
+- Retrieves account information for the sender's user account and wallet account, and the receiver's user and wallet accounts.
+- Derives the wallet PDAs for both the source and destination wallets. It verifies that the provided wallet accounts match their respective PDAs.
+- Deserializes the `Wallet` data from both the source and destination wallet accounts.
+- Adds the transfer amount to the destination wallet's amount. This operation is not checked for overflow errors.
+- Checks if the source wallet's `amount` is sufficient for the transfer. Returns `ProgramError::InsufficientFunds` if it's not.
+- Subtracts the amount from the source wallet's amount using `checked_sub` to prevent underflow, returning a custom `ArithmeticError` if an underflow occurs.
+- Serializes the updated `Wallet` data back into both the source and destination wallet accounts.

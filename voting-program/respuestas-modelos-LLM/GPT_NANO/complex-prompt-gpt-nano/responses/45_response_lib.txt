@@ -1,0 +1,47 @@
+Function "create_admin":
+- Uses unwrap() on Pubkey::from_str() which can panic if the string is not a valid Pubkey, potentially causing runtime failure.
+- Does not verify that the admin_payer is authorized or trusted; anyone can create an admin account if they control the correct seeds.
+- Creates the admin account with zero lamports without additional access control, risking unauthorized creation or overwriting.
+
+Function "update_admin":
+- Does not verify if the caller is the current admin; anyone signing could update the admin without proper authorization.
+- Does not check if the account to be updated actually has the proper admin data; possible data corruption or misuse.
+- Lacks checks for reentrancy or concurrent modifications that could lead to inconsistent admin state.
+
+Function "create_account":
+- Does not verify that the account being created is not already initialized, aside from lamports check, which can be insufficient.
+- Uses create_program_address which can produce the same address if seeds are predictable; susceptible to seed collisions if not carefully managed.
+- Does not verify the caller’s authority to create or claim the account; any signer can create an account with the correct seeds.
+
+Function "open_proposal":
+- Seeds for proposal account creation are based on title; this can lead to collisions if titles are reused, overwriting proposals.
+- Does not verify if the proposer has sufficient governance points or rights to open a proposal.
+- Does not restrict who can create proposals, potentially allowing spam or abuse.
+
+Function "vote_process":
+- Creates a vote record account with predictable seeds; risk of replay attacks if votes are not carefully validated.
+- Does not check if a user has already voted; multiple votes from the same user could be recorded if not properly checked.
+- Uses user’s governance points as the vote weight without validation; could be manipulated if governance points are maliciously altered.
+
+Function "manage_governance_points":
+- Does not restrict which accounts can invoke changes; any account with the correct owner and signing authority could alter governance points.
+- Does not prevent underflow when subtracting governance points, risking wrapping around to large values.
+- Lacks explicit access control, allowing any signer to modify points assuming correct ownership.
+
+Function "execute_instruction":
+- Uses create_program_address with static seed; potential seed collision if reused or improperly managed.
+- Checks only that the owner is the program; no additional authority verification.
+- Relies on current instruction index to validate previous instruction; potential reentrancy or timing attacks if state is not carefully managed.
+- Does not verify that the referenced accounts (vault, system, etc.) are the intended ones beyond seed-matching.
+
+Function "make_decision":
+- Does not verify that only an authorized admin can execute this function; any signer could invoke.
+- Uses timestamp compared against proposal end_time without additional verification of proposal ownership or status, leading to possible premature or malicious invocation.
+- Does not validate proposal data integrity before making a decision, risking manipulation if proposal data is corrupted.
+
+Overall:
+- Many functions rely on seed-based addresses without sufficient protections against seed collisions or malicious reuse.
+- Critical functions lack proper authorization checks, enabling unauthorized control or upgrade of admin and governance structures.
+- Insufficient validation of existing accounts and states, risking overwriting, replay, or manipulation attacks.
+- Potential for panic due to unwrap() or subtraction underflow, which can lead to contract failure or exploitability.
+- Absence of reentrancy guards or nonce mechanisms to prevent reentrancy or replay attacks during state transitions.

@@ -1,0 +1,41 @@
+Function "process_instruction":
+- Unpacks the instruction data into an `InstructionFormat` enum.
+- Matches the unpacked instruction and calls the appropriate function.
+- Possible instructions are `CreateAccount`, `IncreaseAmount`, `WithdrawAmount`, and `TransferAmount`.
+
+Function "initialize_wallet_account":
+- Initializes a new wallet account for a user.
+- Checks if the user account is a signer.
+- Derives the wallet PDA (Program Derived Address) using `Pubkey::find_program_address`.
+- Validates that the provided wallet account matches the derived PDA.
+- Creates a `Wallet` struct with an initial amount of 0 and sets `initialized` to true.
+- Calculates the rent required for the wallet account.
+- Invokes the system program to create the wallet account, transferring rent to the account.
+- Serializes the `Wallet` struct into the wallet account's data.
+
+Function "deposit_amount":
+- Deposits an amount into the user's wallet account.
+- Checks if the user account is a signer.
+- Derives the wallet PDA and validates that the provided wallet account matches.
+- Deserializes the wallet account data into a `Wallet` struct.
+- Adds the deposit amount to the wallet's `amount` field, using `checked_add` to prevent overflows.
+- Serializes the updated `Wallet` struct back into the wallet account's data.
+
+Function "withdraw_amount":
+- Withdraws an amount from the user's wallet account.
+- Checks if the user account is a signer.
+- Derives the wallet PDA and validates that the provided wallet account matches.
+- Deserializes the wallet account data into a `Wallet` struct.
+- Checks if the wallet has sufficient funds.
+- Subtracts the withdrawal amount from the wallet's `amount` field, using `checked_sub` to prevent overflows.
+- Serializes the updated `Wallet` struct back into the wallet account's data.
+
+Function "transfer_amount":
+- Transfers an amount from one user's wallet to another user's wallet.
+- Checks if the user account initiating the transfer is a signer.
+- Derives both the source and destination wallet PDAs and validates that the provided wallet accounts match.
+- Deserializes both the source and destination wallet account data into `Wallet` structs.
+- Adds the transfer amount to the destination wallet's `amount` field, using `checked_add` to prevent overflows.
+- Checks if the source wallet has sufficient funds.
+- Subtracts the transfer amount from the source wallet's `amount` field, using `checked_sub` to prevent overflows.
+- Serializes the updated `Wallet` structs back into their respective wallet account's data.

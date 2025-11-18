@@ -1,0 +1,49 @@
+Function "vault_program_id":
+- Hardcodes a program ID, which is generally bad practice. This limits flexibility and makes the program harder to upgrade or redeploy. Consider making it configurable via an admin function or a more dynamic approach.
+
+Function "action_as_str":
+- This function is safe. It simply maps a u8 value to a string literal for logging purposes.
+
+Function "send_create_vault_transaction":
+- Relies on `invoke_signed` without any checks if the program_id called is the expected one, which can lead to calling malicious programs.
+
+Function "send_instr_to_vault_transaction":
+- Relies on `invoke_signed` without any checks if the program_id called is the expected one, which can lead to calling malicious programs.
+
+Function "process_instruction":
+- This is the main entry point, it unpacks and calls the appropriate handler function.
+
+Function "create_admin":
+- The account length is calculated using `account.try_to_vec()?.len()`. This approach is susceptible to discrepancies between the serialized size and the actual data stored in the account, potentially leading to buffer overflows or underflows during deserialization. A better practice is to define a constant ACCOUNT_SIZE and use that to create the account.
+-  Uses `invoke_signed` to create an account, which is fine, but it could use some error handling.
+
+Function "update_admin":
+- The account length is calculated using `account.try_to_vec()?.len()`. This approach is susceptible to discrepancies between the serialized size and the actual data stored in the account, potentially leading to buffer overflows or underflows during deserialization. A better practice is to define a constant ACCOUNT_SIZE and use that to create the account.
+- Relies on the fact that `Admin_Account::try_from_slice` will not return an error. This should be handled properly
+
+Function "create_account":
+- The account length is calculated using `account.try_to_vec()?.len()`. This approach is susceptible to discrepancies between the serialized size and the actual data stored in the account, potentially leading to buffer overflows or underflows during deserialization. A better practice is to define a constant ACCOUNT_SIZE and use that to create the account.
+- Uses `invoke_signed` to create an account, which is fine, but it could use some error handling.
+
+Function "open_proposal":
+- The account length is calculated using `account.try_to_vec()?.len()`. This approach is susceptible to discrepancies between the serialized size and the actual data stored in the account, potentially leading to buffer overflows or underflows during deserialization. A better practice is to define a constant ACCOUNT_SIZE and use that to create the account.
+- Uses `invoke_signed` to create an account, which is fine, but it could use some error handling.
+- The `title` and `description` are passed as Strings and copied into the Proposal struct. This can be a DoS vector if the strings are too large. Consider limiting the size of these strings.
+
+Function "vote_process":
+- The account length is calculated using `account.try_to_vec()?.len()`. This approach is susceptible to discrepancies between the serialized size and the actual data stored in the account, potentially leading to buffer overflows or underflows during deserialization. A better practice is to define a constant ACCOUNT_SIZE and use that to create the account.
+- Uses `invoke_signed` to create an account, which is fine, but it could use some error handling.
+- Relies on the fact that `Proposal::try_from_slice` and `User_Account::try_from_slice` will not return an error. This should be handled properly
+
+Function "manage_governance_points":
+- Relies on the fact that `User_Account::try_from_slice` will not return an error. This should be handled properly
+- There is no check to prevent integer overflow or underflow when adding or subtracting governance points.
+
+Function "execute_instruction":
+- There are several checks using `Pubkey::create_program_address` to validate account addresses inside the match statement. However, the parameters for these checks (specifically, `user_bump`) are derived from the instruction data. If an attacker can control the instruction data, they can potentially bypass these checks by providing a `user_bump` value that generates the expected PDA, even if it doesn't correspond to the legitimate account.
+- The `load_instruction_at` function could potentially lead to issues if the instruction data is malformed or if the index is out of bounds.
+- The program ID is cloned instead of dereferenced, which is not an issue but can be made more efficient
+- Relies on `invoke_signed` without any checks if the program_id called is the expected one, which can lead to calling malicious programs.
+
+Function "make_decision":
+- Relies on the fact that `Proposal::try_from_slice` will not return an error. This should be handled properly

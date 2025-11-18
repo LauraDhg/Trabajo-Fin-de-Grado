@@ -1,0 +1,43 @@
+Function "process_instruction":
+- Dispatches to different functions based on instruction format
+- Handles CreateAccount, IncreaseAmount, WithdrawAmount, and TransferAmount instructions
+- Unpacks instruction data using InstructionFormat::unpack
+
+Function "initialize_wallet_account":
+- Creates a new PDA wallet account using system_instruction::create_account
+- Uses invoke_signed with PDA bump seed for signature
+- Initializes wallet with amount 0 and initialized true
+- Serializes wallet data to account storage
+- Validates PDA address matches expected derivation
+
+Function "deposit_amount":
+- Increases wallet amount by specified value
+- Uses checked_add to prevent integer overflow
+- Validates PDA address ownership
+- Deserializes and reserializes wallet data
+- Includes arithmetic error handling
+
+Function "withdraw_amount":
+- Decreases wallet amount by specified value
+- Checks for sufficient funds before withdrawal
+- Uses checked_sub to prevent integer underflow
+- Validates PDA address ownership
+- Returns InsufficientFunds error if balance too low
+
+Function "transfer_amount":
+- Transfers amount between two wallet accounts
+- Validates both source and destination PDA addresses
+- Checks source wallet has sufficient funds
+- Updates both source (subtract) and destination (add) amounts
+- Uses checked arithmetic operations
+- Serializes both wallets after transfer
+
+Potential risks and vulnerabilities:
+- Missing access control checks (anyone can call any function)
+- No signature verification for user_account ownership
+- PDA validation only checks address, not ownership
+- No reinitialization protection in initialize_wallet_account
+- Missing rent exemption checks for destination wallet in transfer
+- Potential arithmetic overflow/underflow (though checked operations are used)
+- No validation that destination wallet is initialized in transfer
+- Missing CPI safety checks for cross-program invocations

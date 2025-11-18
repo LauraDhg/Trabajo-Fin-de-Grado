@@ -1,0 +1,43 @@
+Function "process_instruction":
+- Dispatches to different functions based on instruction format
+- Handles CreateAccount, IncreaseAmount, WithdrawAmount, and TransferAmount operations
+- Unpacks instruction data using InstructionFormat::unpack
+
+Function "initialize_wallet_account":
+- Creates a new wallet account using PDA derivation with "wallet" seed and user account key
+- Validates system program account matches expected system program ID
+- Requires user account to be a signer
+- Checks if wallet account already has lamports (preventing reinitialization)
+- Calculates required rent for wallet account storage
+- Uses invoke_signed with PDA bump seed for account creation
+- Serializes initial wallet state with zero amount and initialized flag
+
+Function "deposit_amount":
+- Increases wallet amount by specified value
+- Validates wallet account is owned by the program
+- Requires user account to be a signer
+- Deserializes wallet data from account storage
+- Checks if wallet is initialized before operation
+- Performs unchecked addition (potential arithmetic overflow risk)
+- Serializes updated wallet state back to account
+
+Function "withdraw_amount":
+- Decreases wallet amount by specified value
+- Validates wallet account is owned by the program
+- Requires user account to be a signer
+- Deserializes wallet data from account storage
+- Checks if wallet is initialized before operation
+- Validates sufficient funds before withdrawal
+- Uses checked_sub to prevent underflow (safe arithmetic)
+- Serializes updated wallet state back to account
+
+Function "transfer_amount":
+- Transfers amount from source wallet to destination wallet
+- Validates both wallet accounts are owned by the program
+- Requires user account to be a signer
+- Deserializes both source and destination wallet data
+- Checks if both wallets are initialized
+- Performs unchecked addition on destination wallet (potential arithmetic overflow risk)
+- Validates sufficient funds in source wallet before transfer
+- Uses checked_sub on source wallet (safe arithmetic)
+- Serializes both updated wallet states back to accounts

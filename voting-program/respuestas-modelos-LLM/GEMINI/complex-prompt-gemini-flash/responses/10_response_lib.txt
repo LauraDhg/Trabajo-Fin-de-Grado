@@ -1,0 +1,51 @@
+Function "vault_program_id":
+- Hardcoded program ID, which is bad practice and should be configurable via environment variables or a configuration file.
+
+Function "send_create_vault_transaction":
+- The `vault_seeds` are hardcoded which reduces flexibility.
+- Missing input validation for `variant_instr`.
+
+Function "send_instr_to_vault_transaction":
+- The `vault_seeds` are hardcoded which reduces flexibility.
+- Missing input validation for `variant_instr`.
+
+Function "process_instruction":
+- The `InstructionFormat::unpack` could fail, leading to unexpected program behavior if not properly handled.
+
+Function "create_admin":
+- No check is performed to verify that the admin account being created does not already exist.
+- The admin account creation is not using a nonce, it depends on the program ID and the "admin" seed.
+- Uses unchecked deserialization `try_from_slice_unchecked`.
+
+Function "update_admin":
+- No authorization check to ensure only the current admin can update the admin.
+- Uses unchecked deserialization `try_from_slice_unchecked`.
+
+Function "create_account":
+- The user account creation is not using a nonce, it depends on the program ID and the user's public key.
+- Uses unchecked deserialization `try_from_slice_unchecked`.
+
+Function "open_proposal":
+- The program does not validate the length of `title` and `description`, making it vulnerable to denial of service attacks due to excessive storage costs.
+- Uses unchecked deserialization `try_from_slice_unchecked`.
+- The proposal account creation is not using a nonce, it depends on the program ID and the `title`.
+
+Function "vote_process":
+- Potential integer overflow issues in vote counting if `amount_governance_points` is very large, though checked_add is used.
+- Uses unchecked deserialization `try_from_slice_unchecked`.
+- The vote account creation is not using a nonce, it depends on the program ID and the user account and proposal accounts.
+
+Function "manage_governance_points":
+- No check to ensure the admin adding/subtracting points is authorized to do so.
+- Subtraction is not checked, leading to possible underflow.
+- Uses unchecked deserialization `try_from_slice_unchecked`.
+
+Function "execute_instruction":
+- There is no actual execution logic performed in the match arm for `variant_instr` (0, 1, 2) besides account validation.
+- The check `if prev_ix.program_id == vault_program_id()` is insufficient to guarantee that the previous instruction was indeed intended to be a Vault program confirmation. This introduces a vulnerability because any program can make a call to this one after calling the Vault program, bypassing any intended checks.
+- Uses unchecked deserialization `try_from_slice_unchecked`.
+- Redundant key checks in match arms.
+
+Function "make_decision":
+- There's no handling of a tie in the vote, the proposal will be denied if yes_votes == no_votes.
+- Uses unchecked deserialization `try_from_slice_unchecked`.

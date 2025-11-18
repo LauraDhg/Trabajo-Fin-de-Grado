@@ -1,0 +1,29 @@
+Function "initialize_wallet_account":
+- Uses find_program_address to generate a PDA, which is standard; however, no check to prevent re-initialization of the same account outside of lamports being zero.
+- Creates account with create_account instruction without explicit access control beyond lamports check.
+- No explicit restriction to prevent re-initialization or reuse of existing account structures, risking data overwrite or replay.
+
+Function "deposit_amount":
+- No check to ensure that the deposit is authorized by the owner of the wallet.
+- Relies solely on owner of wallet account matching program id for ownership, but no additional signature verification or access control.
+- No validation of the deposit amount (e.g., zero or extremely large values).
+
+Function "withdraw_amount":
+- Similar to deposit, no validation that the user is authorized to withdraw; assumes wallet owner has control, but no explicit signature check.
+- No constraints or limits on withdrawal amount, potentially allowing excessive withdrawals if authorized.
+- Does not prevent withdrawal beyond account balance (though checked), but no mechanism to prevent misuse.
+
+Function "transfer_amount":
+- Lack of signature verification for source or destination accounts; assumes ownership by checking owner but does not verify that the invoking user is the owner.
+- No checks for transfer limits or restrictions.
+- No validation to prevent double-spending in case of address reuse or malicious account reuse.
+- No owner verification for both source and destination — relies solely on owner field.
+
+General vulnerabilities:
+- No access control: Critical functions do not verify signer signatures, relying only on owner field matching, which could be spoofed if accounts are compromised.
+- No validation for instruction parameters (e.g., amount == 0), which can lead to no-op or erroneous transactions.
+- No explicit account re-initialization checks beyond lamports == 0; race conditions or reinitialization attempts could be exploited.
+- No event or log for security-relevant actions beyond simple msgs; lack of audit trail for sensitive operations.
+- Potential for integer overflow (though guarded by checked_add and checked_sub), but no additional maximum amount constraints.
+- Use of custom error code for arithmetic error but no other errors are extended with details for better debugging.
+

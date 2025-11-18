@@ -1,0 +1,36 @@
+Function "process_instruction":
+- Dispatches to different functions based on instruction format
+- Unpacks instruction data using InstructionFormat::unpack
+- Handles CreateAccount, IncreaseAmount, WithdrawAmount, and TransferAmount instructions
+
+Function "initialize_wallet_account":
+- Creates a PDA wallet account using find_program_address
+- Calculates required rent for account creation
+- Uses invoke_signed to create account with proper program-derived address seeds
+- Serializes initial wallet state with amount=0 and initialized=true
+- Missing validation to ensure wallet account doesn't already exist
+- Missing validation to ensure user_account is signer
+
+Function "deposit_amount":
+- Increases wallet amount without any validation of user authorization
+- Missing check to ensure user_account is signer/owner of the wallet
+- Missing validation that deposited amount comes from actual token transfer
+- No overflow protection on amount addition
+- Directly modifies wallet state without access control
+
+Function "withdraw_amount":
+- Checks for sufficient funds before withdrawal
+- Uses checked_sub for safe arithmetic to prevent underflow
+- Missing authorization check to ensure user_account owns the wallet
+- Missing validation that user_account is signer
+- No mechanism to actually transfer tokens out of the program
+
+Function "transfer_amount":
+- Transfers amount between two wallet accounts
+- Checks both source and destination wallets are owned by program
+- Uses checked_sub for safe arithmetic on source wallet
+- Missing authorization check to ensure user_account owns source wallet
+- Missing validation that user_account is signer
+- No overflow protection on destination wallet amount addition
+- Potential reentrancy vulnerability as both accounts are modified
+- Missing atomicity guarantees - if serialization fails on second wallet, first is already modified

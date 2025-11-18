@@ -1,0 +1,64 @@
+Function "vault_program_id":
+- Hardcoded program ID which cannot be changed after deployment
+- Uses unwrap() which will panic if parsing fails during program execution
+
+Function "action_as_str":
+- No security vulnerabilities identified
+
+Function "send_create_vault_transaction":
+- Missing proper validation of account ownership and types
+- No validation that vault_program is actually the expected program
+- Uses hardcoded seeds which could conflict with other programs
+
+Function "send_instr_to_vault_transaction":
+- Missing proper validation of account ownership and types
+- No validation that vault_program is actually the expected program
+- Missing system program account for certain vault operations
+
+Function "process_instruction":
+- No security vulnerabilities identified in the dispatch function itself
+
+Function "create_admin":
+- Missing rent exemption check before account creation
+- No validation that system_program is actually the system program
+- Potential reinitialization attack if account is not properly validated
+
+Function "update_admin":
+- Missing access control validation beyond signature check
+- No validation that the new_admin is a valid pubkey
+- Missing rent exemption checks
+
+Function "create_account":
+- Missing validation that system_program is actually the system program
+- Hardcoded initial governance points value (10)
+- Potential reinitialization attack if account is not properly validated
+
+Function "open_proposal":
+- Fixed 1-hour voting period which cannot be changed
+- Missing validation that system_program is actually the system program
+- Potential reinitialization attack if account is not properly validated
+- Title-based PDA could lead to collisions with long titles
+
+Function "vote_process":
+- Missing validation that system_program is actually the system program
+- No prevention of double voting (only checks if vote record exists)
+- Missing validation that user owns the user_account_dao
+- Potential arithmetic overflow if governance points are too large
+
+Function "manage_governance_points":
+- Admin can arbitrarily modify any user's governance points without restrictions
+- Missing validation that the amount is reasonable or within bounds
+- No access control beyond admin check
+
+Function "execute_instruction":
+- Missing proper validation of all account types and ownership
+- Instruction sysvar validation is incomplete and could be bypassed
+- No validation that vault_account is properly derived
+- Missing validation that system_program is actually the system program
+- Instruction validation logic is duplicated and inconsistent
+
+Function "make_decision":
+- Admin can execute decisions without proper quorum or threshold checks
+- Missing validation that the proposal has actually ended
+- No validation that the proposal hasn't already been executed
+- Simple majority voting without minimum participation requirements

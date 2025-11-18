@@ -1,0 +1,59 @@
+Function "vault_program_id":
+- Hardcoded program ID may be insecure if the vault program changes
+- No validation that the provided address is actually a valid program
+
+Function "send_create_vault_transaction":
+- Uses hardcoded seeds ("vault") which may conflict with other programs
+- No validation that vault_program is actually the expected program
+- Missing proper account validation checks
+
+Function "send_instr_to_vault_transaction":
+- Missing system_program account in invoke_signed call for deposit/withdraw operations
+- No validation that vault_program is actually the expected program
+- Uses hardcoded seeds ("vault") which may conflict
+
+Function "process_instruction":
+- No instruction data validation before unpacking
+- Missing proper access control checks at entry point
+
+Function "create_admin":
+- Uses create_account without checking if account is already initialized properly
+- No rent exemption validation beyond minimum balance check
+- Potential reinitialization attack if account exists but isn't owned by program
+
+Function "update_admin":
+- No authorization check beyond current admin signature
+- Missing validation that new_admin is a valid pubkey
+- No timestamp validation to prevent replay attacks
+
+Function "create_account":
+- Hardcoded initial governance points (10) without configurable mechanism
+- Uses user-provided bump without validation
+- No maximum account size validation
+
+Function "open_proposal":
+- Fixed 1-hour voting period (3600 seconds) without configurability
+- Title used in PDA derivation without length validation
+- No validation that user has sufficient governance points
+
+Function "vote_process":
+- No check for duplicate votes from same user
+- No validation that user hasn't already voted on this proposal
+- Missing validation that voting period is still active
+- No maximum vote amount validation
+
+Function "manage_governance_points":
+- Admin can arbitrarily modify any user's governance points
+- No upper bound validation on governance points
+- No event logging for governance point changes
+
+Function "execute_instruction":
+- Instruction validation relies on previous instruction check which can be bypassed
+- Uses instruction sysvar without proper validation
+- Missing proper cross-program invocation security checks
+- No validation that vault_account is properly derived
+
+Function "make_decision":
+- Decision logic only compares yes_votes >= no_votes without quorum requirements
+- No validation that proposal hasn't already been executed
+- Missing proper event emission for proposal outcomes

@@ -1,0 +1,82 @@
+Function "send_create_vault_transaction":
+- Constructs and sends an instruction to create a vault by invoking the vault program.
+- Prepares instruction data and specifies the accounts expected by the vault program.
+- Uses invoke_signed with vault_seeds for account validation and signing.
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends an instruction for depositing or withdrawing funds to/from the vault.
+- Prepares instruction data including amount and proposal ID.
+- Uses invoke_signed with vault_seeds for account validation and signing.
+
+Function "process_instruction":
+- The main entry point for the program; dispatches calls based on instruction data.
+- Unpacks instruction and routes to corresponding handler functions.
+- Handles errors for unsupported instructions.
+
+Function "create_admin":
+- Creates and initializes the admin account with proper authority.
+- Checks the signer signature and account state before creation.
+- Derives PDA for admin account and verifies correctness.
+- Writes admin data to account after creation.
+
+Function "update_admin":
+- Updates the admin account with new admin address and timestamp.
+- Validates owner and signer signatures.
+- Ensures the account is correctly derived and owned by the program.
+- Serializes updated admin data.
+
+Function "create_account":
+- Creates a user account with governance points.
+- Validates signer, account state, and correct PDA derivation.
+- Sets initial governance points and serializes data.
+
+Function "open_proposal":
+- Creates a new proposal account with context data.
+- Validates owner, signer, and account state.
+- Derives PDA for proposal and verifies.
+- Initializes proposal fields with timestamp and input data.
+- Serializes proposal data.
+
+Function "vote_process":
+- Processes a vote on a proposal, asserting permissions and account states.
+- Validates that voting is within the allowed time.
+- Updates proposal vote counts based on vote answer.
+- Creates and serializes a vote record account.
+- Updates proposal and user data.
+
+Function "manage_governance_points":
+- Modifies governance points for a user; adds or subtracts.
+- Validates admin privileges via PDA and ownership.
+- Checks for arithmetic overflow/underflow.
+- Serializes updated user data.
+
+Function "execute_instruction":
+- Executes different actions based on instruction variant (create vault, deposit, withdraw).
+- Validates ownership and signer.
+- Performs PDA derivation and validation for admin and user accounts.
+- Calls specific functions to handle each instruction.
+- Loads previous instructions from sysvar to validate sequence.
+
+Function "make_decision":
+- Finalizes a proposal, determining if it’s approved or denied.
+- Validates admin authority.
+- Checks if the current time is past the proposal end time.
+- Loads and updates proposal data to mark as executed.
+- Compares yes/no votes for approval decision and serializes data.
+
+Potential Risks and Vulnerabilities:
+- Unwraps on str::from_str may panic if invalid; better error handling.
+- Checks for lamports > 0 to prevent reinitialization, but does not verify account data integrity.
+- Use of create_program_address without proper bounds may lead to PDA collisions.
+- No explicit checks for program ID validation on all accounts.
+- The instruction data is unpacked without validation of length or format matches.
+- No explicit reentrancy or duplicate transaction protection.
+- Missing explicit checks for account data size before deserialization, which may cause panic.
+- No validation of instruction signs for some critical operations.
+- Potential Arbitrary Data and String injection in proposal/title/description; validation missing.
+- No explicit cooldown or voting timeout mechanisms beyond end_time.
+- Use of unwrap() in vault_program_id() might panic if str parsing fails.
+- Lacks comprehensive error handling for invoke_signed failures.
+- No measures against malicious or malformed instruction data or account data.
+- Potential risk of PDA collision if seeds are not unique or managed properly.
+- No validation that the program's authority is not misused for malicious transactions.

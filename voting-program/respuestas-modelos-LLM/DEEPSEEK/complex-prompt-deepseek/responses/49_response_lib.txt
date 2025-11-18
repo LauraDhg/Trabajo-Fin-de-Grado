@@ -1,0 +1,58 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program ID changes or is incorrect
+- No validation that the returned Pubkey is actually a valid program on-chain
+
+Function "send_create_vault_transaction":
+- Uses hardcoded seeds ("vault") for PDA derivation without program ID context
+- Missing validation that vault_program is actually the expected program
+- No checks on account ownership before invoking external program
+
+Function "send_instr_to_vault_transaction":
+- Missing system_program account in invoke_signed call for deposit/withdraw operations
+- No validation of vault_program identity before cross-program invocation
+- Uses hardcoded seeds without proper program context
+
+Function "process_instruction":
+- No validation of instruction_data length before unpacking
+- Missing access control checks at the entry point level
+
+Function "create_admin":
+- Missing rent exemption check before account creation
+- No validation that system_program is actually the system program
+- Potential reinitialization attack if account data is not properly initialized
+
+Function "update_admin":
+- No authorization check to ensure only current admin can update admin
+- Missing validation that clock_sysvar is actually the clock sysvar
+- No protection against unauthorized admin changes
+
+Function "create_account":
+- Fixed initial governance points (10) without configurable mechanism
+- Missing validation that system_program is actually the system program
+- No maximum limit on governance points creation
+
+Function "open_proposal":
+- Uses title as PDA seed which could lead to collisions with long titles
+- Fixed 1-hour voting period without configurable duration
+- No validation that clock_sysvar is actually the clock sysvar
+
+Function "vote_process":
+- Arithmetic overflow risk in vote counting (yes_votes += amount, no_votes += amount)
+- No prevention of double voting (only checks if vote record account exists)
+- Missing validation that clock_sysvar is actually the clock sysvar
+
+Function "manage_governance_points":
+- Arithmetic underflow risk when subtracting governance points
+- No upper bound check on governance points addition
+- Admin can arbitrarily modify any user's points without restrictions
+
+Function "execute_instruction":
+- Missing validation that vault_program matches vault_program_id()
+- Instruction sysvar usage without proper validation
+- No access control based on instruction type (any user can execute any instruction)
+- Missing validation that system_program is actually the system program
+
+Function "make_decision":
+- No validation that clock_sysvar is actually the clock sysvar
+- Decision logic only marks proposal as executed without actual execution
+- Missing validation of proposal state before decision making

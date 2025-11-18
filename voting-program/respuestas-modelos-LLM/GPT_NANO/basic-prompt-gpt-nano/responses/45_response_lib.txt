@@ -1,0 +1,62 @@
+Function "send_create_vault_transaction":
+- Constructs and sends an instruction to create a vault, preparing the instruction data and accounts.
+- Uses "invoke_signed" for program invocation, handling vault seeds for PDA.
+- Performs basic validation on accounts before invocation.
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends an instruction to interact with the vault (deposit/withdraw).
+- Prepares instruction data and validates account correctness.
+- Uses "invoke_signed" with vault seeds for PDA.
+
+Function "process_instruction":
+- Entry point for program execution, dispatches instructions based on deserialized input.
+- Calls specific handler functions based on instruction type.
+
+Function "create_admin":
+- Creates an admin PDA account if not already initialized.
+- Sets the admin ID and last update timestamp.
+- Uses "invoke_signed" for account creation with proper rent exemption.
+- Validates account ownerships and signatures.
+
+Function "update_admin":
+- Updates the admin account with a new admin ID.
+- Checks owner, signature, and correct PDA.
+- Serializes updated admin data.
+
+Function "create_account":
+- Creates a user account PDA with initial governance points.
+- Validates account ownership and signer status.
+- Uses "invoke_signed" for account creation.
+- Serializes user data.
+
+Function "open_proposal":
+- Creates a proposal PDA account with proposal details.
+- Validates ownership, signer, and account states.
+- Uses "invoke_signed" for account creation.
+- Stores proposal metadata and timestamps.
+
+Function "vote_process":
+- Records a user's vote on a proposal.
+- Checks ownership, signer, and account states.
+- Updates proposal vote counts.
+- Creates a vote record PDA via "invoke_signed".
+- Serializes all changed states.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user account.
+- Checks owners and signer.
+- Deserializes, modifies, and re-serializes user data.
+
+Function "execute_instruction":
+- Executes various vault-related instructions (create, deposit, withdraw).
+- Validates account ownership, signer, and instruction correctness.
+- Loads previous instructions with "load_current_index" and "load_instruction_at".
+- Checks program IDs and casts actions accordingly.
+- Utilizes "invoke_signed" for vault actions via helper functions.
+
+Function "make_decision":
+- Finalizes a proposal after end_time.
+- Validates owners, signatures, and PDA correctness.
+- Checks current time against proposal end_time.
+- Determines decision based on votes.
+- Serializes proposal executed status.

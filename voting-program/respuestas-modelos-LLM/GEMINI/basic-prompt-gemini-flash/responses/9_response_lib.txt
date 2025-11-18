@@ -1,0 +1,101 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for the vault program.
+- This could be a potential vulnerability if the hardcoded Pubkey is incorrect or if the vault program is compromised.
+
+Function "action_as_str":
+- Converts a u8 action code to a string representation.
+- Useful for debugging and logging.
+
+Function "send_create_vault_transaction":
+- Sends a CPI (Cross-Program Invocation) to create a vault account.
+- Includes the variant instruction, ID Pubkey, vault bump seed, and relevant accounts.
+- Uses `invoke_signed` to sign the instruction with the vault's seed.
+
+Function "send_instr_to_vault_transaction":
+- Sends a CPI to the vault program for deposit/withdraw operations.
+- Includes the variant instruction, amount, ID Pubkey, vault bump seed, and relevant accounts.
+- Uses `invoke_signed` to sign the instruction with the vault's seed.
+
+Function "process_instruction":
+- Entrypoint for the Solana program.
+- Unpacks the instruction data using `InstructionFormat::unpack`.
+- Matches the instruction and calls the appropriate handler function.
+
+Function "create_admin":
+- Creates an admin account.
+- Checks if the admin payer is a signer.
+- Checks if the account is already initialized.
+- Derives the admin PDA (Program Derived Address).
+- Checks if the clock sysvar is valid.
+- Creates the account using `system_instruction::create_account`.
+- Serializes the admin account data.
+
+Function "update_admin":
+- Updates the admin account with a new admin Pubkey.
+- Checks if the admin payer is a signer.
+- Checks the account ownership.
+- Checks if the user has admin privileges.
+- Deserializes the admin account data.
+- Serializes the updated admin account data.
+
+Function "create_account":
+- Creates a user account.
+- Checks if the user payer is a signer.
+- Checks if the account is already initialized.
+- Derives the user PDA.
+- Creates the account using `system_instruction::create_account`.
+- Serializes the user account data.
+- Initial governance points are set to 10.
+
+Function "open_proposal":
+- Creates a proposal account.
+- Checks if the user payer is a signer.
+- Checks if the account is already initialized.
+- Derives the proposal PDA.
+- Checks if the clock sysvar is valid.
+- Creates the account using `system_instruction::create_account`.
+- Serializes the proposal data.
+- Sets the proposal end time to 1 hour after the start time.
+
+Function "vote_process":
+- Processes a user's vote on a proposal.
+- Checks if the user payer is a signer.
+- Checks the account ownership.
+- Checks if the account is already initialized.
+- Derives the vote PDA.
+- Deserializes the proposal and user account data.
+- Creates a vote record.
+- Checks if the proposal is still open.
+- Updates the proposal's yes or no votes based on the user's vote.
+- Creates the vote record account.
+- Serializes the vote record, proposal, and user account data.
+
+Function "manage_governance_points":
+- Allows the admin to add or subtract governance points from a user account.
+- Checks if the admin payer is a signer.
+- Checks the account ownership.
+- Checks if the user has admin privileges.
+- Deserializes the admin and user account data.
+- Updates the user's governance points.
+- Serializes the updated user account data.
+- Arithmetic error is possible.
+
+Function "execute_instruction":
+- Executes a vault instruction based on the variant instruction.
+- Checks if the user payer is a signer.
+- Checks the account ownership.
+- Matches the variant instruction and performs different actions.
+- Validates the vault program ID and instruction sysvar ID.
+- Checks the previous instruction to ensure it was a vault program confirmation (potentially for security).
+- Calls `send_create_vault_transaction` or `send_instr_to_vault_transaction` to perform the CPI.
+- Lacks proper authorization checks based on the type of vault instruction.
+
+Function "make_decision":
+- Makes a decision on a proposal based on the votes.
+- Checks if the admin payer is a signer.
+- Checks the account ownership.
+- Checks if the user has admin privileges.
+- Deserializes the admin and proposal data.
+- Checks if the proposal has ended.
+- Sets the proposal's executed status based on the vote outcome.
+- Serializes the updated proposal data.

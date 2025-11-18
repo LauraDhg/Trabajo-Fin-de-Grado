@@ -1,0 +1,103 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey "6dVLkpmd5BvVQF7oXpipnQFtKwba2uQkMMwzHnaqf8Gr" as the Vault program ID.
+- Uses unwrap() without error handling, which could panic if the string is invalid (though it's constant and valid).
+
+Function "action_as_str":
+- Maps instruction variant numbers (0, 1, 2) to string descriptions ("Create", "Deposit", "Withdraw").
+- Returns "Unknown" for any other value.
+- Used for logging; does not affect program logic.
+
+Function "send_create_vault_transaction":
+- Constructs a cross-program invocation (CPI) to create a vault via the Vault program.
+- Includes admin_payer, admin_account_dao, vault_account, and system_program in instruction accounts.
+- Uses invoke_signed with PDA signer seeds ("vault", bump).
+- Data includes variant instruction, ID pubkey, and bump.
+- No validation that vault_program is actually the expected vault program beyond later checks in caller.
+
+Function "send_instr_to_vault_transaction":
+- Constructs a CPI to deposit or withdraw from a vault.
+- Includes user_payer, user_account_dao, and vault_account in instruction accounts.
+- Uses invoke_signed with same PDA seeds.
+- Data includes variant, amount (LE bytes), and ID pubkey.
+- No validation of amount or instruction type within this function.
+
+Function "process_instruction":
+- Main entry point, dispatches to handler functions based on unpacked instruction.
+- Uses InstructionFormat::unpack to deserialize instruction data.
+- Matches on instruction variants and calls corresponding handler.
+- No default case or error handling if unpack fails (handled by InstructionFormat::unpack).
+
+Function "create_admin":
+- Initializes a new admin account with payer as signer.
+- Checks that admin_payer is signer and admin_account_dao is uninitialized.
+- Derives PDA using "admin" and bump; validates it matches provided account.
+- Validates clock sysvar ID.
+- Creates account via CPI to system program with signed seeds.
+- Serializes Admin_Account with admin_id and current timestamp.
+- Risk: No access control — any user can become admin if they know the bump.
+
+Function "update_admin":
+- Allows updating the admin ID and timestamp.
+- Requires signer and correct PDA.
+- Deserializes existing admin account, updates fields, and reserializes.
+- Risk: No authorization check — any signer can update admin if they provide correct PDA and bump.
+
+Function "create_account":
+- Creates a user account with 10 governance points.
+- Requires signer, checks account is uninitialized.
+- Derives PDA using "userAccount", user key, and bump.
+- Creates account via CPI with rent exemption.
+- Serializes User_Account with type, user_id, and initial points.
+- Risk: Fixed 10 points — no flexibility or control.
+
+Function "open_proposal":
+- Allows a user to create a new proposal.
+- Checks user account ownership and signer status.
+- Ensures proposal account is uninitialized.
+- Derives PDA using "proposal", title bytes, and bump.
+- Sets proposal duration to 1 hour from current time.
+- Creates account via CPI and serializes Proposal.
+- Risk: Title used in PDA — identical titles with same bump cause collision.
+- Risk: No length check on title or description — potential for large allocations.
+
+Function "vote_process":
+- Allows a user to vote on a proposal with their full governance points.
+- Checks ownership and signer status.
+- Ensures vote record account is uninitialized.
+- Derives PDA using "vote", user and proposal keys, and bump.
+- Deserializes user and proposal.
+- Checks voting period is active.
+- Adds user's full points to yes/no based on vote_answer.
+- Creates vote record account and serializes vote and updated proposal/user.
+- Risk: User can vote multiple times if different vote_bump used — no deduplication.
+- Risk: Vote weight is fixed at account creation — no delegation or dynamic balance.
+
+Function "manage_governance_points":
+- Allows admin to add or subtract governance points from a user.
+- Requires signer and valid admin PDA.
+- Deserializes user account and modifies amount_governance_points.
+- No overflow/underflow checks — subtraction can underflow (panics in debug, wraps in release).
+- Risk: No event emission or logging beyond msg!.
+- Risk: Admin can set negative points via subtraction (underflow).
+
+Function "execute_instruction":
+- Routes CPIs to the Vault program for create, deposit, or withdraw.
+- Performs account ownership and signer checks.
+- Validates user account is initialized.
+- Matches variant_instr and checks PDA:
+  - For 0 and 2, checks user_account_dao is admin PDA (but uses user_bump) — likely bug.
+  - For 1, checks user_account_dao is user PDA — correct.
+- Validates vault_program ID and instructions sysvar.
+- Checks previous instruction was from vault_program (security measure).
+- Calls send_create_vault_transaction or send_instr_to_vault_transaction.
+- Risk: PDA check logic is flawed — uses user_bump to derive admin PDA, which is inconsistent.
+- Risk: variant_instr = 0 and 2 incorrectly use user_bump to derive admin PDA — likely logic error.
+- Risk: No validation of vault_account PDA or existence.
+
+Function "make_decision":
+- Allows admin to finalize a proposal after voting period.
+- Checks ownership, signer, and correct admin PDA.
+- Ensures proposal has ended.
+- Marks proposal as executed and logs outcome.
+- Risk: No action taken based on result (e.g., executing actual instruction).
+- Risk: No guard against re-execution — executed flag is set but no check if already executed.

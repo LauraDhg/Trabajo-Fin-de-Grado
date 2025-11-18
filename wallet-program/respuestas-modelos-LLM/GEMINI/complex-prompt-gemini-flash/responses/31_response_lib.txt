@@ -1,0 +1,28 @@
+Function "process_instruction":
+- The `match` statement covers all variants of `InstructionFormat`, which is good.
+- It calls the appropriate handler functions based on the instruction.
+
+Function "initialize_wallet_account":
+- Checks if the user account is a signer.
+- Uses `find_program_address` to derive the PDA and validates the provided wallet account.
+- Creates a new account using `invoke_signed` with the correct seeds.
+- Serializes the initial `Wallet` state into the newly created account.
+- It checks for rent exemption.
+
+Function "deposit_amount":
+- Checks if the user account is a signer.
+- Uses `find_program_address` to derive the PDA and validates the provided wallet account.
+- Deserializes the `Wallet` state from the account.
+- Uses `checked_add` to prevent overflow errors.
+
+Function "withdraw_amount":
+- Checks if the user account is a signer.
+- Uses `find_program_address` to derive the PDA and validates the provided wallet account.
+- Deserializes the `Wallet` state from the account.
+- It uses direct subtraction (`wallet.amount -= amount`) which can lead to underflow.
+
+Function "transfer_amount":
+- Checks if the user account is a signer.
+- Uses `find_program_address` to derive the PDAs and validates the provided wallet accounts.
+- Deserializes the `Wallet` state from both accounts.
+- Uses `checked_add` for the destination wallet to prevent overflow, but performs direct subtraction on the source wallet (`src_wallet.amount -= amount`), which can lead to underflow.

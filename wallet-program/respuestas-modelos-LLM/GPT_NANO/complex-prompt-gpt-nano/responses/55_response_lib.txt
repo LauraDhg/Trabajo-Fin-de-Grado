@@ -1,0 +1,20 @@
+Function "initialize_wallet_account":
+- Uses unchecked len calculation with `try_to_vec()?.len()`, which could introduce runtime panics if serialization fails, though unlikely.
+- Does not verify that the wallet account is rent-exempt before creating it, risking account being non rent-exempt, leading to account eviction.
+- Does not explicitly check that `wallet_account` is uninitialized or empty before creating a new wallet, risking account overwrite.
+
+Function "deposit_amount":
+- Does not check that `amount` is greater than zero, allowing no-op or potential confusion.
+- Does not verify if the wallet account is already initialized or if `amount` exceeds u64 limits before addition (although checked with `.checked_add()`).
+- Relies solely on owner being correct; no other invariants or locks, which could lead to race conditions in more complex systems, but typical in Solana programs.
+
+Function "withdraw_amount":
+- Does not check that `amount` is greater than zero, allowing no-op or potential issues.
+- Allows withdrawal of amount greater than current wallet balance, causing underflow panic or logic errors; missing explicit balance check.
+- Uses direct subtraction without validation, risking underflow errors if `amount` exceeds current balance.
+
+Function "transfer_amount":
+- Does not check that `amount` is greater than zero, risking no-op or logical errors.
+- No explicit check that `src_wallet.amount >= amount` before subtraction, risking underflow panics and inconsistent state.
+- Does not verify that source and destination wallet accounts are distinct, enabling transfer to self without particular safeguards, though not a critical issue.
+- Assumes both wallet accounts are initialized and valid; no explicit check for `initialized` flag or account state validity beyond owner check.

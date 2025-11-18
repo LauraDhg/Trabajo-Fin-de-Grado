@@ -1,0 +1,77 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey "6dVLkpmd5BvVQF7oXpipnQFtKwba2uQkMMwzHnaqf8Gr" as the Vault program ID.
+- Uses unwrap() without error handling, which could panic if the string were invalid (though it's constant and valid here).
+
+Function "action_as_str":
+- Maps a u8 action code to a static string description for logging purposes.
+- Returns "Unknown" for any unrecognized action code.
+
+Function "send_create_vault_transaction":
+- Constructs and sends a CPI (Cross-Program Invocation) to create a vault via the Vault program.
+- Uses invoke_signed with PDA-based signing (vault_seeds = [b"vault", &[vault_bump]]).
+- Does not validate that vault_program.key matches the expected vault_program_id().
+- Could allow malicious program impersonation if vault_program is not checked.
+
+Function "send_instr_to_vault_transaction":
+- Sends a CPI to deposit or withdraw from a vault via the Vault program.
+- Uses invoke_signed with the same PDA signing logic.
+- Similar risk: does not verify that vault_program.key matches the expected vault_program_id().
+
+Function "process_instruction":
+- Main entry point; routes instructions based on unpacked InstructionFormat.
+- Relies on InstructionFormat::unpack which is assumed safe but not shown in code.
+- No explicit validation of instruction_data length or structure beyond unpacking.
+
+Function "create_admin":
+- Initializes a singleton admin PDA account ([b"admin"]).
+- Checks payer signature, ensures account is uninitialized, and creates it with system_instruction::create_account.
+- Uses invoke_signed with correct seeds ([b"admin", &[admin_bump]]).
+- Serializes Admin_Account data after creation.
+- Risk: No access control beyond signature; any signer can become admin if account doesn't exist.
+
+Function "update_admin":
+- Allows current admin to update the admin pubkey.
+- Validates caller is current admin via Admin_Account check.
+- Updates timestamp using Clock sysvar.
+- Risk: No delay or confirmation mechanism; immediate effect allows instant privilege escalation.
+
+Function "create_account":
+- Creates a user account PDA based on user's pubkey.
+- Assigns 10 governance points by default.
+- Risk: Hardcoded initial governance points; no mechanism to change or cap.
+- No check if user already has an account (only checks lamports, which could be zeroed maliciously).
+
+Function "open_proposal":
+- Allows a user to create a new proposal with title and description.
+- Sets proposal duration to 1 hour from current time.
+- Risk: Title is used in PDA derivation — long or duplicate titles could cause issues.
+- No length validation on title or description; could lead to memory or compute limit issues.
+
+Function "vote_process":
+- Allows a user to vote on a proposal with their full governance weight.
+- Creates a vote record PDA to prevent double voting.
+- Checks proposal end time using Clock.
+- Risk: Vote weight is based on current user balance at time of vote — balance could be changed afterward, but vote is already recorded.
+- No refund or cleanup of vote_record account; leads to rent accumulation.
+
+Function "manage_governance_points":
+- Allows admin to add or subtract governance points from a user.
+- Performs checked subtraction to avoid underflow (returns custom ArithmeticError).
+- Risk: Admin has unilateral power to modify user balances with no limits or logging beyond program logs.
+- No event emission or external audit trail.
+
+Function "execute_instruction":
+- Handles CPIs to the Vault program for create, deposit, or withdraw actions.
+- Performs role checks: only admin can create or withdraw, any user can deposit.
+- Validates previous instruction was from vault_program_id() by inspecting instruction sysvar.
+- Risk: Relies on instruction ordering in transaction — can be bypassed if multiple instructions are reordered or if sysvar is not properly checked.
+- Uses load_instruction_at to check previous instruction; but does not validate the full CPI flow securely.
+- Potential for reentrancy or spoofing if vault_program is not strictly validated.
+- Uses program_id.clone() as id_pubkey — unclear if this is intended (should it be proposal or user ID?).
+
+Function "make_decision":
+- Allows admin to finalize a proposal after its end time.
+- Sets executed = true and logs outcome based on vote counts.
+- Risk: Admin must call this manually — no automatic enforcement or incentive.
+- No action taken based on decision (e.g., no CPI to execute proposal outcome).
+- Vulnerable to front-running or delay if admin is malicious or inactive.

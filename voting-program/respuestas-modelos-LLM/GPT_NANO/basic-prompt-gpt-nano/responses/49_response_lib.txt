@@ -1,0 +1,43 @@
+Function "send_create_vault_transaction":
+- Constructs and sends a transaction to create a vault using the provided instruction data.
+- Uses invoke_signed to call the vault program with associated accounts and seeds.
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends a transaction to perform deposit or withdrawal actions on the vault.
+- Uses invoke_signed to invoke the vault program with the appropriate accounts and instructions.
+
+Function "process_instruction":
+- Entry point for processing instructions, dispatching to specific functions based on instruction data.
+- Unpacks instruction data and routes to function handlers accordingly.
+
+Function "create_admin":
+- Creates and initializes the admin account with a program-derived address (PDA).
+- Checks account ownership, signs, and serializes admin details into the account.
+
+Function "update_admin":
+- Updates the admin account with a new admin ID and updates the last update timestamp.
+- Checks for owner and signer requirements, deserializes, modifies, and serializes admin data.
+
+Function "create_account":
+- Creates a user account with a PDA and initializes governance points.
+- Checks for existing account, owner, signs, and serializes user data.
+
+Function "open_proposal":
+- Creates a new proposal account with associated start and end times.
+- Validates accounts, deserializes user info, builds proposal struct, and serializes it.
+
+Function "vote_process":
+- Records a vote on a proposal, updating vote counts based on user governance points.
+- Checks account ownership, signer status, proposal state, and serializes vote, proposal, and user accordingly.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user account based on instruction.
+- Checks owner, signer, deserializes, updates, and serializes user data.
+
+Function "execute_instruction":
+- Executes different vault actions (create, deposit, withdraw) based on instruction variants.
+- Validates accounts, ownership, signs, and calls helper functions to perform transaction.
+
+Function "make_decision":
+- Determines whether a proposal is approved or denied after end time.
+- Checks account ownership, signer, deserializes proposal, compares votes, updates, and serializes.

@@ -1,0 +1,64 @@
+Function "vault_program_id":
+- Hardcoded program ID, which couples the program to a specific deployment.
+- If the vault program is redeployed, this program will become unusable unless updated.
+
+Function "send_create_vault_transaction":
+- Uses `invoke_signed` with seeds. This is good for security as it restricts the vault program's actions.
+- The function itself doesn't check the `variant_instr` value, which could lead to unexpected behavior if an invalid value is passed.
+
+Function "send_instr_to_vault_transaction":
+- Uses `invoke_signed` with seeds. This is good for security as it restricts the vault program's actions.
+- The function itself doesn't check the `variant_instr` value, which could lead to unexpected behavior if an invalid value is passed.
+
+Function "process_instruction":
+- This is the main entry point, and its security depends on the security of the individual instruction handlers it calls.
+- Relies on the `InstructionFormat::unpack` function to correctly deserialize and validate the instruction data.
+- No default case for handling unknown instructions, which is good.
+
+Function "create_admin":
+- Uses a program-derived address (PDA) to derive the admin account. This helps to prevent unauthorized accounts from acting as admins.
+- Checks for account initialization, which is good to prevent accidental overwrites.
+- Uses `invoke_signed` to create the admin account.
+
+Function "update_admin":
+- Checks that the admin account is owned by the program before updating it.
+- Uses a PDA to derive the admin account, which is good.
+- Overwrites the admin ID with a new one. Ensure that this is an intended operation and not a vulnerability.
+
+Function "create_account":
+- Uses a PDA to derive the user account. This helps prevent unauthorized account creation.
+- The user account is initialized with 10 governance points. Consider whether this initial value should be configurable or zero.
+- Uses `invoke_signed` to create the user account.
+
+Function "open_proposal":
+- Uses a PDA to derive the proposal account using the proposal title as part of the seed.
+- The `title` and `description` are passed as strings. Ensure that these strings are properly validated to prevent excessively long strings that could cause rent exhaustion or other issues.
+- Sets a fixed 1-hour duration for proposals.
+- Uses `invoke_signed` to create the proposal account.
+
+Function "vote_process":
+- Uses a PDA to derive the vote record account, incorporating the user and proposal accounts.
+- Checks the owner of the user and proposal accounts, ensuring they are managed by this program.
+- Implements voting logic, adding governance points to either the `yes_votes` or `no_votes` field.
+- Uses `checked_add` to prevent integer overflows.
+- Uses `invoke_signed` to create the vote record account.
+- Serializes the user account after deserializing, even if no modifications are made, this is probably unnecessary.
+
+Function "manage_governance_points":
+- Only allows the admin to manage governance points.
+- Uses a boolean `instruction` to decide whether to add or subtract points.
+- Does not prevent the admin from setting governance points to zero or below.
+
+Function "execute_instruction":
+- Dispatches instructions to an external vault program.
+- Checks that the vault program and instruction sysvar are the expected ones.
+- Loads the previous instruction to check if it was a Vault program confirmation.
+- Uses a match statement but the logic inside each match arm seems incomplete. Each arm only verifies that the user_account_dao is a pda of the admin or the user depending of the case, but then, it does nothing.
+- Calls `send_create_vault_transaction` and `send_instr_to_vault_transaction` to interact with the vault program.
+- Delegates the actual instruction execution to the vault program, which is good for separation of concerns.
+
+Function "make_decision":
+- Checks if the proposal has ended based on the current time.
+- Determines whether the proposal is approved or denied based on the number of yes/no votes.
+- Updates the `executed` flag on the proposal.
+- The check `proposal.yes_votes >= proposal.no_votes` means a proposal will be approved in case of a tie.

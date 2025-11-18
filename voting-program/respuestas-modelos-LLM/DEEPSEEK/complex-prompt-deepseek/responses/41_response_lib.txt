@@ -1,0 +1,68 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program ID changes or differs between environments
+- No validation that the returned Pubkey is a valid program address
+
+Function "send_create_vault_transaction":
+- Uses hardcoded seeds "vault" which may conflict with other programs using similar seeds
+- No validation of vault_program account ownership before invocation
+- Missing proper error handling for invoke_signed failure cases
+
+Function "send_instr_to_vault_transaction":
+- Missing system_program account in invoke_signed call for deposit/withdraw operations
+- No validation of vault_program account ownership before invocation
+- Uses hardcoded seeds "vault" without proper namespace isolation
+
+Function "process_instruction":
+- No instruction data validation beyond unpacking
+- Missing access control checks at the entry point level
+
+Function "create_admin":
+- Uses Pubkey::create_program_address without proper error handling for potential bumps
+- No validation that admin_payer has sufficient funds for account creation
+- Potential reinitialization attack if account lamports check is bypassed
+
+Function "update_admin":
+- No authorization check beyond matching admin_id - susceptible to replay attacks
+- Missing timestamp validation to prevent outdated updates
+- No event logging for admin changes
+
+Function "create_account":
+- Hardcoded initial governance points (10) without configurable mechanism
+- Uses user-provided bump without validation
+- No prevention against multiple account creation for same user
+
+Function "open_proposal":
+- Fixed 1-hour duration (3600 seconds) without configurability
+- Uses title as PDA seed which may cause collisions with similar titles
+- No maximum length validation for title and description strings
+
+Function "vote_process":
+- Arithmetic overflow risk in yes_votes/no_votes addition without checked math
+- User can vote multiple times by creating different vote records
+- No prevention of voting after proposal end time beyond the initial check
+
+Function "manage_governance_points":
+- Arithmetic underflow risk when subtracting governance points
+- No upper bound validation for governance points
+- Admin can arbitrarily modify any user's points without restrictions
+
+Function "execute_instruction":
+- Instruction sysvar validation only checks previous instruction, not current context
+- No proper cross-program invocation security validation
+- Missing validation that vault_account is actually owned by vault_program
+
+Function "make_decision":
+- Time comparison uses current_time < proposal.end_time instead of current_time >= proposal.end_time
+- No threshold or quorum requirements for proposal execution
+- Admin can execute decisions regardless of vote outcomes
+
+Function "action_as_str":
+- No security vulnerabilities identified in this helper function
+
+Function "try_from_slice_unchecked" (imported):
+- Using unchecked deserialization which can lead to malformed data processing
+- Should use checked deserialization with proper error handling
+
+Function "invoke_signed" (imported):
+- Proper usage observed but requires careful validation of all account inputs
+- Missing validation of program ownership in cross-program invocations

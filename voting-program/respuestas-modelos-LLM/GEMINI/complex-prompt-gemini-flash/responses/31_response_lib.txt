@@ -1,0 +1,45 @@
+Function "vault_program_id":
+- The `unwrap()` call will cause the program to panic if the `Pubkey::from_str` function fails. This could happen if the provided string is not a valid public key.
+
+Function "process_instruction":
+- The `unpack` method on the `InstructionFormat` trait could fail, leading to a program crash if the instruction data is invalid.
+
+Function "create_admin":
+- The size calculation for the admin account using `account.try_to_vec()?.len()` could lead to a denial of service if the serialization fails, as it consumes compute budget before failing.
+- There is no check to prevent multiple admin accounts from being created. If the admin PDA is somehow derived differently (e.g., due to a bug or future change in the `find_program_address` function), it could be possible to create multiple admin accounts, leading to confusion and potential security issues.
+
+Function "update_admin":
+- The size calculation for the admin account using `Admin_Account::try_from_slice(&admin_account_dao.data.borrow())?` could lead to a denial of service if the deserialization fails, as it consumes compute budget before failing.
+- There's no check to ensure that the `new_admin` Pubkey is a valid and authorized entity.
+
+Function "create_account":
+- The size calculation for the user account using `account.try_to_vec()?.len()` could lead to a denial of service if the serialization fails, as it consumes compute budget before failing.
+- There is no mechanism to prevent a user from creating multiple accounts, potentially gaming the governance system.
+
+Function "open_proposal":
+- The size calculation for the proposal account using `proposal.try_to_vec()?.len()` could lead to a denial of service if the serialization fails, as it consumes compute budget before failing.
+- The hardcoded proposal duration of 1 hour might not be suitable for all types of proposals. Consider making the duration configurable by the admin.
+- The program uses the `title` in `Pubkey::find_program_address`, which means that users are restricted to a title length that does not exceed the maximum length of a seed.
+- The `title` is passed directly to `Pubkey::find_program_address` without any sanitization which could lead to unexpected behavior.
+
+Function "vote_process":
+- The size calculation for the vote record account using `vote_record.try_to_vec()?.len()` could lead to a denial of service if the serialization fails, as it consumes compute budget before failing.
+- A user can vote multiple times on the same proposal.
+- The program assumes that the `user.amount_governance_points` is a valid measure of voting power. There's no mechanism to prevent a user from accumulating governance points solely for voting purposes, potentially manipulating the outcome of proposals.
+- The user account and proposal account are serialized to disk at the end of the function after updating the votes, if the program fails after creating the vote_record_account, there would be a new vote_record_account but the vote won't be accounted for on the other accounts, leading to inconsistency.
+
+Function "manage_governance_points":
+- It's possible for the admin to set a user's governance points to zero, effectively disenfranchising them. While this might be intended functionality, it's worth considering whether there should be a minimum number of governance points that a user must have.
+- There are no checks to prevent integer overflow when adding governance points, which is partially mitigated by the use of `checked_sub`
+- The size calculation for the admin account using `Admin_Account::try_from_slice(&admin_account_dao.data.borrow())?` could lead to a denial of service if the deserialization fails, as it consumes compute budget before failing.
+
+Function "execute_instruction":
+- The nested match statements and PDA checks make the code harder to read and reason about. Consider refactoring the code to improve readability and maintainability.
+- There are multiple checks for the same error, this could be simplified.
+- The size calculation for the admin account using `Admin_Account::try_from_slice(&user_account_dao.data.borrow())?` could lead to a denial of service if the deserialization fails, as it consumes compute budget before failing.
+- The program checks the vault program id using a hardcoded pubkey which could change, there should be a mechanism to upgrade or update that value to keep compatibility.
+- The check `if current_index > 0` can be removed as `load_instruction_at` will return an error if the index is out of bounds which is already handled by `.map_err(|_| ProgramError::InvalidInstructionData)?`
+
+Function "make_decision":
+- The size calculation for the admin account using `Admin_Account::try_from_slice(&admin_account_dao.data.borrow())?` could lead to a denial of service if the deserialization fails, as it consumes compute budget before failing.
+- The proposal is just marked as `executed = true`, there is no actual logic to do any action based on the decision, maybe it should call a function to execute the proposal.

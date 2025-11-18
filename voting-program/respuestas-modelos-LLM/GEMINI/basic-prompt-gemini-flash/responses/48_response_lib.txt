@@ -1,0 +1,125 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey which represents the vault program's ID.
+- Uses `Pubkey::from_str` which can panic if the string is not a valid Pubkey.
+
+Function "send_create_vault_transaction":
+- Sends a cross-program invocation (CPI) to the vault program to create a vault.
+- Takes several account infos and a `vault_bump` as input.
+- Constructs the instruction data by concatenating the `variant_instr`, the `id_pubkey`, and the `vault_bump`.
+- Invokes the vault program using `invoke_signed`, passing the necessary accounts and seeds for signing.
+- The `vault_seeds` used for signing are composed of the string literal "vault" and the `vault_bump` passed as argument to the function.
+
+Function "send_instr_to_vault_transaction":
+- Sends a cross-program invocation (CPI) to the vault program for depositing or withdrawing.
+- Takes several account infos, an amount, and a `vault_bump` as input.
+- Constructs the instruction data by concatenating the `variant_instr`, the amount in little-endian byte order, and the `id_pubkey`.
+- Invokes the vault program using `invoke_signed`, passing the necessary accounts and seeds for signing.
+- The `vault_seeds` used for signing are composed of the string literal "vault" and the `vault_bump` passed as argument to the function.
+
+Function "process_instruction":
+- The main entry point of the program.
+- Deserializes the instruction data into an `InstructionFormat` enum.
+- Matches on the instruction type and calls the corresponding handler function.
+
+Function "create_admin":
+- Creates an admin account.
+- Checks if the admin payer is a signer.
+- Checks if the admin account has already been initialized.
+- Derives the admin PDA using `Pubkey::find_program_address` with the seed "admin".
+- Checks if the provided admin account matches the derived PDA.
+- Gets the clock sysvar and retrieves the current timestamp.
+- Creates the admin account using a CPI to the system program, signing with the admin PDA.
+- Serializes the `Admin_Account` data into the created account.
+
+Function "update_admin":
+- Updates the admin account with a new admin Pubkey.
+- Checks if the admin account owner is the program.
+- Checks if the admin payer is a signer.
+- Deserializes the `Admin_Account` from the account data.
+- Derives the admin PDA using `Pubkey::find_program_address` with the seed "admin".
+- Checks if the provided admin account matches the derived PDA.
+- Gets the clock sysvar and retrieves the current timestamp.
+- Updates the admin_id field in the `Admin_Account` and serializes the updated data back into the account.
+
+Function "create_account":
+- Creates a user account.
+- Checks if the user payer is a signer.
+- Checks if the user account has already been initialized.
+- Derives the user PDA using `Pubkey::find_program_address` with the seeds "userAccount" and the user's Pubkey.
+- Checks if the provided user account matches the derived PDA.
+- Creates the user account using a CPI to the system program, signing with the user PDA.
+- Serializes the `User_Account` data into the created account.
+- Initial amount of governance points is set to 10.
+
+Function "open_proposal":
+- Creates a proposal account.
+- Checks if the user account owner is the program.
+- Checks if the user payer is a signer.
+- Checks if the proposal account has already been initialized.
+- Derives the proposal PDA using `Pubkey::find_program_address` with the seeds "proposal" and the proposal title.
+- Checks if the provided proposal account matches the derived PDA.
+- Gets the clock sysvar and retrieves the current timestamp.
+- Sets the proposal end time to 1 hour after the start time.
+- Creates the proposal account using a CPI to the system program, signing with the proposal PDA.
+- Serializes the `Proposal` data into the created account.
+
+Function "vote_process":
+- Processes a vote for a proposal.
+- Checks if the user and proposal account owners are the program.
+- Checks if the user payer is a signer.
+- Checks if the vote record account has already been initialized.
+- Derives the vote PDA using `Pubkey::find_program_address` with the seeds "vote", the user's Pubkey, and the proposal's Pubkey.
+- Checks if the provided vote record account matches the derived PDA.
+- Deserializes the `Proposal` and `User_Account` data.
+- Gets the clock sysvar and retrieves the current timestamp.
+- Checks if the current time is within the proposal's start and end times.
+- Updates the yes_votes or no_votes count in the proposal based on the vote answer.
+- Creates a vote record account.
+- Serializes the `Vote_Record`, `Proposal` and `User_Account` data into their respective accounts.
+
+Function "manage_governance_points":
+- Manages the governance points of a user account.
+- Checks if the admin and user account owners are the program.
+- Checks if the admin payer is a signer.
+- Derives the admin PDA using `Pubkey::find_program_address` with the seed "admin".
+- Checks if the provided admin account matches the derived PDA.
+- Deserializes the `User_Account` data.
+- Adds or subtracts the specified amount from the user's governance points.
+- Serializes the updated `User_Account` data back into the account.
+
+Function "execute_instruction":
+- Executes an instruction by CPI to the vault program.
+- Checks if the user account owner is the program.
+- Checks if the user payer is a signer.
+- Checks if the user account has lamports.
+- Performs checks based on the `variant_instr` value (0, 1, or 2) relating to admin or user accounts.
+- Checks if the vault program key matches the expected vault program ID.
+- Loads the current instruction index using the instruction sysvar.
+- Checks if the previous instruction (if any) was a vault program confirmation.
+- Calls `send_create_vault_transaction` or `send_instr_to_vault_transaction` based on the `variant_instr` value.
+
+Function "make_decision":
+- Finalizes a proposal by determining if it passes or fails.
+- Checks if the admin and proposal account owners are the program.
+- Checks if the admin payer is a signer.
+- Derives the admin PDA using `Pubkey::find_program_address` with the seed "admin".
+- Checks if the provided admin account matches the derived PDA.
+- Deserializes the `Proposal` data.
+- Gets the clock sysvar and retrieves the current timestamp.
+- Checks if the current time is after the proposal's end time.
+- Determines if the proposal passes based on the yes_votes vs. no_votes.
+- Sets the proposal's executed field to true and serializes the updated `Proposal` data back into the account.
+
+Potential Risks and Vulnerabilities:
+
+- Hardcoded Program ID: The `vault_program_id` function returns a hardcoded Pubkey. If the vault program's ID changes, this program will need to be redeployed.
+- PDA Collision: The `find_program_address` function could potentially lead to PDA collisions if the seeds are not unique enough. Especially with the proposal seed, where the title of the proposal is used.
+- Integer Overflow/Underflow: The `manage_governance_points` function could be vulnerable to integer overflows or underflows if the `amount` is too large or if the user's `amount_governance_points` is too small.
+- Time-Based Vulnerabilities: Reliance on the `Clock` sysvar for critical logic (e.g., proposal voting deadlines) could be vulnerable to manipulation if the clock is not reliable.
+- Lack of Access Control in execute_instruction: The check `if user_account_dao.key != &admin_pda` in `execute_instruction` when `variant_instr` is 0, 2 can be bypassed since the `user_payer` which should be the admin is not checked against the admin_account_dao account.
+- Instruction Sysvar Vulnerability: The check for the previous instruction in `execute_instruction` only checks the program ID. A malicious program could potentially spoof this by creating a dummy instruction with the correct program ID, bypassing the intended security check. Also, the instruction sysvar is deprecated.
+- CPI without checks on the external program result: The program doesn't check for errors in the `invoke_signed` calls. This can lead to unexpected behavior if the external program fails.
+- Proposal Title as PDA Seed: Using proposal titles directly as PDA seeds in `open_proposal` and `vote_process` can lead to issues if the titles contain special characters or are too long, exceeding the maximum seed length. Also, it might prevent the creation of different proposals with the same title, as their PDAs would collide.
+- Re-entrancy Risk: If the CPI to the vault program calls back into this program, it could lead to unexpected behavior.
+- Missing input validation: Many functions do not properly validate input data such as the title and description strings. This can lead to unexpected behavior and potentially DoS attacks by providing oversized input values.
+- Potential for griefing: The admin account can arbitrarily add or remove governance points from user accounts in the `manage_governance_points` function, potentially leading to griefing attacks.

@@ -1,0 +1,66 @@
+Function "vault_program_id":
+- Hardcoded program ID which may be incorrect if the vault program changes
+- Uses unwrap() which can panic if the string is invalid
+
+Function "action_as_str":
+- No apparent vulnerabilities, but match on u8 could be unsafe if variant_instr is not validated
+
+Function "send_create_vault_transaction":
+- Missing validation of account ownership and program IDs
+- Uses hardcoded seeds which may not match the vault program's expectations
+- No validation that vault_program is the expected program
+- Potential reentrancy risk with invoke_signed
+
+Function "send_instr_to_vault_transaction":
+- Missing validation of account ownership and program IDs
+- Uses hardcoded seeds which may not match the vault program's expectations
+- No validation that vault_program is the expected program
+- Missing system program account for token transfers
+
+Function "process_instruction":
+- No input validation on instruction data before unpacking
+- No access control checks at the entry point level
+
+Function "create_admin":
+- Uses create_program_address without verifying the bump seed matches
+- Missing rent exemption check before account creation
+- No validation that system_program is actually the system program
+- Potential reentrancy with invoke_signed
+
+Function "update_admin":
+- No authorization check beyond signature - any signer can update admin
+- Missing validation that the new_admin is a valid pubkey
+- No time-based restrictions on admin changes
+
+Function "create_account":
+- Hardcodes initial governance points (10) without configurable mechanism
+- Uses create_program_address without verifying the bump seed matches
+- Missing rent exemption check before account creation
+
+Function "open_proposal":
+- Uses title as part of PDA seeds which could cause collisions if titles are similar
+- Fixed 1-hour duration (3600 seconds) without configurability
+- No maximum length validation for title and description strings
+
+Function "vote_process":
+- Allows multiple votes from same user if they create multiple accounts
+- No check if user has already voted on this proposal
+- Vote weight based on governance points which can be manipulated by admin
+- Missing validation that vote_record_account is uninitialized
+
+Function "manage_governance_points":
+- Admin can arbitrarily add/subtract governance points without restrictions
+- No limits on amount that can be added/removed
+- No event logging for governance point changes
+
+Function "execute_instruction":
+- Complex branching logic with potential state inconsistencies
+- Uses instruction sysvar to check previous instruction, which can be manipulated
+- Missing proper validation of vault_program account
+- No validation that the instruction is authorized for the specific user type
+
+Function "make_decision":
+- Only checks if current time > end_time, no minimum voting period
+- Decision logic is simple majority without quorum requirements
+- No validation that proposal hasn't already been executed
+- Admin can execute decision regardless of voting results

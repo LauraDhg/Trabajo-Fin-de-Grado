@@ -1,0 +1,41 @@
+Function "vault_program_id":
+- Hardcoded program ID, which should be configurable or dynamically derived for flexibility and security.
+
+Function "send_create_vault_transaction":
+- The `vault_seeds` variable is hardcoded, which could lead to collision and compromise the security of the vault.
+- Relies on the `variant_instr` value without proper validation, potentially leading to unintended actions if the value is manipulated.
+
+Function "send_instr_to_vault_transaction":
+- The `vault_seeds` variable is hardcoded, which could lead to collision and compromise the security of the vault.
+- Relies on the `variant_instr` value without proper validation, potentially leading to unintended actions if the value is manipulated.
+
+Function "process_instruction":
+- Dispatching logic relies on the `InstructionFormat::unpack` result without a fallback for unknown instruction types.
+
+Function "create_admin":
+- Does not check if the admin account has already been created. Although it checks for lamports, an attacker might have set the lamports to zero and still pass the conditional, so the Program Derived Address (PDA) should be checked.
+
+Function "update_admin":
+- It does not check if the `admin_payer` is the current admin before updating it. This allows anyone to change the admin.
+
+Function "create_account":
+- Gives 10 governance points to every new user. It's important to consider if this initial allocation of governance points is intended and whether it might be subject to abuse.
+
+Function "open_proposal":
+- It does not limit the length of title and description, which might lead to rent exhaustion or denial of service.
+
+Function "vote_process":
+- It does not prevent users from voting multiple times on the same proposal.
+- It updates votes based on current governance points, which may have changed since the proposal was created, leading to inconsistent vote weighting.
+
+Function "manage_governance_points":
+- Uses a boolean `instruction` to determine addition or subtraction. An enum is more readable and less prone to errors.
+
+Function "execute_instruction":
+- Uses a numerical `variant_instr` to determine which action to execute. An enum is more readable and less prone to errors.
+- The first three match arms inside execute_instruction have empty "Ok(())" blocks. These arms should have some business logic.
+- Checks `prev_ix.program_id == vault_program_id()` but does not actually use the result. It only logs a message.
+
+Function "make_decision":
+- It does not check if the proposal has already been executed.
+- Relies on a simple majority (`proposal.yes_votes >= proposal.no_votes`) for decision-making. More sophisticated mechanisms such as quorum or weighted voting may be desirable.

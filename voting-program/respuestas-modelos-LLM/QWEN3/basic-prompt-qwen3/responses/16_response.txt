@@ -1,0 +1,76 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey derived from the string "6dVLkpmd5BvVQF7oXpipnQFtKwba2uQkMMwzHnaqf8Gr".
+- This function is used to identify the Vault program, but the key is hardcoded and not configurable, which may reduce flexibility or introduce risk if the Vault program changes.
+
+Function "action_as_str":
+- Maps a u8 action code to a static string description (e.g., 0 → "Create").
+- Used for logging purposes only.
+- Returns "Unknown" for any unrecognized value, which could mask invalid inputs if not properly validated elsewhere.
+
+Function "send_create_vault_transaction":
+- Constructs and sends a cross-program invocation (CPI) to the Vault program to create a vault.
+- Uses `invoke_signed` with PDA-derived seeds (`b"vault"` and bump), ensuring authority via program-derived address.
+- The instruction data includes the variant, ID pubkey, and bump.
+- Risk: Does not validate that `vault_program.key` matches the expected `vault_program_id()`, allowing potential CPI to an incorrect or malicious program.
+
+Function "send_instr_to_vault_transaction":
+- Sends a CPI to the Vault program for deposit or withdrawal operations.
+- Includes amount and ID in instruction data and uses the same PDA signing mechanism.
+- Risk: Like `send_create_vault_transaction`, it does not verify that `vault_program.key` matches the expected Vault program ID, enabling potential hijacking.
+
+Function "process_instruction":
+- Main entry point for the program; dispatches instructions based on unpacked data.
+- Uses `InstructionFormat::unpack` to deserialize input data.
+- Risk: Relies on proper validation in each handler; failure in any could lead to vulnerabilities.
+- No explicit instruction size or data bounds check before unpacking.
+
+Function "create_admin":
+- Initializes an admin PDA account with signer as admin ID and current timestamp.
+- Validates that the provided admin account is uninitialized and matches the expected PDA.
+- Uses `invoke_signed` to create the account with rent exemption.
+- Risk: Does not check if the admin already exists or prevent re-creation after deletion; could allow overwrite if account is closed and reused.
+
+Function "update_admin":
+- Allows current admin to transfer admin privileges to a new public key.
+- Validates signer is current admin via stored `admin_id`.
+- Updates timestamp on change.
+- Risk: No delay or confirmation mechanism, enabling immediate privilege escalation if admin key is compromised.
+
+Function "create_account":
+- Creates a user account with 10 initial governance points.
+- Uses PDA derived from user’s key.
+- Risk: Hardcoded 10 governance points may not be flexible or secure; could be exploited in sybil attacks if account creation is not rate-limited or permissioned.
+
+Function "open_proposal":
+- Allows a user to create a new proposal with title, description, and one-hour voting window.
+- Stores proposer’s public key, initializes vote counts, and sets start/end times.
+- Risk: Title is used in PDA derivation; long or duplicate titles could cause issues (e.g., hash collisions or denial of service).
+- No length check on `title` or `description`, risking memory exhaustion or inconsistent PDAs.
+
+Function "vote_process":
+- Allows a user to vote on a proposal using their full governance points.
+- Creates a vote record account and updates proposal vote totals.
+- Prevents voting after `end_time` using clock sysvar.
+- Risk: Vote weight is based on current `amount_governance_points` at time of vote; if points change later, double-counting or inconsistency could occur.
+- No check that user hasn’t already voted (though vote PDA should prevent this); relies on PDA uniqueness.
+
+Function "manage_governance_points":
+- Allows admin to add or subtract governance points from a user.
+- Uses checked arithmetic to prevent overflow/underflow.
+- Risk: No event logging or limits on point adjustments; admin could unfairly manipulate voting power.
+- Serializes admin account even when unchanged.
+
+Function "execute_instruction":
+- Handles CPIs to the Vault program for vault creation, deposit, or withdrawal.
+- Validates user or admin role depending on instruction type.
+- Checks previous instruction via `Instructions` sysvar to ensure CPI was expected.
+- Risk: Previous instruction check only verifies program ID, not instruction data or account list; could be bypassed by a malicious program mimicking Vault.
+- Risk: Uses `program_id.clone()` as `id_pubkey`, which may not be intended; likely should pass a different identifier.
+- Risk: After role checks, it returns `Ok(())` inside match arms instead of continuing; this causes early return and skips CPI execution.
+- Critical bug: The `match` block ends with `?;` and then proceeds to CPI logic, but the `Ok(())` returns early and skips vault interaction — this breaks intended functionality.
+
+Function "make_decision":
+- Allows admin to finalize a proposal after voting period ends.
+- Checks that current time is past `end_time` and marks proposal as executed.
+- Risk: No check that proposal hasn’t already been executed; could lead to replay.
+- Admin is required, but decision is based solely on vote counts; admin could delay execution indefinitely.

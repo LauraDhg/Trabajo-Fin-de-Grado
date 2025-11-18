@@ -1,0 +1,32 @@
+Function "process_instruction":
+- No direct vulnerabilities found in this routing function
+- Relies on proper validation in the individual instruction handlers
+
+Function "initialize_wallet_account":
+- Does not verify that wallet_account is actually a PDA derived from the expected seeds
+- Missing validation that wallet_account.owner == program_id
+- Uses unwrap() on try_into() conversion which could panic
+- Does not validate that system_program is actually the system program
+- Missing proper rent exemption validation beyond minimum balance calculation
+
+Function "deposit_amount":
+- Missing validation that wallet_account.owner == program_id
+- Does not verify that the wallet account belongs to the user signing the transaction
+- No access control beyond signature check - any signer can deposit to any wallet
+- Missing validation that the wallet account is actually a PDA
+
+Function "withdraw_amount":
+- Missing validation that wallet_account.owner == program_id
+- Does not verify that the wallet account belongs to the user signing the transaction
+- No access control beyond signature check - any signer can withdraw from any wallet
+- Missing validation that the wallet account is actually a PDA
+- Missing transfer of actual lamports when withdrawing funds
+
+Function "transfer_amount":
+- Missing validation that both wallet accounts are owned by the program
+- Does not verify that src_wallet_account belongs to the user signing the transaction
+- Missing validation that both wallet accounts are PDAs
+- No access control beyond signature check - any signer can transfer between any wallets
+- Missing cross-program invocation to actually transfer funds between accounts
+- Arithmetic operations are performed in wrong order (add to destination before checking source)
+- Potential reentrancy vulnerability with multiple serialization operations

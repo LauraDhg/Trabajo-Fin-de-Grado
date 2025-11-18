@@ -1,0 +1,75 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for a vault program.
+
+Function "send_create_vault_transaction":
+- Constructs and sends a cross-program invocation (CPI) to create a vault.
+- Takes the `variant_instr`, `id_pubkey`, `vault_bump`, and several account infos as input.
+- Creates an instruction with the provided data and account metadata.
+- Uses `invoke_signed` to execute the instruction with the vault's seeds.
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends a cross-program invocation (CPI) to interact with a vault.
+- Takes the `variant_instr`, `id_pubkey`, `amount`, `vault_bump`, and several account infos as input.
+- Creates an instruction with the provided data and account metadata.
+- Uses `invoke_signed` to execute the instruction with the vault's seeds.
+
+Function "process_instruction":
+- The main entry point of the Solana program.
+- Unpacks the instruction data using `InstructionFormat::unpack`.
+- Matches the unpacked instruction and calls the corresponding handler function.
+
+Function "create_admin":
+- Creates an admin account.
+- Checks for required signatures and account initialization status.
+- Derives the admin account's PDA using `Pubkey::create_program_address`.
+- Creates the admin account using `invoke_signed` with the system program.
+- Serializes the admin account data using Borsh.
+
+Function "update_admin":
+- Updates the admin account with a new admin Pubkey.
+- Checks for correct owner, signer, and admin privileges.
+- Derives the admin account's PDA and checks if it matches the provided account.
+- Deserializes the admin account data, updates the admin ID, and serializes it back.
+
+Function "create_account":
+- Creates a user account.
+- Checks for required signatures and account initialization status.
+- Derives the user account's PDA using `Pubkey::create_program_address`.
+- Creates the user account using `invoke_signed` with the system program.
+- Serializes the user account data using Borsh, initializing governance points to 10.
+
+Function "open_proposal":
+- Creates a proposal account.
+- Checks for required signatures and account initialization status.
+- Derives the proposal account's PDA using `Pubkey::create_program_address`.
+- Creates the proposal account using `invoke_signed` with the system program.
+- Serializes the proposal account data using Borsh, setting initial values.
+
+Function "vote_process":
+- Processes a user's vote on a proposal.
+- Checks for required signatures, account ownership, and initialization status.
+- Derives the vote record's PDA using `Pubkey::create_program_address`.
+- Deserializes the proposal and user account data.
+- Checks if the proposal is still open based on the clock sysvar.
+- Updates the yes or no votes based on the user's vote and governance points.
+- Creates the vote record account and serializes the vote record, proposal, and user account data.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user account.
+- Checks for admin privileges and validates accounts.
+- Deserializes the admin and user account data.
+- Performs addition or subtraction of governance points.
+- Serializes the updated user account data.
+
+Function "execute_instruction":
+- Executes different instructions related to a vault program based on `variant_instr`.
+- Performs checks based on the `variant_instr`.
+- Calls `send_create_vault_transaction` or `send_instr_to_vault_transaction` to perform CPIs to the vault program.
+- Checks if the previous instruction was a vault program confirmation.
+
+Function "make_decision":
+- Finalizes a proposal based on the votes.
+- Checks for admin privileges and validates accounts.
+- Deserializes the admin and proposal data.
+- Determines if the proposal is approved or denied based on the yes and no votes.
+- Updates the proposal's `executed` field and serializes the changes.

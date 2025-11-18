@@ -1,0 +1,68 @@
+Function "vault_program_id":
+- Hardcoded program ID, which is a security risk if the program is upgraded or if there are multiple instances.
+- The use of unwrap() can cause the program to panic if the Pubkey::from_str() fails.
+
+Function "send_create_vault_transaction":
+- The vault_seeds are hardcoded and should be carefully managed to avoid collisions.
+- The function uses invoke_signed which requires careful consideration of the signing seeds to prevent unauthorized access.
+
+Function "send_instr_to_vault_transaction":
+- The vault_seeds are hardcoded and should be carefully managed to avoid collisions.
+- The function uses invoke_signed which requires careful consideration of the signing seeds to prevent unauthorized access.
+
+Function "process_instruction":
+- This is the entry point of the program. It unpacks the instruction data and calls the appropriate handler function.
+- There is no access control or authorization logic implemented in this function, making it vulnerable.
+
+Function "create_admin":
+- Uses `invoke_signed` to create the admin account. It's crucial to ensure the seeds used for signing are unique and prevent collision.
+- Checks if the account is already initialized, preventing accidental overwrites.
+- The `create_program_address` function is correctly used to derive the admin PDA.
+
+Function "update_admin":
+- The function allows updating the admin. It's important to ensure only the current admin can call this function.
+- It's important to add an instruction to check if the admin_payer is the current admin before proceeding.
+
+Function "create_account":
+- Checks if the account is already initialized, preventing accidental overwrites.
+- The `create_program_address` function is correctly used to derive the user PDA.
+- The account is initialized with 10 governance points.
+- Uses `invoke_signed` to create the user account. It's crucial to ensure the seeds used for signing are unique and prevent collision.
+
+Function "open_proposal":
+- The function creates a new proposal. It's important to ensure that the proposal title is unique.
+- It's important to limit the size of the title and description fields to prevent excessive storage costs.
+- The PDA creation includes the title, which could lead to collisions if titles are not unique enough.
+- There is no mechanism to prevent a user from creating multiple proposals.
+- The function initializes the start and end times for the proposal.
+
+Function "vote_process":
+- The function allows users to vote on a proposal.
+- The function checks if the proposal is still open before allowing users to vote.
+- The function updates the yes_votes or no_votes count based on the user's vote.
+- Uses `checked_add` to prevent integer overflow.
+- There is no check to prevent a user from voting multiple times on the same proposal.
+- The PDA creation for the vote record includes the user and proposal keys, which is good for uniqueness.
+- The proposal and user accounts are serialized after the vote, which is correct.
+
+Function "manage_governance_points":
+- The function allows the admin to manage governance points for users.
+- The function checks if the admin is a signer and if the admin account is valid.
+- The function adds or subtracts governance points from the user's account based on the instruction parameter.
+- Uses `checked_add` to prevent integer overflow.
+- Governance points can be subtracted without a lower limit which might lead to underflow.
+
+Function "execute_instruction":
+- The function allows users to execute instructions related to a vault program.
+- The function checks if the user account is valid and if the user is a signer.
+- The function uses a switch statement to handle different instructions.
+- The function uses CPI (Cross-Program Invocation) to call the vault program.
+- The checks performed on the account keys inside the match statement (case 0, 1, 2) seem redundant and potentially incorrect. The PDA should be derived using the appropriate seeds for the correct account type (admin or user).
+- The `vault_program_id()` is hardcoded, which can be problematic if the vault program is updated.
+- The reliance on the previous instruction being a Vault program confirmation based on instruction history can be bypassed or manipulated, leading to vulnerabilities.
+
+Function "make_decision":
+- The function allows the admin to make a decision on a proposal.
+- The function checks if the proposal is still active before allowing the admin to make a decision.
+- The function updates the executed flag on the proposal.
+- The admin can execute a proposal even if it has more 'no' votes than 'yes' votes, and it does not check if the admin is the creator of the proposal. This could lead to a malicious admin approving proposals against the will of the voters.

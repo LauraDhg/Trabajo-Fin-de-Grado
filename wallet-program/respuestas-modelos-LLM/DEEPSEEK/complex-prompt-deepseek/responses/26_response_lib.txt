@@ -1,0 +1,37 @@
+Function "process_instruction":
+- No direct security vulnerabilities in this routing function
+- Properly unpacks instruction data before routing
+- Matches on instruction variants correctly
+
+Function "initialize_wallet_account":
+- Missing validation that user_account is signer
+- Uses unwrap() which can panic on conversion error (wallet_len.try_into().unwrap())
+- Does not verify that wallet_account is writable
+- Does not verify that user_account is owned by system program
+- PDA derivation uses fixed seed "wallet" which is acceptable but should be documented
+- Checks lamports > 0 for initialization but should use proper initialized flag check
+- Missing rent exemption transfer from user to PDA account
+
+Function "deposit_amount":
+- Missing overflow check on wallet.amount += amount
+- Does not verify that user_account is signer
+- Does not verify that wallet_account is writable
+- Missing validation that the deposit amount is actually transferred from user
+- Pure state change without value transfer creates inconsistency
+
+Function "withdraw_amount":
+- Missing underflow check on wallet.amount -= amount
+- Does not verify that user_account is signer
+- Does not verify that wallet_account is writable
+- Missing validation that withdrawn amount is actually transferred to user
+- Pure state change without value transfer creates inconsistency
+- No access control - any user can withdraw from any wallet if they provide the account
+
+Function "transfer_amount":
+- Missing overflow check on dest_wallet.amount += amount
+- Missing underflow check on src_wallet.amount -= amount
+- Does not verify that user_account is signer (only source account owner should authorize)
+- Does not verify that src_wallet_account and dest_wallet_account are writable
+- Missing cross-program invocation to actually transfer value between accounts
+- No access control - any user can transfer from any source wallet
+- Missing validation that source wallet has sufficient balance before subtraction

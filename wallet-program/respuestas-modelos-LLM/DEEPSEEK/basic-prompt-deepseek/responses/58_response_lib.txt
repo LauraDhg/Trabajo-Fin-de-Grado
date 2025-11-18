@@ -1,0 +1,46 @@
+Function "process_instruction":
+- Unpacks instruction data using InstructionFormat::unpack
+- Matches instruction variants to appropriate handler functions
+- Routes CreateAccount to initialize_wallet_account
+- Routes IncreaseAmount to deposit_amount with amount parameter
+- Routes WithdrawAmount to withdraw_amount with amount parameter
+- Routes TransferAmount to transfer_amount with amount parameter
+
+Function "initialize_wallet_account":
+- Finds PDA address using user account key and "wallet" seed
+- Creates new Wallet struct with amount 0 and initialized true
+- Calculates rent requirements for wallet account
+- Uses invoke_signed to create account with proper PDA derivation
+- Serializes wallet data to the newly created account
+- Missing validation to ensure wallet account is actually the PDA
+- No validation to prevent reinitialization of existing wallet
+
+Function "deposit_amount":
+- Reads current wallet state from account data
+- Increases wallet amount by specified parameter
+- Serializes updated wallet back to account
+- No access control - any account can deposit to any wallet
+- No validation that user_account owns the wallet
+- No validation that wallet is initialized
+- Potential integer overflow risk with unchecked addition
+
+Function "withdraw_amount":
+- Reads current wallet state from account data
+- Checks if sufficient funds exist before withdrawal
+- Uses checked_sub to prevent underflow
+- Serializes updated wallet back to account
+- No access control - any account can withdraw from any wallet
+- No validation that user_account owns the wallet
+- No signature verification for withdrawal authorization
+
+Function "transfer_amount":
+- Reads both source and destination wallet states
+- Adds amount to destination wallet
+- Checks if source wallet has sufficient funds
+- Uses checked_sub to prevent underflow
+- Serializes both wallets back to accounts
+- No access control - any account can transfer from any wallet
+- No validation that user_account owns the source wallet
+- No validation that destination wallet belongs to dest_user_account
+- Potential integer overflow in destination wallet addition
+- No reentrancy protection between source subtraction and destination addition

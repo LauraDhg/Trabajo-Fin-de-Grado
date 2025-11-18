@@ -1,0 +1,100 @@
+Function "vault_program_id":
+- Returns a hardcoded `Pubkey`.
+
+Function "action_as_str":
+- Takes a `u8` representing an action and returns a string slice describing the action.
+- Returns "Unknown" if the input `u8` doesn't match a known action.
+
+Function "send_create_vault_transaction":
+- Sends a cross-program invocation (CPI) to the vault program to create a vault.
+- Includes the `variant_instr`, `id_pubkey`, and `vault_bump` in the instruction data.
+- Signs the instruction with the vault's seeds.
+
+Function "send_instr_to_vault_transaction":
+- Sends a CPI to the vault program for depositing or withdrawing from the vault.
+- Includes the `variant_instr`, `amount`, and `id_pubkey` in the instruction data.
+- Signs the instruction with the vault's seeds.
+
+Function "process_instruction":
+- The main entrypoint of the Solana program.
+- Deserializes the instruction data into an `InstructionFormat` enum.
+- Calls the appropriate handler function based on the instruction type.
+
+Function "create_admin":
+- Creates an admin account.
+- Checks that the admin payer is a signer.
+- Checks if the admin account has already been initialized.
+- Derives the admin PDA using `Pubkey::find_program_address`.
+- Creates the admin account using a CPI to the system program.
+- Serializes the `Admin_Account` data into the newly created account.
+
+Function "update_admin":
+- Updates the admin account with a new admin `Pubkey`.
+- Checks that the admin account is owned by the program.
+- Checks that the admin payer is a signer.
+- Checks that the current admin is the one attempting to update the account.
+- Derives the admin PDA and verifies the admin account address.
+- Updates the `admin_id` field in the `Admin_Account` and serializes the updated data.
+
+Function "create_account":
+- Creates a user account.
+- Checks that the user payer is a signer.
+- Checks if the user account has already been initialized.
+- Derives the user account PDA using `Pubkey::find_program_address`.
+- Creates the user account using a CPI to the system program.
+- Serializes the `User_Account` data into the newly created account, initializing the user with 10 governance points.
+
+Function "open_proposal":
+- Creates a proposal account.
+- Checks that the user payer is a signer.
+- Checks if the proposal account has already been initialized.
+- Derives the proposal PDA using `Pubkey::find_program_address`.
+- Creates the proposal account using a CPI to the system program.
+- Serializes the `Proposal` data into the newly created account.
+- Sets the `start_time` to the current clock timestamp and `end_time` to one hour later.
+
+Function "vote_process":
+- Processes a user's vote on a proposal.
+- Checks that the user payer is a signer.
+- Checks if the vote record account has already been initialized.
+- Derives the vote record PDA using `Pubkey::find_program_address`.
+- Deserializes the `Proposal` and `User_Account` data.
+- Creates a vote record using a CPI to the system program.
+- Checks that the proposal is still open for voting based on the clock timestamp.
+- Updates the `yes_votes` or `no_votes` count on the proposal based on the `vote_answer`.
+- Serializes the `Vote_Record`, `Proposal`, and `User_Account` data back into their respective accounts.
+- The vote weight is equal to the user's amount of governance points.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user account.
+- Checks that the admin payer is a signer.
+- Derives the admin PDA and verifies the admin account address.
+- Checks that the caller is the admin.
+- Deserializes the `User_Account` data.
+- Adds or subtracts the specified `amount` from the user's `amount_governance_points`.
+- Serializes the updated `User_Account` data back into the account.
+
+Function "execute_instruction":
+- Executes instructions related to a vault program via CPI.
+- Performs checks to ensure the user account belongs to the DAO program and the user is a signer.
+- Includes logic for different instruction variants (create, deposit, withdraw).
+- Checks if the previous instruction was a vault program confirmation.
+- Sends a CPI to the vault program based on the `variant_instr`.
+
+Function "make_decision":
+- Finalizes a proposal and determines whether it passes or fails based on the vote counts.
+- Checks that the admin payer is a signer.
+- Derives the admin PDA and verifies the admin account address.
+- Checks that the caller is the admin.
+- Deserializes the `Proposal` data.
+- Checks if the voting period has ended based on the clock timestamp.
+- Sets the `executed` flag on the proposal and serializes the updated data.
+
+Potential risks and vulnerabilities:
+- The `vault_program_id` is hardcoded, making the program inflexible and potentially vulnerable if the vault program's ID changes.
+- There's no check on the `title` and `description` strings in `open_proposal` to prevent excessively long strings, which could lead to rent exhaustion or denial-of-service.
+- The `end_time` in `open_proposal` is hardcoded to be 1 hour after the `start_time`. Consider making this configurable.
+- The program does not implement access control for the `execute_instruction` function, except for checking the admin account. Any user can call this function.
+- The admin PDA and user account PDA seeds do not include a nonce/bump seed to guarantee that the PDA is not a valid account.
+- The program does not validate the `amount` being passed to `manage_governance_points`, it could lead to an overflow.
+- The program uses `try_from_slice_unchecked`, which is unsafe.

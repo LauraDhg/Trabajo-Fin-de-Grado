@@ -1,0 +1,65 @@
+Function "vault_program_id":
+- It uses `Pubkey::from_str`, which can panic if the provided string is not a valid Pubkey.
+
+Function "process_instruction":
+- This function acts as the main dispatcher, calling different instruction handlers based on the `instruction` argument. It is well-structured.
+
+Function "create_admin":
+- Checks for admin payer signature.
+- Checks if the admin account has already been initialized.
+- Creates a program address (PDA) for the admin account using `Pubkey::create_program_address`.
+- Checks if the derived PDA matches the provided admin account.
+- Checks if the clock sysvar ID is valid.
+- Creates an `Admin_Account` struct and serializes it into the admin account's data.
+- The `last_update` field is set to the clock's unix timestamp, which is good for tracking the last update time.
+
+Function "update_admin":
+- Checks if the admin payer is a signer.
+- Checks if the provided admin account belongs to the program.
+- Deserializes the admin account data.
+- Checks if the derived PDA matches the provided admin account.
+- Checks if the admin payer is the current admin.
+- Updates the admin ID and last update timestamp.
+
+Function "create_account":
+- Checks for user payer signature.
+- Checks if the user account has already been initialized.
+- Creates a program address (PDA) for the user account using `Pubkey::create_program_address`.
+- Checks if the derived PDA matches the provided user account.
+- Initializes a `User_Account` with a default amount of governance points.
+
+Function "open_proposal":
+- Checks if the user payer is a signer.
+- Checks if the proposal account has already been initialized.
+- Creates a program address (PDA) for the proposal account using `Pubkey::create_program_address`.
+- Checks if the derived PDA matches the provided proposal account.
+- Sets a fixed 1-hour duration for proposals.
+- The `title` and `description` are strings, which means they have dynamic size. If a user sets a really large string, then the rent might be not enough and the program can break.
+
+Function "vote_process":
+- Checks if the user payer is a signer.
+- Checks if the proposal is still open based on the current time and the proposal's end time.
+- Updates the `yes_votes` or `no_votes` count based on the user's vote and governance points.
+- Creates a `Vote_Record` and serializes it.
+- Accumulates votes based on `amount_governance_points` which might lead to a vulnerability if the user can manipulate it.
+
+Function "manage_governance_points":
+- Checks if the admin payer is a signer.
+- Checks if the admin account has the authority to manage governance points.
+- Adds or subtracts governance points from the user's account.
+- Uses `checked_sub` to prevent underflow.
+
+Function "execute_instruction":
+- Checks if the user payer is a signer.
+- Executes different instructions based on the `variant_instr`.
+- Delegates to `send_create_vault_transaction` or `send_instr_to_vault_transaction` based on the instruction type.
+- Validates that the `vault_program` key matches the expected `vault_program_id`.
+- Loads the current instruction index from the `instructions` sysvar.
+- It does not validate admin_bump.
+- It checks if previous transaction was a vault program confirmation but doesn't enforce action to be performed if the previous transaction was not a vault program confirmation.
+
+Function "make_decision":
+- Checks if the admin payer is a signer.
+- Checks if the proposal's voting period has ended.
+- Determines if the proposal is approved based on the vote counts.
+- Sets the `executed` flag on the proposal.

@@ -1,0 +1,64 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey which may be insecure if not verified to be the correct Vault program; hardcoding addresses increases risk of misconfiguration or spoofing.
+
+Function "send_create_vault_transaction":
+- Constructs an instruction to a vault program without validating that `vault_program.key` matches the expected vault program ID, increasing risk of CPI to malicious program.
+- Uses `invoke_signed` with seeds but does not validate that the `vault_account` is derived correctly from the expected PDA; vulnerable to PDA manipulation if not enforced.
+
+Function "send_instr_to_vault_transaction":
+- Similar to `send_create_vault_transaction`, constructs CPI without validating `vault_program.key`, risking invocation of wrong program.
+- Does not validate that `vault_account` is a valid PDA derived from expected seeds; potential for account manipulation.
+
+Function "process_instruction":
+- Dispatches instructions without validating instruction data length or alignment; susceptible to malformed input.
+- Relies on `InstructionFormat::unpack` which may be unsafe if not properly bounds-checked.
+
+Function "create_admin":
+- Correctly uses PDA and signer check but does not verify that `system_program` account key matches `system_program::ID`, allowing potential spoofing.
+- Uses `try_to_vec` for serialization length but does not validate data size limits; potential for excessive allocation.
+- Initializes account with lamports check but does not enforce write permissions or ownership cleanly.
+
+Function "update_admin":
+- Performs proper ownership and signer checks.
+- Does not validate that `clock_sysvar` is actually the Clock sysvar beyond key comparison; relies on caller passing correct sysvar.
+- Serializes updated data without validating account mutability.
+
+Function "create_account":
+- Uses user-specific PDA correctly but does not validate `system_program` account key.
+- Grants 10 governance points unconditionally; potential inflation or privilege escalation if not controlled.
+- No rate limiting or checks on number of accounts per user.
+
+Function "open_proposal":
+- Derives PDA using `title.as_bytes()` which may lead to collisions if titles are not unique or normalized.
+- Sets proposal duration to 1 hour; no configurability or validation of time bounds.
+- Does not validate length of `title` or `description`, risking memory exhaustion or deserialization issues.
+- Uses `system_program` without verifying it is the true system program.
+
+Function "vote_process":
+- PDA derivation includes user, proposal, and "vote" label; correct in structure.
+- Does not check that user has not already voted (no duplicate vote prevention).
+- Uses `checked_add` for vote tallying, which is safe.
+- Does not validate that the user's governance points are non-zero before allowing vote.
+- Serializes user account but does not actually modify `user.amount_governance_points`, implying vote weight can be reused.
+
+Function "manage_governance_points":
+- Allows admin to add or subtract governance points.
+- Subtraction uses unchecked `-= amount`, which can underflow if `amount > user.amount_governance_points`.
+- No event logging or limits on point adjustments; risk of abuse by admin.
+- Does not validate that admin is current admin or that operation is time-locked.
+
+Function "execute_instruction":
+- Matches `variant_instr` and performs different logic based on value.
+- For `variant_instr == 0`, incorrectly uses `user_account_dao` as admin PDA check — should be using a dedicated admin account, not repurposing user account.
+- Reuses `user_account_dao` for admin checks in multiple branches, leading to confusion and potential privilege escalation.
+- Validates `vault_program.key` against `vault_program_id()` only after performing logic; should be done earlier.
+- Uses instruction sysvar to check previous CPI; vulnerable to replay or manipulation if not properly validated.
+- Allows CPI to vault program but does not validate that `vault_account` is a PDA derived from correct seeds.
+- `id_pubkey` is set to `program_id.clone()` — unclear purpose; may be used incorrectly in CPI data.
+
+Function "make_decision":
+- Correctly checks time and proposal execution status.
+- Allows decision only after voting period ends.
+- Does not validate that proposal has not already been executed (`executed` flag is updated but not checked before).
+- No quorum or minimum participation requirement enforced; proposal can pass with zero votes if `yes_votes >= no_votes` (both zero).
+- Serializes proposal after update without checking account mutability.

@@ -1,0 +1,88 @@
+Function "vault_program_id":
+- Returns a hardcoded `Pubkey`.
+
+Function "process_instruction":
+- Unpacks the instruction data into an `InstructionFormat` enum.
+- Matches on the enum to call the appropriate handler function.
+- Dispatches to different functions based on the instruction type.
+
+Function "create_admin":
+- Creates an admin account.
+- Takes `admin_bump` as input to derive the PDA.
+- Checks if the `admin_payer` is a signer.
+- Checks if the `admin_account_dao` account is already initialized by checking lamports.
+- Derives the PDA for the admin account using `Pubkey::create_program_address`.
+- Creates the admin account using `system_instruction::create_account`.
+- Serializes the `Admin_Account` data into the newly created account.
+
+Function "update_admin":
+- Updates the admin account.
+- Takes `new_admin` Pubkey and `admin_bump` as input.
+- Checks that the `admin_account_dao` is owned by the program.
+- Checks if the `admin_payer` is a signer.
+- Deserializes the `Admin_Account` data from the account.
+- Derives the PDA for the admin account using `Pubkey::create_program_address`.
+- Updates the `admin_id` field in the `Admin_Account` struct.
+- Serializes the updated `Admin_Account` data back into the account.
+
+Function "create_account":
+- Creates a user account.
+- Takes `user_bump` as input to derive the PDA.
+- Checks if the `user_payer` is a signer.
+- Checks if the `user_account_dao` account is already initialized.
+- Derives the PDA for the user account using `Pubkey::create_program_address`.
+- Creates the user account using `system_instruction::create_account`.
+- Serializes the `User_Account` data into the newly created account, initializing `amount_governance_points` to 10.
+
+Function "open_proposal":
+- Creates a proposal account.
+- Takes `title`, `description`, and `proposal_bump` as input.
+- Checks that `user_account_dao` is owned by the program.
+- Checks if the `user_payer` is a signer.
+- Checks if the `proposal_account` account is already initialized.
+- Derives the PDA for the proposal account using `Pubkey::create_program_address`.
+- Deserializes the `User_Account` data from the user account.
+- Creates the proposal account using `system_instruction::create_account`.
+- Serializes the `Proposal` data into the newly created account.
+- Sets the `start_time` to the current clock timestamp and `end_time` to one hour later.
+
+Function "vote_process":
+- Processes a user's vote on a proposal.
+- Takes `vote_answer` (boolean) and `vote_bump` as input.
+- Checks that `user_account_dao` and `proposal_account` are owned by the program.
+- Checks if the `user_payer` is a signer.
+- Checks if the `vote_record_account` account is already initialized.
+- Derives the PDA for the vote record account using `Pubkey::create_program_address`.
+- Deserializes the `Proposal` and `User_Account` data from their respective accounts.
+- Creates a vote record account using `system_instruction::create_account`.
+- Updates the `yes_votes` or `no_votes` field of the proposal based on the `vote_answer`.
+- Serializes the `Vote_Record`, `Proposal`, and `User_Account` data back into their respective accounts.
+- Checks if the current time is past the proposal's `end_time`.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user account.
+- Takes `amount`, `admin_bump`, and `instruction` (boolean, add/subtract) as input.
+- Checks that `admin_account_dao` and `user_account_dao` are owned by the program.
+- Checks if the `admin_payer` is a signer.
+- Derives the PDA for the admin account using `Pubkey::create_program_address`.
+- Deserializes the `User_Account` data from the user account.
+- Adds or subtracts the specified `amount` from the user's `amount_governance_points`.
+
+Function "execute_instruction":
+- Executes an instruction by CPI to the vault program.
+- Takes `variant_instr`, `amount`, `vault_bump` and `user_bump` as input.
+- Checks that `user_account_dao` is owned by the program.
+- Checks if the `user_payer` is a signer.
+- Loads current index
+- CPI to vault program using `invoke_signed` based on the `variant_instr`.
+
+Function "make_decision":
+- Makes a decision on a proposal based on the votes.
+- Takes `admin_bump` as input.
+- Checks that `admin_account_dao` and `proposal_account` are owned by the program.
+- Checks if the `admin_payer` is a signer.
+- Derives the PDA for the admin account using `Pubkey::create_program_address`.
+- Deserializes the `Proposal` data from the proposal account.
+- Checks if the current time is before the proposal's `end_time`.
+- Sets the `executed` field of the proposal to `true`.
+- Serializes the updated `Proposal` data back into the account.

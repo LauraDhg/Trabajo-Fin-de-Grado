@@ -1,0 +1,76 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for the vault program
+- Uses unwrap which may panic if the string is invalid
+
+Function "action_as_str":
+- Converts a u8 action code to a static string
+- Matches 0 to "Create", 1 to "Deposit", 2 to "Withdraw", others to "Unknown"
+
+Function "send_create_vault_transaction":
+- Constructs instruction data with variant, pubkey, and bump
+- Creates a cross-program instruction to the vault program
+- Uses invoke_signed with vault seeds for PDA signing
+- Handles account cloning for CPI invocation
+
+Function "send_instr_to_vault_transaction":
+- Constructs instruction data with variant, amount, and pubkey
+- Creates CPI to vault program for deposit/withdraw operations
+- Uses invoke_signed with vault seeds
+- Omits system program from accounts for deposit/withdraw operations
+
+Function "process_instruction":
+- Entry point that unpacks instruction data
+- Routes to appropriate handler function based on instruction variant
+- Handles admin creation, account creation, proposal management, voting, and vault operations
+
+Function "create_admin":
+- Creates admin PDA account with admin bump seed
+- Validates signer and account initialization status
+- Stores admin ID and timestamp in account data
+- Uses CPI to create account with system program
+- Validates clock sysvar account
+
+Function "update_admin":
+- Updates admin account with new admin pubkey
+- Validates signer and account ownership
+- Updates timestamp with current clock time
+- Validates admin PDA and clock sysvar
+
+Function "create_account":
+- Creates user PDA account with user-specific seeds
+- Initializes user with 10 governance points
+- Validates signer and account initialization
+- Uses CPI with system program for account creation
+
+Function "open_proposal":
+- Creates proposal PDA account with title-based seeds
+- Sets proposal duration to 1 hour from current time
+- Validates user account ownership and type
+- Stores proposal metadata and voting counters
+
+Function "vote_process":
+- Creates vote record PDA with user and proposal seeds
+- Validates proposal is still active
+- Adds user's governance points to yes/no votes
+- Uses checked arithmetic to prevent overflow
+- Creates vote record account via CPI
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from user account
+- Validates admin authority and account ownership
+- Uses checked arithmetic for safe operations
+- Updates user account data
+
+Function "execute_instruction":
+- Routes vault operations (create, deposit, withdraw)
+- Validates user account type based on operation
+- Checks previous instruction to prevent vault program abuse
+- Calls appropriate vault transaction function
+- Validates vault program ID and instruction sysvar
+
+Function "make_decision":
+- Finalizes proposal after voting period ends
+- Validates admin authority and proposal ownership
+- Checks if current time exceeds proposal end time
+- Compares yes/no votes and marks proposal as executed
+- Updates proposal account data

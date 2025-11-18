@@ -1,0 +1,64 @@
+Function "vault_program_id":
+- Hardcoded program ID creates inflexibility and potential errors if the vault program changes
+- No validation that the program ID is actually a valid program on the network
+
+Function "action_as_str":
+- No security vulnerabilities identified in this helper function
+
+Function "send_create_vault_transaction":
+- Missing validation that vault_program is actually the expected program
+- No checks on account ownership or proper program derivation
+- Potential for incorrect CPI if vault_bump doesn't match actual derivation
+
+Function "send_instr_to_vault_transaction":
+- Missing system_program account in CPI for deposit/withdraw operations
+- No validation of vault_program ownership or proper program ID
+- Missing rent exemption checks for vault operations
+
+Function "process_instruction":
+- No instruction data validation beyond unpacking
+- Missing checks for proper account ordering and expected account counts
+
+Function "create_admin":
+- Uses deprecated try_from_slice_unchecked pattern instead of try_from_slice
+- Missing rent exemption check before account creation
+- No validation that system_program is actually the system program
+- Potential reinitialization attack if account is reused
+
+Function "update_admin":
+- Missing rent exemption check
+- No validation that the new_admin is a valid pubkey or different from current
+- No access control beyond current admin check
+
+Function "create_account":
+- Hardcoded initial governance points (10) creates fixed initial state
+- Missing validation that system_program is actually the system program
+- Potential reinitialization attack if account is reused
+
+Function "open_proposal":
+- Uses title as seed which could lead to collisions if titles are similar
+- Fixed 1-hour duration (3600 seconds) without configurability
+- Missing validation that system_program is actually the system program
+- No maximum length checks for title and description
+
+Function "vote_process":
+- Arithmetic overflow risk in yes_votes/no_votes addition without checked math
+- User can vote multiple times by creating multiple vote records
+- No validation that system_program is actually the system program
+- Missing rent exemption check before account creation
+
+Function "manage_governance_points":
+- Arithmetic overflow/underflow risk without checked math
+- No validation that amount doesn't cause underflow when subtracting
+- Admin can arbitrarily manipulate any user's governance points
+
+Function "execute_instruction":
+- Uses deprecated load_instruction_at and load_current_index functions
+- Instruction sysvar validation is incomplete and potentially bypassable
+- Missing proper cross-program invocation security checks
+- No validation that vault_account is properly derived
+
+Function "make_decision":
+- Time comparison uses parentheses unnecessarily but functionally correct
+- No validation that proposal hasn't already been executed
+- Decision logic only compares yes vs no without threshold requirements

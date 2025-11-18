@@ -1,0 +1,57 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program changes or is redeployed
+- No validation that the provided Pubkey corresponds to an actual vault program
+
+Function "send_create_vault_transaction":
+- Missing validation of vault_program account ownership
+- No check that vault_account is derived from the correct seeds
+- Potential reentrancy risk with invoke_signed call
+
+Function "send_instr_to_vault_transaction":
+- Missing validation of vault_program account ownership
+- No system program account included for operations that may require it
+- Potential reentrancy risk with invoke_signed call
+
+Function "process_instruction":
+- No instruction data validation before unpacking
+- Missing proper error handling for instruction parsing failures
+
+Function "create_admin":
+- Missing rent exemption check before account creation
+- No validation that system_program is actually the system program
+- Potential signature spoofing vulnerability
+
+Function "update_admin":
+- Missing authorization check - any signer can update admin without verifying they are the current admin
+- No validation that the new_admin is a valid Pubkey
+- Missing rent exemption check
+
+Function "create_account":
+- Hardcoded initial governance points (10) without validation
+- Missing validation that system_program is actually the system program
+- Potential signature spoofing vulnerability
+
+Function "open_proposal":
+- Title used directly in PDA derivation without length validation
+- Fixed 1-hour proposal duration may not be appropriate for all use cases
+- Missing validation that system_program is actually the system program
+
+Function "vote_process":
+- User can vote multiple times by creating different vote record accounts
+- Missing check if user has already voted on this proposal
+- No validation that system_program is actually the system program
+
+Function "manage_governance_points":
+- Admin can arbitrarily modify any user's governance points without restrictions
+- Subtraction operation can underflow (user.amount_governance_points -= amount)
+- Missing overflow/underflow protection for subtraction case
+
+Function "execute_instruction":
+- Instruction verification logic has incorrect PDA checks (compares user_account_dao instead of expected accounts)
+- Relies on previous instruction being from vault program without proper validation
+- Missing validation that vault_program is actually the expected vault program
+
+Function "make_decision":
+- Decision logic only compares yes_votes >= no_votes without considering quorum requirements
+- Admin can execute decision multiple times
+- Missing validation that the proposal hasn't already been executed

@@ -1,0 +1,51 @@
+Function "vault_program_id":
+- The use of unwrap() can cause the program to panic if the Pubkey::from_str() fails.
+- Hardcoding a program ID can make the program less flexible and harder to upgrade.
+
+Function "send_create_vault_transaction":
+- The account list passed to invoke_signed only includes admin_payer, admin_account_dao, vault_account, and system_program. The instruction's account list includes these same accounts, but specifies that admin_payer is a signer. This could cause confusion.
+- The vault_seeds are hardcoded, consider making them more dynamic, perhaps using the account address in the seed.
+
+Function "send_instr_to_vault_transaction":
+- The account list passed to invoke_signed only includes user_payer, user_account_dao, and vault_account. The instruction's account list includes these same accounts, but specifies that user_payer is a signer. This could cause confusion.
+- The vault_seeds are hardcoded, consider making them more dynamic, perhaps using the account address in the seed.
+
+Function "process_instruction":
+- This function serves as the main entrypoint and uses a match statement to delegate to different instruction handlers. This structure is generally sound.
+
+Function "create_admin":
+- There is no check to see if the admin_payer is the system program's designated funder.
+- The program checks if the admin account has already been initialized by verifying that the lamports are greater than 0. It's better to implement a boolean inside the account that indicates if it is initialized.
+- The `admin` seed is hardcoded, and it might be better to include other parameters related to the account for better uniqueness, reducing the chances of collisions.
+
+Function "update_admin":
+- It lacks proper authorization. There is no check to ensure the `admin_payer` is the current `admin_id` in the `Admin_Account`. Anyone could potentially update the admin.
+- The `admin` seed is hardcoded, and it might be better to include other parameters related to the account for better uniqueness, reducing the chances of collisions.
+
+Function "create_account":
+- There is no check to see if the user_payer is the system program's designated funder.
+- The program checks if the user account has already been initialized by verifying that the lamports are greater than 0. It's better to implement a boolean inside the account that indicates if it is initialized.
+
+Function "open_proposal":
+- There is no validation to check the size of the title and description strings. Large strings could lead to excessive rent costs or denial-of-service vulnerabilities.
+- The `proposal` seed is hardcoded, and it might be better to include other parameters related to the account for better uniqueness, reducing the chances of collisions.
+
+Function "vote_process":
+- The check `user_account_dao.owner != program_id || proposal_account.owner != program_id` could be simplified to `user_account_dao.owner != program_id || proposal_account.owner != program_id`.
+- It is possible to vote multiple times, as there is no check if the user has already voted on a particular proposal. If a user votes multiple times, they will be able to modify the vote outcome as the vote_amount is equal to the current amount_governance_points of the user.
+- The `vote` seed is hardcoded, and it might be better to include other parameters related to the account for better uniqueness, reducing the chances of collisions.
+
+Function "manage_governance_points":
+- It relies on a boolean `instruction` to determine whether to add or subtract points. This is not very explicit or readable. An enum would be a better approach.
+- It lacks proper authorization. There is no check to ensure the `admin_payer` is the current `admin_id` in the `Admin_Account`. Anyone could potentially manage the governance points.
+- There is no limit for the maximum governance points a user can have. It may be necessary to implement a cap to prevent overflow issues or unwanted behavior.
+- The `admin` seed is hardcoded, and it might be better to include other parameters related to the account for better uniqueness, reducing the chances of collisions.
+
+Function "execute_instruction":
+- The logic inside the match statement for `variant_instr` 0, 1 and 2 seems strange, as it just checks for the equality between `user_account_dao.key` and other pda addresses. There are no instructions being executed.
+- The switch based on `variant_instr` only validates if the account corresponds to the admin or to the user based on the instruction type. The correct validation should be that only the admin is able to create a Vault.
+- The program retrieves the previous instruction using `load_instruction_at`, but only checks if it comes from the Vault program. It doesn't validate if the previous instruction was successful, or if it corresponds to what it expects. This could be used to bypass checks.
+
+Function "make_decision":
+- It lacks proper authorization. There is no check to ensure the `admin_payer` is the current `admin_id` in the `Admin_Account`. Anyone could potentially execute the decision.
+- The `admin` seed is hardcoded, and it might be better to include other parameters related to the account for better uniqueness, reducing the chances of collisions.

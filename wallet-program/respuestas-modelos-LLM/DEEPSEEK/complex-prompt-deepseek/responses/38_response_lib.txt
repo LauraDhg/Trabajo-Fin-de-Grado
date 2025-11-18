@@ -1,0 +1,37 @@
+Function "process_instruction":
+- No direct security vulnerabilities found in this routing function
+- Properly unpacks instruction data before routing
+- Uses match statement for clear instruction handling
+
+Function "initialize_wallet_account":
+- Missing validation that user_account is signer
+- Missing validation that wallet_account is not initialized
+- Uses unwrap() which could panic instead of proper error handling
+- Does not verify that wallet_account matches the derived PDA
+- Missing rent exemption check for the created account
+- No validation that user_account has sufficient lamports to create the wallet
+
+Function "deposit_amount":
+- Missing validation that user_account is signer
+- Missing validation that wallet_account belongs to the user
+- No access control - anyone can deposit to any wallet
+- Missing validation that the wallet is initialized
+- Uses try_from_slice_unchecked which could deserialize invalid data
+
+Function "withdraw_amount":
+- Missing validation that user_account is signer
+- Missing validation that wallet_account belongs to the user
+- No access control - anyone can withdraw from any wallet
+- Missing validation that the wallet is initialized
+- Uses try_from_slice_unchecked which could deserialize invalid data
+- Withdraws funds without transferring lamports back to user
+
+Function "transfer_amount":
+- Missing validation that user_account is signer
+- Missing validation that src_wallet_account belongs to the user
+- Missing validation that dest_wallet_account belongs to dest_user_account
+- No access control - anyone can transfer from any wallet to any wallet
+- Missing validation that both wallets are initialized
+- Uses try_from_slice_unchecked which could deserialize invalid data
+- Missing cross-program invocation for actual token transfer
+- Only updates internal accounting without moving actual funds

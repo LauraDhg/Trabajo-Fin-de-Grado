@@ -1,0 +1,34 @@
+Function "process_instruction":
+- The function uses a match statement to determine which instruction to execute. It calls other functions based on the instruction passed in `instruction_data`.
+
+Function "initialize_wallet_account":
+- Checks if the user account is a signer.
+- Derives the wallet PDA and checks if the provided wallet account matches the derived PDA.
+- Checks if the wallet account has already been initialized by verifying if lamports > 0.
+- Creates a new account using `invoke_signed`.
+- Serializes the wallet data into the newly created account.
+
+Function "deposit_amount":
+- Checks if the user account is a signer.
+- Derives the wallet PDA and checks if the provided wallet account matches the derived PDA.
+- Deserializes the wallet data from the provided account.
+- Checks if the wallet is initialized.
+- Increases the amount in the wallet using `checked_add`, handling potential arithmetic overflows.
+- Serializes the updated wallet data back into the account.
+
+Function "withdraw_amount":
+- Checks if the user account is a signer.
+- Derives the wallet PDA and checks if the provided wallet account matches the derived PDA.
+- Deserializes the wallet data from the provided account.
+- Checks if the wallet is initialized.
+- Directly subtracts the amount from the wallet.amount, which is vulnerable to underflow.
+- Serializes the updated wallet data back into the account.
+
+Function "transfer_amount":
+- Checks if the user account is a signer.
+- Derives both source and destination wallet PDAs and validates the provided accounts.
+- Deserializes both source and destination wallet data.
+- Checks if both wallets are initialized.
+- Adds the amount to the destination wallet using `checked_add` which prevents overflow.
+- Directly subtracts the amount from the source wallet, which is vulnerable to underflow.
+- Serializes the updated wallet data back into both accounts.

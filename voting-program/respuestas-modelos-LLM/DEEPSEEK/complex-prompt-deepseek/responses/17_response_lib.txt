@@ -1,0 +1,63 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program changes or is redeployed
+- No validation that the returned Pubkey is actually a valid program
+
+Function "send_create_vault_transaction":
+- Uses hardcoded vault_program_id without validation
+- No validation that vault_program account matches the expected program ID
+- Missing proper account validation and ownership checks
+
+Function "send_instr_to_vault_transaction":
+- Missing system_program account in CPI invocation (required for transfers)
+- No validation that vault_program account matches expected program ID
+- Missing proper account validation and ownership checks
+
+Function "process_instruction":
+- No validation of account ordering or expected account counts
+- No access control checks before dispatching to specific instructions
+- Missing input validation for instruction parameters
+
+Function "create_admin":
+- Uses deprecated try_from_slice_unchecked pattern (should use try_from_slice)
+- Missing rent exemption check before account creation
+- No validation that system_program account is actually the system program
+- Missing validation that clock_sysvar is actually the clock sysvar
+
+Function "update_admin":
+- Missing validation that the current signer is actually the current admin
+- Allows any signer to update admin without authorization check
+- No validation that clock_sysvar is actually the clock sysvar
+
+Function "create_account":
+- Hardcoded initial governance points (10) without justification
+- Missing rent exemption check before account creation
+- No validation that system_program account is actually the system program
+
+Function "open_proposal":
+- Uses title bytes for PDA derivation which could cause collisions
+- Fixed 1-hour proposal duration (3600 seconds) without flexibility
+- Missing validation that clock_sysvar is actually the clock sysvar
+- No validation that system_program account is actually the system program
+
+Function "vote_process":
+- Allows multiple votes from same user by creating new vote records
+- Missing check if user has already voted on this proposal
+- No validation that clock_sysvar is actually the clock sysvar
+- Missing validation that system_program account is actually the system program
+
+Function "manage_governance_points":
+- Allows admin to arbitrarily modify user governance points without constraints
+- Missing validation that the signer is actually an authorized admin
+- No upper bounds or limits on governance point modifications
+
+Function "execute_instruction":
+- Uses deprecated instruction sysvar loading methods
+- Attempts to check previous instruction but logic is flawed
+- Missing proper validation of vault_program account
+- Missing validation that ix_sysvar is actually the instructions sysvar
+- Missing validation that system_program account is actually the system program
+
+Function "make_decision":
+- Missing validation that clock_sysvar is actually the clock sysvar
+- Only marks proposal as executed without actually executing any action
+- No actual decision execution logic implemented

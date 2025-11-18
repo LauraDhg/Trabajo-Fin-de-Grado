@@ -1,0 +1,46 @@
+Function "vault_program_id":
+- Hardcoded program ID, which is generally discouraged for production environments as it reduces flexibility and upgradeability.
+
+Function "process_instruction":
+- Central dispatch function; any vulnerabilities in the called functions are vulnerabilities here.
+- Relies on `InstructionFormat::unpack`, so any issues in the deserialization logic could lead to unexpected behavior.
+
+Function "create_admin":
+- Checks for account initialization but only verifies that lamports > 0, not that the account has been initialized with the correct state.
+- Uses `invoke_signed` to create the account, which is correct for CPI but requires careful consideration of the seed derivation.
+
+Function "update_admin":
+- Checks that the `admin_account_dao` owner is the program ID, preventing external modification.
+- Validates that the `admin_payer` is the current admin.
+- Updates the admin ID without additional checks.
+
+Function "create_account":
+- Checks for account initialization but only verifies that lamports > 0, not that the account has been initialized with the correct state.
+- Assigns initial governance points (10).
+
+Function "open_proposal":
+- Proposal PDA is derived from the proposal title, which is a string. This could lead to collision issues if two proposals have the same title.
+- Sets a fixed proposal duration of 1 hour.
+
+Function "vote_process":
+- Checks that proposal and user account owners are the program ID.
+- The vote weight is equal to user.amount_governance_points, which is controlled by the manage_governance_points function, this could create vulnerabilities.
+- The program does not check if a user has already voted on a proposal, thus allowing users to vote multiple times.
+- The program updates user account and proposal account even when the vote_record_account creation fails due to rent-exemption.
+
+Function "manage_governance_points":
+- Allows adding or subtracting governance points based on an `instruction` boolean.
+- The amount added or subtracted is not checked for reasonable limits, which could lead to integer overflows/underflows or other unexpected behavior.
+
+Function "execute_instruction":
+- Uses a `match` statement based on `variant_instr` to determine the action.
+- The nested match statement contains some checks with pubkeys that are inconsistent.
+- Based on the variant_instr, it uses the admin_pda or user_pda.
+- Vault program ID is hardcoded, this is checked.
+- CPI to the vault program depends on the variant_instr.
+- Checks for a previous vault program instruction based on the `ix_sysvar`, which is a good security measure, because this can indicate CPI call.
+
+Function "make_decision":
+- Only an admin can execute the decision.
+- The decision is made based on a simple majority (`yes_votes >= no_votes`).
+- Once executed, the `executed` flag is set to true, preventing further executions.

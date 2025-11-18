@@ -1,0 +1,91 @@
+Function "vault_program_id":
+- Hardcoded program ID for the vault program. This could be problematic if the vault program is upgraded or if different environments use different vault program IDs. Consider making it configurable or using a more dynamic approach to determine the vault program ID.
+
+Function "process_instruction":
+- The program uses an enum `InstructionFormat` to unpack instruction data, this is a good practice.
+- This function serves as the main entry point for instruction processing, directing control to specific handlers based on the unpacked instruction.
+
+Function "create_admin":
+- Checks for admin payer signature.
+- Checks if the admin account is already initialized.
+- Derives the admin account PDA using `Pubkey::create_program_address`.
+- Verifies that the derived PDA matches the provided admin account.
+- Creates the admin account using `invoke_signed` and the system program.
+- Serializes the admin account data.
+- The PDA derivation uses a hardcoded seed "admin", which is acceptable.
+- Uses `Clock::from_account_info` to get the current timestamp.
+
+Function "update_admin":
+- Checks for admin payer signature.
+- Checks for correct admin account owner.
+- Deserializes the admin account data.
+- Derives the admin account PDA using `Pubkey::create_program_address`.
+- Verifies that the derived PDA matches the provided admin account.
+- Updates the admin account data and serializes it back.
+- There is no authorization check to ensure that only the current admin can update the admin account. This is a critical vulnerability. Any user could potentially change the admin to an address they control.
+
+Function "create_account":
+- Checks for user payer signature.
+- Checks if the user account is already initialized.
+- Derives the user account PDA using `Pubkey::create_program_address`, incorporating the user's public key as a seed.
+- Verifies that the derived PDA matches the provided user account.
+- Creates the user account using `invoke_signed` and the system program.
+- Serializes the user account data.
+- Gives default amount of governance points to newly created account.
+
+Function "open_proposal":
+- Checks for user payer signature.
+- Checks for correct user account owner.
+- Checks if the proposal account is already initialized.
+- Derives the proposal account PDA using `Pubkey::create_program_address`, incorporating the proposal's title as a seed.
+- Verifies that the derived PDA matches the provided proposal account.
+- Creates the proposal account using `invoke_signed` and the system program.
+- Serializes the proposal account data.
+- Sets a fixed duration of 1 hour for the proposal. This may not be flexible enough for all use cases.
+
+Function "vote_process":
+- Checks for user payer signature.
+- Checks for correct user and proposal account owner.
+- Checks if the vote record account is already initialized.
+- Derives the vote record account PDA using `Pubkey::create_program_address`, incorporating the user and proposal public keys as seeds.
+- Verifies that the derived PDA matches the provided vote record account.
+- Deserializes the proposal and user account data.
+- Records the vote by increasing either the `yes_votes` or `no_votes` field in the proposal account based on `vote_answer`.
+- Creates the vote record account using `invoke_signed` and the system program.
+- Serializes the vote record, proposal, and user account data.
+- Vote weight is equivalent to amount_governance_points, which are not updated or substracted, user can vote multiple times.
+-The proposal and user account data are serialized back into the accounts without any checks to ensure that the serialization was successful.
+
+Function "manage_governance_points":
+- Checks for admin payer signature.
+- Checks for correct admin and user account owner.
+- Derives the admin account PDA using `Pubkey::create_program_address`.
+- Verifies that the derived PDA matches the provided admin account.
+- Deserializes the user account data.
+- Adds or subtracts governance points from the user account based on the `instruction` flag.
+- Serializes the user account data.
+- Only the admin is validated using PDA but there is no validation to check that the account being managed is the actual admin_account_dao.
+- No limits are placed on how many points can be added or subtracted, potentially leading to extreme inflation or deflation of governance points.
+
+Function "execute_instruction":
+- Checks for user payer signature.
+- Checks for correct user account owner.
+- Checks if the user account has lamports.
+- Uses a match statement to handle different instruction variants (0, 1, 2).
+- Loads the current instruction index from the instructions sysvar account.
+- Checks if the previous instruction's program ID matches the vault program ID.
+- Calls either `send_create_vault_transaction` or `send_instr_to_vault_transaction` based on the instruction variant.
+- The instruction variants 0, 1 and 2 use the same user_bump as seeds for admin and user accounts, depending on the variant instruction. This is inconsistent and dangerous since it is supposed to be managing different accounts.
+- The validation checks inside the match statement are not consistent and do not provide adequate security. For variants 0 and 2, it derives an `admin_pda` using the `user_bump` and then incorrectly checks it against the `user_account_dao` key. This means that those checks will likely never pass as intended.
+
+Function "make_decision":
+- Checks for admin payer signature.
+- Checks for correct admin and proposal account owner.
+- Derives the admin account PDA using `Pubkey::create_program_address`.
+- Verifies that the derived PDA matches the provided admin account.
+- Deserializes the proposal account data.
+- Checks if the current time is past the proposal's end time.
+- Sets the `executed` flag on the proposal based on whether `yes_votes` is greater than or equal to `no_votes`.
+- Serializes the proposal account data.
+- The admin account must be validated against account_info to make sure it is the actual admin, in order to allow the proposal.
+

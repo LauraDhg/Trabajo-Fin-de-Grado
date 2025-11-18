@@ -1,0 +1,70 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey which may be correct, but should be verified off-chain to ensure it points to the expected vault program; any misconfiguration here could lead to CPI calls failing or being misdirected.
+
+Function "create_admin":
+- Uses `Pubkey::create_program_address` with a static seed "admin" and bump, which is secure if the bump is verified.
+- Properly checks that `admin_payer` is a signer and that the admin account is uninitialized.
+- Serializes data after account creation but does not verify that the account was created by this program (possible race condition if PDA is pre-initialized).
+- Missing check for system program account key (`system_program.key == &system_program::ID`), which could allow malicious programs to spoof the system program.
+- Clock sysvar is read but not validated as the correct sysvar ID (`CLOCK_SYSVAR_ID`), allowing potential spoofing.
+
+Function "update_admin":
+- Does not validate that `admin_payer` is the current admin, allowing any signer to update the admin if they know the PDA.
+- Missing validation that `clock_sysvar.key == &CLOCK_SYSVAR_ID`, enabling potential sysvar spoofing.
+- No delay or timelock on admin changes, which could be a governance risk.
+
+Function "create_account":
+- Uses `user_payer.key` in the PDA derivation, which is safe, and checks signer status.
+- Missing validation that `system_program.key == &system_program::ID`.
+- Assigns 10 governance points unconditionally; no mechanism to prevent spam or control inflation.
+- No check that the user account is being created only once per user (depends on `user_bump`, but no enforcement of bump uniqueness).
+
+Function "open_proposal":
+- Title is used in PDA derivation (`b"proposal" + title.as_bytes()`), which is unsafe because titles can be arbitrarily long and may not be unique or canonical (e.g., different byte representations of same logical title).
+- This can lead to PDA collisions or denial-of-service via crafted titles.
+- Missing validation that `system_program.key == &system_program::ID` and `clock_sysvar.key == &CLOCK_SYSVAR_ID`.
+- Hardcoded 1-hour voting period; not configurable and could be too short.
+
+Function "vote_process":
+- Uses `user_account_dao.key` and `proposal_account.key` in vote PDA derivation, which is secure.
+- Checks that voting occurs before `end_time`, but does not prevent double voting (relies on vote record PDA uniqueness, which is correct).
+- No check that user hasn't already voted on this proposal (PDA enforces this, so it's safe).
+- Missing validation of `system_program.key` and `clock_sysvar.key`.
+- Vote weight is based on current `amount_governance_points`, which could be manipulated if points change between proposal creation and voting (no snapshot mechanism).
+
+Function "manage_governance_points":
+- Allows admin to arbitrarily add or subtract governance points without checks on legitimacy.
+- No event emission or logging beyond `msg!`, which limits auditability.
+- Missing validation that `admin_payer` is the current admin (only checks PDA correctness, not identity).
+- No access control beyond PDA — if admin key is compromised, no safeguards.
+
+Function "execute_instruction":
+- Uses `user_bump` in PDA derivation for admin/user checks, but uses incorrect seeds in some cases (e.g., `b"admin"` with `user_bump` — likely a bug).
+- In variant_instr 0 and 2, checks if `user_account_dao` matches an admin PDA derived from `user_bump`, which is logically inconsistent — admin PDAs should use `admin_bump`, not `user_bump`.
+- This is a critical logic error: allows non-admins to perform admin actions if they guess a valid bump.
+- Uses `ix_sysvar` to check previous instruction, but does not validate that `ix_sysvar.key == &INSTRUCTIONS_SYSVAR_ID`, enabling spoofing.
+- Relies on CPI confirmation from vault program via instruction log, but this is not a secure method — Solana sysvar instructions can be faked if not from correct context.
+- No validation that `vault_program.key` matches expected `vault_program_id()`.
+
+Function "make_decision":
+- Allows execution of proposal decision without verifying that it hasn't already been executed (`executed` flag is set after check, but no early return if already executed).
+- Missing check that `clock_sysvar.key == &CLOCK_SYSVAR_ID`.
+- No requirement for quorum or minimum participation — proposal can pass with zero votes if no votes are cast (yes_votes >= no_votes when both are 0).
+- Admin can call this at any time after end_time — no access restriction beyond admin PDA, but no check that `admin_payer` is current admin.
+
+Function "send_create_vault_transaction":
+- Constructs CPI to vault program without validating that `vault_program.key` matches expected `vault_program_id()`.
+- Uses `id_pubkey: Pubkey = program_id.clone()` passed in data — this could be attacker-controlled and should not be trusted.
+- Missing `is_signer` and `is_writable` checks on accounts used in CPI.
+
+Function "send_instr_to_vault_transaction":
+- Same issues as `send_create_vault_transaction`: no validation of `vault_program.key`, uses untrusted `id_pubkey`.
+- Constructs instruction data manually — risk of serialization mismatch with vault program.
+- No validation that `user_payer` or `user_account_dao` are valid or owned by this program.
+
+Function "action_as_str":
+- Pure utility function; no security impact.
+
+Function "process_instruction":
+- Uses `InstructionFormat::unpack` which is assumed safe, but no details provided on how it's implemented.
+- All instruction variants are handled, but no default case or error handling for unknown instructions (handled in `unpack`, so likely safe).

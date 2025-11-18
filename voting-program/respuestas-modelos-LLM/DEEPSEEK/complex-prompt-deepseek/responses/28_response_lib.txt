@@ -1,0 +1,59 @@
+Function "vault_program_id":
+- Hardcoded program ID which cannot be changed after deployment
+- Uses unwrap() which could panic if the string is invalid
+
+Function "send_create_vault_transaction":
+- Missing proper validation of account ownership and program IDs
+- Uses hardcoded seeds which might not be secure if vault_bump is incorrect
+- No validation that vault_program is actually the expected program
+
+Function "send_instr_to_vault_transaction":
+- Missing system program account in instruction accounts for deposit/withdraw operations
+- No validation of account ownership or program IDs
+- Uses hardcoded seeds without proper validation
+
+Function "process_instruction":
+- No validation of program_id parameter against expected program ID
+- No access control checks before dispatching to functions
+
+Function "create_admin":
+- Missing validation that program_id matches expected program
+- Uses unwrap() which could panic on account length conversion
+- No rent exemption check before account creation
+
+Function "update_admin":
+- Missing validation that the current admin is the signer
+- Allows any signer to change admin without authorization check
+- No validation of program_id against expected program
+
+Function "create_account":
+- Missing validation that program_id matches expected program
+- Uses unwrap() which could panic on account length conversion
+- Gives free governance points (10) without any mechanism to prevent abuse
+
+Function "open_proposal":
+- Fixed 1-hour voting period which cannot be configured
+- Uses title as PDA seed which might cause collisions with similar titles
+- Missing validation that user_account_dao belongs to the user_payer
+
+Function "vote_process":
+- Allows multiple votes from same user (no vote record uniqueness check)
+- User can vote with full governance points multiple times
+- No check if user has already voted on this proposal
+- Arithmetic operations without overflow checks
+
+Function "manage_governance_points":
+- Missing authorization check - any admin can modify any user's points
+- No validation that admin_account_dao admin_id matches the signer
+- Arithmetic operations without proper overflow/underflow protection
+
+Function "execute_instruction":
+- Missing proper authorization checks for different instruction types
+- Instruction sysvar usage without proper validation
+- Hardcoded vault program ID comparison
+- No validation that user_account_dao matches the expected account type
+
+Function "make_decision":
+- Missing validation that admin_account_dao admin_id matches the signer
+- No threshold or quorum requirements for proposal execution
+- Simple majority voting without any minimum participation requirements

@@ -1,0 +1,42 @@
+Function "process_instruction":
+- Parses instruction data and calls corresponding function based on instruction type.
+- Acts as the main entry point for the program.
+
+Function "initialize_wallet_account":
+- Creates a new wallet account for a user with proper rent exemption.
+- Checks if the account already has lamports (is initialized).
+- Derives PDA for the wallet using seed "wallet" and user’s public key.
+- Uses invoke_signed to create account with the correct authority.
+- Serializes wallet data into the new account.
+
+Function "deposit_amount":
+- Adds specified amount to the wallet’s balance.
+- Checks if the user is signer.
+- Deserializes wallet data, modifies amount, and serializes it back.
+
+Function "withdraw_amount":
+- Deducts specified amount from wallet’s balance.
+- Checks if the user is signer.
+- Deserializes wallet data, modifies amount, and serializes it back.
+
+Function "transfer_amount":
+- Transfers amount from source wallet to destination wallet.
+- Checks if the user is signer.
+- Deserializes source and destination wallets.
+- Updates their amounts and serializes back.
+
+Potential Risks and Vulnerabilities:
+- "initialize_wallet_account":
+  - No explicit check that wallet_account is the PDA derived from seed; could be hijacked if not matched.
+  - No validation that wallet_account is owned by the program, risking overwriting unintended accounts.
+- "deposit_amount", "withdraw_amount", "transfer_amount":
+  - No balance check before withdrawal or transfer, risking underflow panic or negative balances.
+  - No maximum limit on deposits or withdrawals.
+  - No check that wallet accounts are PDAs corresponding to user accounts, risking wallet hijack.
+  - No validation that accounts belong to the right program.
+- General:
+  - No checks to prevent reinitialization or double spend issues if accounts are reused improperly.
+  - No owner check on wallet accounts; relies on assumptions.
+  - No explicit overflow/underflow protections in arithmetic operations.
+  - No explicit error handling for serialization/deserialization failures beyond ? operator.
+  - Missing input validation for instruction data or amounts, which could lead to panic or unexpected behavior.

@@ -1,0 +1,78 @@
+Function "send_create_vault_transaction":
+- Sends a create vault instruction to the vault program
+- Prepares instruction data and accounts, then invokes signed
+- Uses the vault_bump seed for PDA derivation
+
+Function "send_instr_to_vault_transaction":
+- Sends deposit or withdrawal instructions to the vault program
+- Prepares instruction data with amount and pubkey
+- Uses the vault_bump seed for PDA derivation
+- Invokes signed instructions
+
+Function "process_instruction":
+- Entry point for processing instructions
+- Unpacks instruction data into specific enum variants
+- Routes to corresponding function based on instruction
+
+Function "create_admin":
+- Creates an admin account PDA and initializes it
+- Checks payer signature and account ownership
+- Serializes the admin account data
+
+Function "update_admin":
+- Updates the admin account with a new admin ID
+- Checks owner, signer, and current admin privileges
+- Serializes updated admin data
+
+Function "create_account":
+- Creates a user account PDA and initializes governance points
+- Checks payer signature and account ownership
+- Serializes user account data
+
+Function "open_proposal":
+- Creates a proposal PDA and initializes proposal data
+- Checks owner, signer, and account status
+- Sets start and end times, serializes proposal
+
+Function "vote_process":
+- Processes a vote on a proposal
+- Checks owner, signer, and vote record account
+- Loads proposal and user data
+- Checks if voting period is active
+- Adds vote weight and serializes vote record, proposal, and user account
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from user account
+- Checks owner, signer, and admin privileges
+- Serializes updated user account
+
+Function "execute_instruction":
+- Executes instructions based on variant (create vault, deposit, withdraw)
+- Checks owner, signer, and account correctness
+- Calls relevant send_* functions for each variant
+- Uses load_current_index and load_instruction_at for instruction verification
+
+Function "make_decision":
+- Finalizes a proposal, determining approval
+- Checks owner, signer, and ownership
+- Checks if proposal voting period has ended
+- Decides outcome based on votes
+- Serializes the proposal
+
+Potential risks and vulnerabilities:
+- No explicit access control for functions beyond signature and owner checks
+- Rounding or integer overflow issues mitigated with checked_add, but potential in subtracting governance points
+- Use of unwrap() on from_str() in vault_program_id, may panic if invalid
+- Arbitrary account creation with PDA depends on correct seeds, misseeds can lead to account misidentification
+- No explicit checks for duplicate votes or multiple voting attempts
+- No explicit limit on vote amount (governance points)
+- No explicit validation of instruction data sizes or content
+- Potential replay of instructions if not handled carefully
+- No explicit event logging beyond msg! which may be insufficient for auditing
+- No validator for `title` and `description` string sizes, potentially leading to very large accounts
+- No safeguards to prevent unauthorized creation or modification of proposals or admin
+- Overflows may happen in some unchecked areas if not for checked arithmetic
+- Inconsistent handling of bump seeds (some are passed as parameters, some are derived internally)
+- No handling of token or lamport transfer errors besides the basic checks
+- Hardcoded program ID within some functions if used outside context with different program IDs
+

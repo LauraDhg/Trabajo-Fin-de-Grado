@@ -1,0 +1,58 @@
+Function "send_create_vault_transaction":
+- Constructs and sends an instruction to create a vault by interacting with another program.
+- Sets up instruction data, accounts, and seeds, then invokes signed CPI (Cross-Program Invocation).
+- Performs the `invoke_signed` call to execute the transaction securely.
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends an instruction to deposit or withdraw amounts from the vault.
+- Sets up instruction data, accounts, and seeds, then invokes signed CPI.
+- Manages deposit/withdraw operations in the vault program securely.
+
+Function "process_instruction":
+- Entry point that unpacks and routes the instructions based on the received data.
+- Calls specific functions like create_admin, update_admin, create_account, etc., according to instruction type.
+
+Function "create_admin":
+- Creates and initializes an admin account PDA (Program Derived Address).
+- Checks ownership, signer status, and lamport balance before account creation.
+- Serializes admin data into the account.
+
+Function "update_admin":
+- Updates the admin account data with a new admin pubkey and last update time.
+- Checks account owner, signer requisites, and validates PDA correctness.
+- Serializes updated admin data.
+
+Function "create_account":
+- Creates a user account PDA with initial governance points.
+- Checks account ownership, signer status, and lamport value.
+- Serializes user account data into the created account.
+
+Function "open_proposal":
+- Creates a proposal account PDA with proposal details.
+- Checks ownership, signer status, and lamport balance.
+- Sets start and end time for the proposal, serializes proposal data.
+
+Function "vote_process":
+- Records a user's vote on a proposal.
+- Checks account owners, signer status, and vote record account initialization.
+- Updates proposal votes and serializes proposal, user, and vote record data.
+- Includes timestamp validation for vote timing.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points for a user account.
+- Checks account ownership, signer, and PDA correctness.
+- Performs arithmetic operation with error handling for underflow.
+- Serializes updated user account data.
+
+Function "execute_instruction":
+- Executes vault instructions (create, deposit, withdraw) based on `variant_instr`.
+- Checks owner, signer, and lamport conditions.
+- Validates previous instruction via instruction sysvar.
+- Calls helper functions to send the appropriate transaction.
+
+Function "make_decision":
+- Finalizes a proposal based on votes after the proposal end time.
+- Checks account owners, signer, PDA correctness.
+- Validates proposal has expired.
+- Logs whether the proposal is approved or denied.
+- Marks the proposal as executed and serializes data.

@@ -1,0 +1,98 @@
+Function "vault_program_id":
+- Returns a Pubkey.
+- The Pubkey is hardcoded as "6dVLkpmd5BvVQF7oXpipnQFtKwba2uQkMMwzHnaqf8Gr".
+- Panics if the string cannot be parsed into a Pubkey.
+
+Function "send_create_vault_transaction":
+- Sends a transaction to create a vault.
+- Takes several account infos, a variant instruction, id pubkey, and vault bump as input.
+- Constructs an instruction with the given data and accounts.
+- Invokes the vault program using `invoke_signed` with the provided accounts and seeds.
+- The vault seeds are `b"vault"` and the vault bump.
+
+Function "send_instr_to_vault_transaction":
+- Sends a transaction to the vault program to perform actions like deposit or withdraw.
+- Takes several account infos, a variant instruction, id pubkey, amount, and vault bump as input.
+- Constructs an instruction with the given data and accounts.
+- Invokes the vault program using `invoke_signed` with the provided accounts and seeds.
+- The vault seeds are `b"vault"` and the vault bump.
+
+Function "process_instruction":
+- The main entry point of the program.
+- Deserializes the instruction data into an `InstructionFormat` enum.
+- Matches on the `InstructionFormat` enum and calls the corresponding handler function.
+
+Function "create_admin":
+- Creates an admin account.
+- Checks that the admin payer is a signer.
+- Checks that the admin account has not already been initialized.
+- Derives the admin PDA.
+- Checks that the provided admin account matches the derived PDA.
+- Creates the admin account using `invoke_signed` with the system program.
+- Serializes the admin account data.
+
+Function "update_admin":
+- Updates the admin account with a new admin.
+- Checks that the admin payer is a signer.
+- Deserializes the admin account data.
+- Derives the admin PDA.
+- Checks that the provided admin account matches the derived PDA.
+- Updates the admin id and last update fields.
+- Serializes the updated admin account data.
+
+Function "create_account":
+- Creates a user account.
+- Checks that the user payer is a signer.
+- Checks that the user account has not already been initialized.
+- Derives the user PDA.
+- Checks that the provided user account matches the derived PDA.
+- Creates the user account using `invoke_signed` with the system program.
+- Serializes the user account data, initializing governance points to 10.
+
+Function "open_proposal":
+- Opens a new proposal.
+- Checks that the user payer is a signer.
+- Checks that the proposal account has not already been initialized.
+- Derives the proposal PDA.
+- Checks that the provided proposal account matches the derived PDA.
+- Creates the proposal account using `invoke_signed` with the system program.
+- Serializes the proposal data.
+- Sets the start time to the current clock timestamp and the end time to one hour later.
+
+Function "vote_process":
+- Processes a user's vote on a proposal.
+- Checks that the user payer is a signer.
+- Checks that the vote record account has not already been initialized.
+- Derives the vote PDA.
+- Checks that the provided vote record account matches the derived PDA.
+- Deserializes the proposal and user account data.
+- Creates a vote record.
+- Checks that the current time is within the proposal's start and end times.
+- Updates the yes or no votes on the proposal based on the vote answer.
+- Creates the vote record account using `invoke_signed` with the system program.
+- Serializes the vote record, proposal, and user account data.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user's account.
+- Checks that the admin payer is a signer.
+- Deserializes the user account data.
+- Adds or subtracts the specified amount from the user's governance points.
+- Serializes the updated user account data.
+
+Function "execute_instruction":
+- Executes a vault instruction.
+- Checks that the user payer is a signer.
+- Checks that the user account has been initialized.
+- Based on `variant_instr` it checks different PDAs depending on the instruction being executed.
+- Checks that the vault program id is correct.
+- Checks if the previous instruction was a vault program confirmation.
+- Calls the `send_create_vault_transaction` or `send_instr_to_vault_transaction` function based on the instruction.
+
+Function "make_decision":
+- Makes a decision on a proposal based on the votes.
+- Checks that the admin payer is a signer.
+- Deserializes the proposal data.
+- Checks that the current time is after the proposal's end time.
+- Sets the proposal's executed flag to true.
+- Serializes the updated proposal data.
+

@@ -1,0 +1,86 @@
+Function "send_create_vault_transaction":
+- Constructs and sends a transaction to create a vault by invoking another program.
+- Prepares instruction data with variant and identifiers.
+- Sets up account metas expected by the vault program.
+- Uses invoke_signed with derived seeds for a program-derived address (PDA).
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends a transaction to interact with a vault (deposit/withdraw).
+- Prepares instruction data with variant, amount, and identifiers.
+- Sets up account metas for the operation.
+- Uses invoke_signed with seeds to sign as the PDA.
+
+Function "process_instruction":
+- Entry point for processing instructions.
+- Unpacks the instruction data into different command variants.
+- Calls respective functions based on the instruction variant.
+
+Function "create_admin":
+- Creates and initializes an admin account as a PDA.
+- Checks if account already exists.
+- Verifies the signer and account correctness.
+- Uses invoke_signed to create the account with rent exemption.
+- Sets the admin's ID and last update timestamp.
+
+Function "update_admin":
+- Updates the admin account with a new admin ID.
+- Checks owner, signer, and account correctness.
+- Deserializes, modifies, and serializes back the admin data with updated timestamp.
+
+Function "create_account":
+- Creates a user account as a PDA.
+- Checks if the account is already initialized.
+- Signs with PDA to create account.
+- Sets initial governance points and serializes.
+
+Function "open_proposal":
+- Creates a proposal account as a PDA.
+- Checks account ownership and signer.
+- Initializes proposal with current time and details.
+- Serializes the proposal data.
+
+Function "vote_process":
+- Processes a vote from a user on a proposal.
+- Checks ownership, signer, and account correctness.
+- Checks if the proposal is still open.
+- Adds user governance points to the vote count (yes/no).
+- Creates a vote record account as a PDA.
+- Serializes vote record, proposal, and user data.
+
+Function "manage_governance_points":
+- Modifies governance points for a user (add/subtract).
+- Verifies admin rights.
+- Checks account ownership and signer.
+- Updates governance points and serializes.
+
+Function "execute_instruction":
+- Executes an instruction based on variant (create vault, deposit, withdraw).
+- Verifies account owners, signatures, and account correctness.
+- Checks previous instruction via instructions sysvar.
+- Calls respective helper functions to send CPI transactions.
+
+Function "make_decision":
+- Finalizes a proposal decision after end time.
+- Checks owner, signer, and account correctness.
+- Loads and verifies admin privileges.
+- Checks if proposal is expired.
+- Determines whether the proposal is approved or denied.
+- Sets the 'executed' flag and serializes.
+
+Potential Risks and Vulnerabilities:
+- Lack of explicit account ownership checks for all critical accounts.
+- Possible re-entrancy or replay attack if instructions sysvar is manipulated.
+- No enforcement of proposal end time before voting, other than timestamp check.
+- No checks for minimum governance points for voting or actions.
+- Admin privileges are only checked via stored admin_id, potentially vulnerable if admin key is compromised.
+- In "manage_governance_points", direct subtraction may cause underflow; unchecked.
+- Use of unwrap() in "vault_program_id" could panic if string parsing fails.
+- Overflow/checked_add is used, but no explicit handling for other arithmetic errors elsewhere.
+- No validation of input data (e.g., proposal titles, descriptions) length limits.
+- No account data size checks before deserialization or serialization.
+- Small time window window for proposals; no explicit safeguards for time synchronization issues.
+- Potential missing checks on instruction data validity before processing.
+- No role-based access controls beyond admin check.
+- Multiple functions assume accounts are already created and properly initialized, risking null references.
+- Instruction validation relies heavily on PDA checks; any mismatch can cause errors, but no fallback logic.
+- No explicit security measures for ensuring nonces or prevent replay attacks apart from the instruction sysvar check.

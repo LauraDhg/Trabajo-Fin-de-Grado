@@ -1,0 +1,95 @@
+Function "vault_program_id":
+- Returns a Pubkey.
+- The Pubkey is hardcoded.
+
+Function "process_instruction":
+- Unpacks the instruction data using `InstructionFormat::unpack`.
+- Matches the unpacked instruction to different program logic.
+- Calls the corresponding function based on the instruction.
+
+Function "create_admin":
+- Creates an admin account.
+- Checks if the admin payer is a signer.
+- Checks if the admin account has already been initialized.
+- Derives the admin PDA.
+- Checks if the provided admin account key matches the derived PDA.
+- Creates and initializes the `Admin_Account` with the admin's pubkey and current timestamp.
+- Serializes the account data into the admin account.
+
+Function "update_admin":
+- Updates the admin account.
+- Checks if the admin payer is a signer.
+- Checks if the admin account's owner is the program.
+- Deserializes the `Admin_Account` from the provided account.
+- Derives the admin PDA.
+- Checks if the provided admin account key matches the derived PDA.
+- Checks if the current admin ID matches the signer.
+- Updates the admin ID with the new admin's pubkey and updates the timestamp.
+- Serializes the updated account data back into the admin account.
+
+Function "create_account":
+- Creates a user account.
+- Checks if the user payer is a signer.
+- Checks if the user account has already been initialized.
+- Derives the user PDA.
+- Checks if the provided user account key matches the derived PDA.
+- Creates and initializes the `User_Account` with the user's pubkey and initial governance points.
+- Serializes the account data into the user account.
+
+Function "open_proposal":
+- Creates a new proposal account.
+- Checks if the user payer is a signer.
+- Checks if the user account's owner is the program.
+- Checks if the proposal account has already been initialized.
+- Derives the proposal PDA.
+- Checks if the provided proposal account key matches the derived PDA.
+- Creates and initializes the `Proposal` account with the provided title, description, and timestamps.
+- Serializes the proposal data into the proposal account.
+
+Function "vote_process":
+- Processes a user's vote on a proposal.
+- Checks if the user payer is a signer.
+- Checks if the user and proposal account's owner is the program.
+- Checks if the vote record account has already been initialized.
+- Derives the vote PDA.
+- Checks if the provided vote record account key matches the derived PDA.
+- Deserializes the `Proposal` and `User_Account` from the provided accounts.
+- Validates that the proposal is still open.
+- Updates the proposal's vote counts (yes or no) based on the user's vote.
+- Creates and initializes the `Vote_Record` account to record the user's vote.
+- Serializes the vote record into the vote account.
+- Serializes the updated proposal data back into the proposal account.
+- Serializes the updated user data back into the user account.
+
+Function "manage_governance_points":
+- Manages the governance points of a user account.
+- Checks if the admin payer is a signer.
+- Checks if the admin and user account's owner is the program.
+- Derives the admin PDA.
+- Checks if the provided admin account key matches the derived PDA.
+- Deserializes the `Admin_Account` and verifies that the signer is the admin.
+- Deserializes the `User_Account` from the provided account.
+- Adds or subtracts governance points from the user account based on the `instruction` flag.
+- Serializes the updated user account data back into the user account.
+
+Function "execute_instruction":
+- Executes a specific instruction by calling another program (CPI - Cross-Program Invocation).
+- Checks if the user payer is a signer.
+- Checks if the user account's owner is the program.
+- Different checks for the admin when the variant_instr is 0 or 2.
+- Checks if the user has the correct pubkey based on the instruction and PDA.
+- Checks if the current instruction was preceded by a vault program instruction.
+- Calls send_create_vault_transaction or send_instr_to_vault_transaction, depending on the instruction.
+
+Function "make_decision":
+- Makes a decision on a proposal based on the votes.
+- Checks if the admin payer is a signer.
+- Checks if the admin and proposal account's owner is the program.
+- Derives the admin PDA.
+- Checks if the provided admin account key matches the derived PDA.
+- Deserializes the `Admin_Account` and verifies that the signer is the admin.
+- Deserializes the `Proposal` from the provided account.
+- Checks that the proposal has finished.
+- Determines if the proposal is approved or denied based on the number of yes/no votes.
+- Updates the proposal's `executed` flag to `true`.
+- Serializes the updated proposal data back into the proposal account.

@@ -1,0 +1,25 @@
+Function "process_instruction":
+- The `match` statement covers all variants of the `InstructionFormat` enum, so there is no missing functionality.
+
+Function "initialize_wallet_account":
+- The program checks if the `user_account` is a signer.
+- The program derives a Program Derived Address (PDA) for the wallet account.
+- The program checks if the wallet account has already been initialized by verifying if it has lamports.
+- The program creates the wallet account using `invoke_signed`, transferring rent-exempt lamports to it. The seed used to create the PDA includes the user's public key, preventing other users from creating wallets for existing users.
+- The program initializes the wallet data with `amount = 0` and `initialized = true`.
+
+Function "deposit_amount":
+- The program checks if the `user_account` is a signer.
+- The program checks if the wallet account is initialized.
+- The program uses `checked_add` to prevent integer overflows.
+
+Function "withdraw_amount":
+- The program checks if the `user_account` is a signer.
+- The program checks if the wallet account is initialized.
+- The program uses the subtraction operator `-` directly, which can lead to underflows if the withdrawal amount is greater than the current balance, resulting in unexpected behavior.
+
+Function "transfer_amount":
+- The program checks if the `user_account` is a signer.
+- The program checks if both the source and destination wallet accounts are initialized.
+- The program uses `checked_add` when crediting the destination wallet to prevent integer overflows.
+- The program uses the subtraction operator `-` directly when debiting the source wallet which can lead to underflows if the withdrawal amount is greater than the current balance, resulting in unexpected behavior.

@@ -1,0 +1,35 @@
+Function "process_instruction":
+- Unpacks instruction data using InstructionFormat::unpack
+- Matches instruction variant to call appropriate handler function
+- Returns ProgramResult from handler functions
+
+Function "initialize_wallet_account":
+- Creates a PDA wallet account using system_instruction::create_account
+- Uses invoke_signed with PDA bump seed for signature
+- Initializes wallet with amount 0 and initialized true
+- Serializes wallet data to account storage
+- Does not validate that wallet_account matches the derived PDA address
+- Does not verify that the created account is actually owned by the program
+- Uses unwrap() on length conversion which could panic
+
+Function "deposit_amount":
+- Reads wallet data from account storage
+- Uses checked_add to prevent arithmetic overflow
+- Returns custom ArithmeticError on overflow
+- Updates wallet amount and serializes back to storage
+- Only checks that wallet account is owned by program, no additional authorization
+
+Function "withdraw_amount":
+- Reads wallet data from account storage
+- Uses unchecked subtraction (wallet.amount -= amount) which can underflow
+- Does not validate that user has sufficient balance before withdrawal
+- No authorization check to verify user owns the wallet being withdrawn from
+- Serializes potentially negative amount due to underflow
+
+Function "transfer_amount":
+- Reads both source and destination wallet data
+- Uses checked_add for destination but unchecked subtraction for source
+- No validation that source wallet has sufficient balance
+- No authorization checks to verify user owns source wallet
+- Potential for source wallet underflow
+- Transfers between any two program-owned wallets without owner verification

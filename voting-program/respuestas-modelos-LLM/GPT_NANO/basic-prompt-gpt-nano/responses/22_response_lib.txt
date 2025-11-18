@@ -1,0 +1,78 @@
+Function "process_instruction":
+- Serves as the program's entry point, unpacking instruction data and dispatching to specific functions based on the instruction type.
+
+Function "create_admin":
+- Creates and initializes an admin account with the relevant admin ID and timestamp.
+- Checks for correct signer and account state.
+- Uses program-derived address (PDA) to validate admin account.
+- Invokes system instructions to create the account, potentially exposing rent-exemption errors if rent calculation is wrong.
+- Serializes admin data into account.
+
+Function "update_admin":
+- Updates the admin ID and timestamp.
+- Checks owner and signer requirements.
+- Validates the admin account with PDA.
+- Reads and writes the admin account data after updating.
+
+Function "create_account":
+- Creates a new user account for governance participation.
+- Checks account signer and existing account status.
+- Uses PDA to ensure correct account.
+- Invokes system instruction to allocate account space and rent.
+- Serializes user account data with governance points.
+
+Function "open_proposal":
+- Opens a new proposal with title and description.
+- Checks account ownership and signer.
+- Validates non-existence of the account before creation.
+- Creates the proposal account with PDA.
+- Initializes proposal with current time, title, description, and vote counts.
+- Serializes proposal data.
+
+Function "vote_process":
+- Registers a vote on a proposal.
+- Checks ownership and signer.
+- Ensures vote record does not already exist.
+- Loads proposal and user data.
+- Checks voting time window.
+- Updates vote tallies based on vote answer.
+- Creates a vote record account with PDA.
+- Serializes vote record, proposal, and user data.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user account.
+- Checks ownership and owner of accounts.
+- Ensures correct admin account with PDA.
+- Deserializes user account, updates points.
+- Serializes updated user account data.
+
+Function "execute_instruction":
+- Executes specific instructions related to vault transaction types.
+- Validates owner, signer, and account types.
+- Checks the correct vault program ID and instruction sysvar.
+- Loads previous instruction index and validates.
+- Calls send_create_vault_transaction or send_instr_to_vault_transaction accordingly.
+- Uses CPI to invoke vault program instructions.
+
+Function "make_decision":
+- Finalizes a proposal by voting outcome.
+- Checks admin account ownership and signer.
+- Validates proposal account with PDA.
+- Checks that voting period has ended based on timestamp.
+- Declares proposal as approved or denied based on votes.
+- Sets proposal as executed and serializes it.
+
+Potential risks and vulnerabilities:
+- Lack of explicit checks for account data length consistency before deserialization.
+- In "manage_governance_points", subtracting points without underflow check could lead to underflow.
+- Reliance on raw `unwrap()` in code (e.g., in `vault_program_id()`) could panic if the string is invalid.
+- No explicit access control beyond PDA validation, possibly allowing unauthorized PDA owners.
+- No validation of input strings length (title, description) may cause serialization/deserialization issues.
+- No checks for maximum points or other limits, risking overflow.
+- Reduced security if clock sysvar account is not correctly validated.
+- System instruction calls could fail silently or throw errors if rent calculations or account creation conditions fail.
+- No fallback or error handling for edge cases such as PDA derivation collisions.
+- No explicit checks for the validity of instruction data deserialization.
+- Potential re-entrancy issues if external calls can modify shared state before serialization.
+- Multiple "unwrap()" that can cause panics if not handled.
+

@@ -1,0 +1,20 @@
+Function "initialize_wallet_account":
+- Uses invoke_signed to create accounts, which can be tricky to get right; improper seed or bump derivation can lead to security issues or account collisions.
+- Does not check for existing wallet account data, potentially overwriting previously initialized data.
+- Assumes lamports == 0 implies uninitialized without enforcing or verifying the account is truly new or empty.
+
+Function "deposit_amount":
+- Does not verify the signer or the authority of the user account, allowing any signer to deposit funds to the wallet.
+- Lacks checks for overflow beyond checked_add, but relies on checked_add which is secure.
+- Does not validate that the depositor is the owner or linked to the wallet, risking unauthorized deposits.
+
+Function "withdraw_amount":
+- Does not verify the signer or authority, so anyone could potentially invoke a withdrawal if they have access to the account.
+- Uses direct subtraction without overflow check — could underflow if withdrawal amount exceeds current balance.
+- Lacks authentication, risking unauthorized access.
+
+Function "transfer_amount":
+- Does not verify the signer authority for source or destination accounts, allowing unauthorized transfers.
+- Does not check for sufficient balance before subtracting the transfer amount, risking underflow.
+- Relies on checked_add for destination balance, which is secure against overflow.
+- No validation that accounts belong to the signer or are authorized for transfer.

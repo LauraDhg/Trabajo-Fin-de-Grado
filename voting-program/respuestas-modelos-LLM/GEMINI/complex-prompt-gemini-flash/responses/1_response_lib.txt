@@ -1,0 +1,65 @@
+Function "vault_program_id":
+- This function hardcodes a program ID. If the vault program is redeployed, this ID will need to be updated, potentially requiring a program update.
+
+Function "process_instruction":
+- This function serves as the main entrypoint and uses a match statement to dispatch instructions. Ensure all possible values of `instruction` are handled to prevent unexpected behavior.
+
+Function "create_admin":
+- Checks if `admin_account_dao` already has lamports. If so, it returns an error, preventing reinitialization.
+- Derives a PDA for the admin account using `Pubkey::find_program_address`.
+- Creates the admin account using `invoke_signed` with the derived PDA as a signer seed.
+- Serializes the admin account data using `account.serialize`.
+
+Function "update_admin":
+- Checks if the `admin_account_dao` is owned by the program.
+- Checks if the `admin_payer` is a signer.
+- Deserializes the admin account data.
+- Verifies that the `admin_account_dao` address matches the derived PDA.
+- Validates that the transaction is signed by the current admin.
+- Updates the admin's `admin_id` and `last_update`.
+
+Function "create_account":
+- Checks if `user_payer` is a signer.
+- Checks if `user_account_dao` already has lamports.
+- Derives a PDA for the user account using `Pubkey::find_program_address`.
+- Creates the user account using `invoke_signed` with the derived PDA as a signer seed.
+- Serializes the user account data.
+
+Function "open_proposal":
+- Checks if `user_payer` is a signer and if the `proposal_account` already has lamports.
+- Derives a PDA for the proposal account using `Pubkey::find_program_address`.
+- Deserializes the user account to check its type.
+- Sets the proposal's `start_time` and `end_time`.
+- Creates the proposal account using `invoke_signed` with the derived PDA as a signer seed.
+- Serializes the proposal data.
+
+Function "vote_process":
+- Checks if `user_payer` is a signer and if the `vote_record_account` already has lamports.
+- Derives a PDA for the vote record account using `Pubkey::find_program_address`.
+- Deserializes the proposal and user accounts.
+- Checks the user account type.
+- Prevents voting after the proposal's `end_time`.
+- Updates the `yes_votes` or `no_votes` count based on the vote answer.
+- Creates the vote record account using `invoke_signed` with the derived PDA as a signer seed.
+- Serializes the vote record, proposal, and user account data.
+
+Function "manage_governance_points":
+- Checks if `admin_payer` is a signer.
+- Derives a PDA for the admin account and deserializes the admin account.
+- Validates that the transaction is signed by the current admin.
+- Deserializes the user account and checks its type.
+- Adds or subtracts governance points based on the `instruction` flag.
+
+Function "execute_instruction":
+- Checks if `user_payer` is a signer and if the `user_account_dao` has lamports.
+- The match statement for `variant_instr` uses different PDAs checks for admin and user accounts. There may be a logical error in the account validation depending on the instruction.
+- The check for the previous instruction being from the "vault_program_id()" might not be robust enough. An attacker could potentially craft a different instruction that appears to be from the vault program.
+- Uses a match statement to determine which transaction to send to the vault program.
+
+Function "make_decision":
+- Checks if `admin_payer` is a signer.
+- Derives a PDA for the admin account and deserializes the admin account.
+- Validates that the transaction is signed by the current admin.
+- Deserializes the proposal account.
+- Prevents a decision from being made before the proposal's `end_time`.
+- Sets the `executed` flag based on the vote outcome.

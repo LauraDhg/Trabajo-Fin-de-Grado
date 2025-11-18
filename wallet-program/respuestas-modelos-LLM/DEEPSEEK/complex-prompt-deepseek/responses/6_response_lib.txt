@@ -1,0 +1,35 @@
+Function "process_instruction":
+- No direct vulnerabilities found in this routing function
+- Properly unpacks instruction data before routing
+- Follows standard Solana program entrypoint pattern
+
+Function "initialize_wallet_account":
+- Missing validation that user_account is signer
+- Missing validation that wallet_account is writable
+- Uses unwrap() on try_into() conversion which could panic
+- Does not verify that the created account has sufficient lamports for rent
+- Missing proper validation of account ownership before PDA verification
+- No re-initialization protection beyond lamports check
+
+Function "deposit_amount":
+- Missing validation that user_account is signer
+- Missing validation that wallet_account is writable
+- No transfer of actual tokens/lamports - only updates internal state
+- Potential confusion between internal "amount" state and actual account balances
+- No access control beyond PDA verification
+
+Function "withdraw_amount":
+- Missing validation that user_account is signer
+- Missing validation that wallet_account is writable
+- No actual transfer of funds/lamports to user - only updates internal state
+- Creates misleading expectation that funds are being withdrawn
+- No access control beyond PDA verification
+
+Function "transfer_amount":
+- Missing validation that user_account is signer
+- Missing validation that src_wallet_account and dest_wallet_account are writable
+- No actual transfer of funds between accounts - only updates internal state
+- Potential for state inconsistency if serialization fails on one account
+- No access control beyond PDA verification
+- Missing validation that dest_user_account is a valid user account
+- Arithmetic operations could potentially overflow/underflow despite checked_* usage

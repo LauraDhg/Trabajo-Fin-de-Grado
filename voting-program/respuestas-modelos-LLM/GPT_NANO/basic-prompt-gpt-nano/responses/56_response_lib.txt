@@ -1,0 +1,66 @@
+Function "send_create_vault_transaction":
+- Prepares and sends a create vault instruction to an external vault program.
+- Assembles instruction data with parameters and uses invoke_signed for cross-program invocation.
+- Uses seeds to sign the transaction with a program-derived address.
+
+Function "send_instr_to_vault_transaction":
+- Prepares and sends a deposit or withdrawal instruction to the vault program.
+- Assembles instruction data with amount and proposal ID.
+- Uses invoke_signed to perform secure cross-program call.
+
+Function "process_instruction":
+- Entry point for processing instructions based on the unpacked instruction enum.
+- Routes to specific functions for each instruction type: create_admin, update_admin, etc.
+
+Function "create_admin":
+- Creates and initializes admin account PDA with program-derived address.
+- Checks lamports to ensure account is not already initialized.
+- Sets admin ID and last update time.
+- Uses invoke_signed to create account with system program.
+
+Function "update_admin":
+- Updates the administrative account with a new admin ID.
+- Checks account owner is correct and account PDA matches.
+- Updates last update timestamp.
+- Serializes updated admin data back into account.
+
+Function "create_account":
+- Creates a user governance points account PDA.
+- Checks account not already initialized.
+- Initializes with default governance points.
+- Uses invoke_signed to create account on chain.
+
+Function "open_proposal":
+- Creates a proposal account PDA with provided title.
+- Checks account is not already initialized.
+- Sets proposal start and end times.
+- Serializes proposal data into account.
+
+Function "vote_process":
+- Processes a vote on a proposal.
+- Checks authority, ownership, and vote record account initialization.
+- Loads current proposal and user account.
+- Checks voting time window.
+- Adds governance points to vote counts, with overflow check.
+- Creates a vote record account.
+- Serializes updated proposal, vote record, and user accounts.
+
+Function "manage_governance_points":
+- Modifies governance points of a user account.
+- Checks admin authority and account owner.
+- Adds or subtracts points with overflow/underflow checks.
+- Serializes user account.
+
+Function "execute_instruction":
+- Executes deposit, withdraw, or vault creation based on instruction variant.
+- Checks owner, signer, and account correctness.
+- Loads current instruction index from sysvar.
+- Validates previous instruction.
+- Calls appropriate send_* function for vault interaction.
+
+Function "make_decision":
+- Finalizes a proposal after voting period.
+- Checks owner and signer authority.
+- Verifies voting period has ended.
+- Declares proposal approved or denied based on votes.
+- Sets executed flag and serializes proposal.

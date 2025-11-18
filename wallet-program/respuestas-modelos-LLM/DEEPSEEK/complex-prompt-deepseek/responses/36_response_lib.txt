@@ -1,0 +1,32 @@
+Function "process_instruction":
+- No direct vulnerabilities found in this routing function
+- Relies on proper validation in the individual instruction handlers
+
+Function "initialize_wallet_account":
+- Uses unwrap() on try_into() conversion which could panic if wallet_len exceeds u64
+- Does not validate that user_account is signer
+- Does not check if wallet_account is already initialized
+- Creates account with program as owner but doesn't verify the account was created properly
+- No rent exemption validation for the created account
+
+Function "deposit_amount":
+- Uses checked_add for overflow protection (good practice)
+- Validates wallet ownership and PDA derivation
+- Does not validate that user_account is signer
+- No transfer of actual SOL/Lamports - only updates internal state
+- Missing access control to ensure only authorized users can deposit
+
+Function "withdraw_amount":
+- Uses unchecked subtraction (wallet.amount -= amount) which can cause integer underflow
+- Does not validate that user_account is signer
+- No transfer of actual SOL/Lamports - only updates internal state
+- Missing access control to ensure only wallet owner can withdraw
+- No validation that wallet has sufficient balance before subtraction
+
+Function "transfer_amount":
+- Uses checked_add for destination but unchecked subtraction for source (src_wallet.amount -= amount)
+- Does not validate that user_account is signer (should be source account owner)
+- No validation that source wallet has sufficient balance
+- Missing access control to ensure only source wallet owner can transfer
+- No transfer of actual SOL/Lamports - only updates internal state
+- Potential reentrancy issue if this were a token transfer (though currently only state update)

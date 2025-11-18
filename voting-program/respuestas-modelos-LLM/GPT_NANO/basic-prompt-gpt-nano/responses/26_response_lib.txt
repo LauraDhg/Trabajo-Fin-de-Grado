@@ -1,0 +1,43 @@
+Function "send_create_vault_transaction":
+- Prepares and constructs a create-vault instruction with the given parameters.
+- Invokes the instruction signed with vault PDA seeds, trusting that the vault creation is successful.
+
+Function "send_instr_to_vault_transaction":
+- Prepares and constructs instructions for depositing to or withdrawing from the vault.
+- Invokes the instruction signed with vault PDA seeds, ensuring authorized access.
+
+Function "process_instruction":
+- Entry point of the program that unpacks and matches various instruction types.
+- Delegates to specific functions based on instruction variant.
+
+Function "create_admin":
+- Creates a new admin account, initializing with the admin's public key and current timestamp.
+- Ensures the admin account is properly created and serialized.
+
+Function "update_admin":
+- Updates the admin account with a new admin public key and timestamp.
+- Checks current admin privileges before modification.
+
+Function "create_account":
+- Creates a user account, initializing governance points.
+- Ensures proper PDA and account setup.
+
+Function "open_proposal":
+- Creates and initializes a new proposal account with title, description, and timestamps.
+- Sets the proposal's start and end times.
+
+Function "vote_process":
+- Records a user's vote, increasing yes or no counts based on vote answer.
+- Checks proposal activity window, previous votes, and serializes the vote record.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from user accounts based on admin instruction.
+- Validates admin privileges.
+
+Function "execute_instruction":
+- Executes specific instruction types based on the variant.
+- Authenticates the user and verifies the previous instruction placement.
+
+Function "make_decision":
+- Finalizes a proposal, announces whether it was approved or denied.
+- Checks if voting period has ended, and updates proposal state.

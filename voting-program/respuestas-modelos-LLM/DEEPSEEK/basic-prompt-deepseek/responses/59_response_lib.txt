@@ -1,0 +1,73 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for the vault program
+- Uses unwrap which may panic if the string is invalid
+
+Function "action_as_str":
+- Maps a u8 action code to a string description
+- Returns "Unknown" for unrecognized action codes
+
+Function "send_create_vault_transaction":
+- Constructs an instruction for creating a vault
+- Uses invoke_signed to call an external vault program
+- Includes system program in account metas
+- Uses vault_bump for PDA signing
+
+Function "send_instr_to_vault_transaction":
+- Constructs instructions for deposit/withdraw operations
+- Uses invoke_signed to call external vault program
+- Does not include system program in account metas
+- Uses vault_bump for PDA signing
+
+Function "process_instruction":
+- Entry point that unpacks instruction data
+- Routes to appropriate handler functions based on instruction variant
+- Handles multiple instruction types including admin, account, proposal, and vote operations
+
+Function "create_admin":
+- Creates admin account PDA
+- Checks for signer and account initialization
+- Uses system_instruction::create_account
+- Stores admin ID and timestamp
+
+Function "update_admin":
+- Updates admin account with new admin ID
+- Verifies account ownership and signer
+- Updates timestamp
+- Validates PDA address
+
+Function "create_account":
+- Creates user account PDA
+- Initializes with 10 governance points
+- Uses system_instruction::create_account
+- Validates PDA derivation
+
+Function "open_proposal":
+- Creates proposal account with title and description
+- Sets 1-hour voting period
+- Uses system_instruction::create_account
+- Validates PDA derivation using title
+
+Function "vote_process":
+- Processes user votes on proposals
+- Creates vote record account
+- Checks voting period validity
+- Adds governance points to yes/no votes
+- Uses system_instruction::create_account
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from user accounts
+- Requires admin authorization
+- Performs arithmetic operations on points
+- No overflow/underflow checks
+
+Function "execute_instruction":
+- Executes vault operations (create/deposit/withdraw)
+- Validates account types based on operation
+- Checks previous instruction for vault program confirmation
+- Calls appropriate vault transaction functions
+
+Function "make_decision":
+- Finalizes proposal voting after end time
+- Compares yes/no votes
+- Marks proposal as executed
+- Requires admin authorization

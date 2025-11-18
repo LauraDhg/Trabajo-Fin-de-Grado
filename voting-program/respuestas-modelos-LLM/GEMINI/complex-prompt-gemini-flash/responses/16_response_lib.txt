@@ -1,0 +1,76 @@
+Function "vault_program_id":
+- Hardcoded program ID makes the program less flexible and harder to upgrade.
+- If the vault program is updated, this program will need to be redeployed with the new ID.
+
+Function "send_create_vault_transaction":
+- It's important to validate `variant_instr` to ensure it is within the expected range to avoid unexpected behavior in the target vault program.
+- The `vault_seeds` used for signing should be carefully reviewed to ensure they match the vault program's expectations and prevent signature mismatch.
+- Ensure that the `vault_bump` matches the bump seed derived by the vault program for the given vault account.
+
+Function "send_instr_to_vault_transaction":
+- Validate `variant_instr` to ensure it is within the expected range to avoid unexpected behavior in the target vault program.
+- The `vault_seeds` used for signing should be carefully reviewed to ensure they match the vault program's expectations and prevent signature mismatch.
+- Ensure that the `vault_bump` matches the bump seed derived by the vault program for the given vault account.
+
+Function "process_instruction":
+- This function acts as the main entry point and uses a match statement. Ensure all possible instruction variants are handled correctly.
+- Consider adding a default case that returns an explicit error for unrecognised instructions to prevent unexpected program behavior.
+
+Function "create_admin":
+- The `Admin_Account` PDA can be created by anyone, which means anyone can become an admin.
+- There is no authorization check to determine who can create the admin account.
+- Consider using a single signer authority to initialize the admin account.
+- Ensure the `clock_sysvar` account is indeed the Clock sysvar account by checking its key against `CLOCK_SYSVAR_ID`.
+- The account length is calculated via `try_to_vec` which is not gas efficient.
+
+Function "update_admin":
+- It checks if the `admin_account_dao` account is owned by the program, preventing external modification.
+- The function updates the `admin_id` field in the `Admin_Account` to a new admin, specified by the `new_admin` parameter.
+- Ensure the `clock_sysvar` account is indeed the Clock sysvar account by checking its key against `CLOCK_SYSVAR_ID`.
+
+Function "create_account":
+- The function creates a `User_Account` with an initial amount of governance points (10).
+- This initial amount could be a point of manipulation; consider if it should be configurable or based on some other factor.
+- The function creates a PDA using the user's public key. This prevents multiple accounts per user, but may limit functionality if multiple accounts are needed.
+- The amount of governance points is initialized to a fixed value. It might be a good idea to allow the admin to set this value or to derive it from some other on-chain data.
+
+Function "open_proposal":
+- The function uses the proposal title as part of the PDA derivation. If titles are not unique, this could lead to collisions.
+- The proposal end time is hardcoded to be 1 hour after the start time. This could be made configurable.
+- The PDA is derived using the title, which is a string provided by the user. This can lead to collisions or difficulties in managing proposals.
+
+Function "vote_process":
+- The program checks that the proposal is still open based on the `end_time` stored in the proposal.
+- A new `Vote_Record` account is created for each vote.
+- The vote weight is equal to the user's `amount_governance_points`.
+- The user's governance points are not decremented after voting.
+- Arithmetic errors are handled using `checked_add`.
+- The function allows users to vote multiple times, which could be an issue depending on the desired voting mechanism.
+- It's important to prevent users from voting after the proposal's end time. The code correctly checks this condition.
+
+Function "manage_governance_points":
+- The function allows the admin to add or subtract governance points from a user's account.
+- There is no limit on the amount of governance points that can be added or subtracted, which could lead to potential abuse.
+- The admin's authority is checked based on the `admin_id` field in the `Admin_Account`.
+- Arithmetic errors are handled using `checked_add` and `checked_sub`.
+- The function uses a boolean `instruction` to determine whether to add or subtract points. Consider using an enum for better readability.
+- It's crucial to implement checks to prevent integer overflow or underflow when adding or subtracting governance points.
+
+Function "execute_instruction":
+- This function acts as a dispatcher for different instructions related to a vault program.
+- The function retrieves the previous instruction and checks if it's related to the vault program, but doesn't take any action based on it. This check seems redundant.
+- The function uses a `match` statement to determine which instruction to execute based on `variant_instr`.
+- The instruction `variant_instr = 0` checks the admin account but does nothing else.
+- The instruction `variant_instr = 1` checks the user account but does nothing else.
+- The instruction `variant_instr = 2` checks the admin account but does nothing else.
+- There is no admin check for variant_instr = 1.
+- It uses `load_current_index` and `load_instruction_at` to inspect the instruction history. There is an assumption that the previous instruction is related to the vault.
+- The instructions 0, 1, and 2 have duplicated code.
+- It's important to carefully validate all inputs, especially the `variant_instr`, `amount`, and `vault_bump` parameters, to prevent unexpected behavior.
+
+Function "make_decision":
+- Only admins can execute this instruction.
+- The function checks if the proposal is still active based on the `end_time` stored in the proposal.
+- The function compares the number of "yes" votes to "no" votes and determines whether the proposal is approved or denied.
+- The `executed` field of the proposal is set to `true` regardless of the outcome.
+- It's important to consider the potential impact of this decision and whether additional checks or actions are needed.

@@ -1,0 +1,30 @@
+Function "process_instruction":
+- Dispatches to different functions based on instruction format
+- Handles four instruction types: CreateAccount, IncreaseAmount, WithdrawAmount, and TransferAmount
+- Unpacks instruction data using InstructionFormat::unpack
+
+Function "initialize_wallet_account":
+- Creates a new wallet account using PDA derivation with "wallet" prefix and user account key
+- Calculates required rent for wallet account storage
+- Uses invoke_signed with system_instruction::create_account
+- Initializes wallet with zero amount and sets initialized flag to true
+- Serializes wallet data into the created account
+
+Function "deposit_amount":
+- Increases wallet amount by specified value
+- Uses checked_add to prevent integer overflow
+- Returns ArithmeticError on overflow
+- Updates and serializes wallet state
+
+Function "withdraw_amount":
+- Decreases wallet amount by specified value
+- Uses unchecked subtraction (potential underflow vulnerability)
+- Does not validate sufficient balance before withdrawal
+- Updates and serializes wallet state
+
+Function "transfer_amount":
+- Transfers amount from source wallet to destination wallet
+- Uses checked_add for destination (safe) but unchecked subtraction for source (unsafe)
+- Does not validate sufficient balance in source wallet
+- Updates and serializes both wallet states
+- No validation that destination wallet belongs to destination user

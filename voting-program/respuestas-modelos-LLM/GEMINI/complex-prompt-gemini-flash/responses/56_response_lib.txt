@@ -1,0 +1,81 @@
+Function "vault_program_id":
+- Hardcoded program ID, which may be insecure. It tightly couples this program with a specific vault program. If the vault program is upgraded, this program would need to be redeployed, or a more flexible approach should be considered, such as storing the vault program ID in a configurable account.
+
+Function "action_as_str":
+- Returns a string slice based on the input `action`. If the `action` is outside the defined range (0-2), it returns "Unknown". This function itself doesn't pose a direct vulnerability, but it is used for logging and debugging, which is less secure in production.
+
+Function "send_create_vault_transaction":
+- Uses `invoke_signed` which is correct for cross-program invocations that require signing with program-derived addresses (PDAs).
+- Seeds used to sign the CPI are hardcoded.
+
+Function "send_instr_to_vault_transaction":
+- Similar to `send_create_vault_transaction`, uses `invoke_signed` with hardcoded seeds for CPI.
+
+Function "process_instruction":
+- This is the main entry point, dispatching to different instruction handlers based on the unpacked `InstructionFormat`.
+
+Function "create_admin":
+- Uses `Pubkey::create_program_address` to derive the admin account PDA.
+- Checks if the admin payer is a signer.
+- Checks if the account has already been initialized.
+- The `last_update` field in the `Admin_Account` struct is updated with the current timestamp. This is good for tracking the last time the admin account was updated.
+
+Function "update_admin":
+- Allows updating the admin ID.
+- Checks if the admin payer is a signer.
+- Checks if the admin account's owner is the program ID.
+- Uses `Pubkey::create_program_address` to derive the admin account PDA and verifies if the passed account matches the derived PDA.
+- Updates the `last_update` field with the current timestamp.
+
+Function "create_account":
+- Creates a user account.
+- Seeds are hardcoded.
+- Gives the user 10 governance points.
+- Checks if the user payer is a signer.
+- Checks if the account has already been initialized.
+- Uses `Pubkey::create_program_address` to derive the user account PDA and verifies if the passed account matches the derived PDA.
+
+Function "open_proposal":
+- Allows a user to open a proposal.
+- Checks if the user payer is a signer.
+- Checks if the proposal account has already been initialized.
+- Seeds are hardcoded.
+- Sets the proposal's end time to be 1 hour after the start time.
+
+Function "vote_process":
+- Allows a user to vote on a proposal.
+- Checks if the user payer is a signer.
+- Checks if the account has already been initialized.
+- Checks if the current time is after the proposal's end time.
+- Seeds are hardcoded.
+- Updates the proposal's yes_votes or no_votes based on the user's vote.
+- Updates the proposal's yes_votes or no_votes based on the user's vote.
+- Updates the proposal and user accounts after the vote.
+
+Function "manage_governance_points":
+- Allows an admin to manage user's governance points (add or subtract).
+- Checks if the admin payer is a signer.
+- Seeds are hardcoded.
+- Checks if the admin and user accounts' owner is the program ID.
+- Uses `checked_add` to prevent overflow when adding points.
+- Directly subtracts points without a check, potentially leading to underflow if the subtraction results in a negative number.
+
+Function "execute_instruction":
+- Executes instructions related to a vault program.
+- The instruction argument is crucial and should be carefully validated.
+- Checks if the user payer is a signer.
+- Checks if the user account belongs to the DAO program.
+- Uses a hardcoded vault program ID.
+- The check `if prev_ix.program_id == vault_program_id()` is a good practice to ensure that the previous instruction was indeed a call to the vault program.
+- There are a series of checks depending of the `variant_instr` argument, which determine if the key passed is an admin_pda or a user_pda, but these conditions are mutually exclusive.
+- CPIs to the vault program using `send_create_vault_transaction` and `send_instr_to_vault_transaction`.
+- Seeds are hardcoded.
+
+Function "make_decision":
+- Allows an admin to make a decision on a proposal.
+- Checks if the admin payer is a signer.
+- Checks if the admin and proposal accounts' owner is the program ID.
+- Seeds are hardcoded.
+- Uses the clock sysvar.
+- Checks if the current time is before the proposal's end time.
+- Sets the proposal's `executed` field to true.

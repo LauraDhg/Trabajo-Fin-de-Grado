@@ -1,0 +1,32 @@
+Function "process_instruction":
+- Missing validation of account ordering and expected accounts for each instruction type
+- No validation that accounts passed match expected accounts for each instruction
+- Potential for incorrect account indexing if wrong number of accounts provided
+
+Function "initialize_wallet_account":
+- Uses unwrap() on try_into() conversion which could panic
+- Does not validate that wallet_account matches the derived PDA
+- Missing validation that wallet_account is not already initialized
+- No check that wallet_account has sufficient lamports for rent exemption
+- Uses user_account as signer but doesn't verify PDA derivation matches user_account
+
+Function "deposit_amount":
+- Missing validation that wallet_account is actually a PDA derived from user_account
+- No ownership verification beyond program_id check
+- Potential reentrancy issue with serialization after state modification
+- Missing overflow check on amount addition (though u64 addition wraps in Rust)
+
+Function "withdraw_amount":
+- Missing validation that wallet_account is actually a PDA derived from user_account
+- No ownership verification beyond program_id check
+- Uses custom error MyError::ArithmeticError for subtraction but doesn't handle it specifically
+- Missing proper access control - any signer can withdraw from any wallet
+
+Function "transfer_amount":
+- Missing validation that src_wallet_account is derived from user_account
+- Missing validation that dest_wallet_account is derived from dest_user_account
+- Potential integer overflow in dest_wallet.amount += amount
+- No validation that dest_wallet_account belongs to the intended recipient
+- Missing proper access control - any signer can transfer from any wallet to any wallet
+- Potential reentrancy issues with multiple serializations
+- Missing validation that accounts are distinct (no self-transfer prevention)

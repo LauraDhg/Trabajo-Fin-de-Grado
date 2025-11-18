@@ -1,0 +1,76 @@
+Function "send_create_vault_transaction":
+- Prepares and sends a transaction to create a vault by invoking an external program.
+- Constructs instruction data with provided parameters.
+- Sets the required accounts for the instruction.
+- Uses `invoke_signed` with vault seeds to authorize the transaction.
+
+Function "send_instr_to_vault_transaction":
+- Prepares and sends a transaction to perform an operation (deposit/withdraw) to a vault.
+- Builds instruction data including amount and proposal ID.
+- Sets the accounts involved in the transaction.
+- Calls `invoke_signed` with vault seeds for authorization.
+
+Function "process_instruction":
+- Entry point for processing different instruction types.
+- Deserializes instruction data into a format understood by the program.
+- Delegates execution to specific functions based on instruction type.
+
+Function "create_admin":
+- Creates and initializes an admin account with associated data.
+- Checks if the admin account already exists.
+- Finds program address for admin, verifies correctness.
+- Checks for the clock sysvar.
+- Uses `invoke_signed` to create the account with rent exemption.
+- Stores admin information in the account data.
+
+Function "update_admin":
+- Updates the admin account with a new admin ID.
+- Checks ownership and signer requirements.
+- Deserializes existing admin data.
+- Verifies admin privileges.
+- Updates admin ID and timestamp, then serializes back.
+
+Function "create_account":
+- Creates a user governance points account.
+- Checks if account already initialized.
+- Finds program address for user account.
+- Uses `invoke_signed` for account creation.
+- Initializes with default governance points and serializes.
+
+Function "open_proposal":
+- Opens a new proposal with a title and description.
+- Verifies account ownership and signatures.
+- Checks for account existence.
+- Finds program address for proposal.
+- Sets start/end time based on current timestamp.
+- Creates and serializes proposal account.
+
+Function "vote_process":
+- Handles voting on proposals from users.
+- Checks account ownership and signatures.
+- Ensures vote record doesn't already exist.
+- Loads and updates proposal to add votes.
+- Creates vote record account via `invoke_signed`.
+- Serializes updated states for vote, proposal, and user.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user.
+- Verifies admin privileges and signatures.
+- Updates user governance points accordingly.
+- Serializes updated user and admin data.
+
+Function "execute_instruction":
+- Performs specific actions based on instruction variant (create vault, deposit, withdraw).
+- Checks account ownership and signatures.
+- Verifies system account states and program IDs.
+- Loads previous instruction if exists for validation.
+- Calls respective functions to handle the instruction.
+
+Function "make_decision":
+- Finalizes a proposal by counting votes.
+- Verifies admin privileges and signatures.
+- Checks proposal ownership.
+- Loads proposal and admin data.
+- Checks that proposal duration has ended.
+- Declares outcome based on votes.
+- Marks proposal as executed and serializes.

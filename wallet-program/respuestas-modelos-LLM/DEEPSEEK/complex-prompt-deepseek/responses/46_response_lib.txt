@@ -1,0 +1,32 @@
+Function "process_instruction":
+- No direct vulnerabilities found in this routing function
+- Relies on proper validation in individual instruction handlers
+
+Function "initialize_wallet_account":
+- Missing validation that user_account is signer
+- Missing validation that wallet_account is not already initialized
+- Uses unwrap() on try_into() conversion which could panic
+- Does not verify system_program is actually the system program
+- PDA derivation uses user_account.key without verifying user_account ownership
+
+Function "deposit_amount":
+- Missing validation that user_account is signer
+- No access control - any user can deposit to any wallet
+- No overflow check on wallet.amount += amount
+- Missing rent exemption validation for wallet account
+- Does not verify wallet.initialized flag before operation
+
+Function "withdraw_amount":
+- Missing validation that user_account is signer (critical vulnerability)
+- No access control - any user could withdraw from any wallet
+- Uses checked_sub but error handling converts to custom error instead of proper ProgramError
+- Missing rent exemption validation
+- Does not verify wallet.initialized flag before operation
+
+Function "transfer_amount":
+- Missing validation that user_account is signer (critical vulnerability)
+- No access control - any user could transfer from any wallet
+- Potential arithmetic overflow in dest_wallet.amount += amount
+- Missing rent exemption validation for both wallet accounts
+- Does not verify wallet.initialized flags before operation
+- Transfer happens even if destination wallet might not be properly initialized

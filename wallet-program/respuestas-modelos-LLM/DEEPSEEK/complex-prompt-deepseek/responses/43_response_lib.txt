@@ -1,0 +1,32 @@
+Function "process_instruction":
+- No explicit validation of account ownership or program-derived address (PDA) verification
+- Missing access control checks to ensure only authorized users can execute instructions
+- No validation that accounts passed match expected accounts for each instruction type
+
+Function "initialize_wallet_account":
+- Missing validation that wallet_account is actually a PDA derived from the expected seeds
+- No verification that the created account has the correct program owner
+- Missing check to ensure the account isn't already initialized
+- Uses unwrap() on try_into() conversion which could panic
+- No validation that user_account actually owns/signs the transaction
+
+Function "deposit_amount":
+- Missing PDA verification to ensure wallet_account belongs to the user_account
+- No access control - any user can deposit to any wallet
+- Missing validation that wallet_account is owned by the program
+- No signature verification to ensure user_account authorizes the operation
+
+Function "withdraw_amount":
+- Missing PDA verification to ensure wallet_account belongs to the user_account
+- No access control - any user could potentially withdraw from any wallet
+- Missing signature verification to ensure user_account authorizes the withdrawal
+- No validation that wallet_account is owned by the program
+- Insufficient funds check uses ProgramError::InsufficientFunds which is meant for native SOL, not program-specific tokens
+
+Function "transfer_amount":
+- Missing PDA verification for both source and destination wallet accounts
+- No access control - any user could transfer between any wallets
+- Missing signature verification to ensure user_account authorizes the transfer
+- No validation that both wallet accounts are owned by the program
+- Transfer operation is not atomic - if serialization fails on second wallet, first wallet is already modified
+- Insufficient funds check uses inappropriate ProgramError::InsufficientFunds

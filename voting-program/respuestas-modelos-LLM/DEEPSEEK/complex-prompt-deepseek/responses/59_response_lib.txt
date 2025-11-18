@@ -1,0 +1,64 @@
+Function "vault_program_id":
+- Hardcoded program ID which may be incorrect if the vault program changes
+- Uses unwrap() which can panic if the string is invalid
+
+Function "send_create_vault_transaction":
+- Missing proper validation of account ownership and types
+- Uses hardcoded seeds "vault" which may conflict with other programs
+- No validation that vault_program is the expected program
+
+Function "send_instr_to_vault_transaction":
+- Missing proper validation of account ownership and types
+- Uses hardcoded seeds "vault" which may conflict with other programs
+- No validation that vault_program is the expected program
+
+Function "process_instruction":
+- No validation that program_id matches expected program ID
+- No validation of account ordering and types before processing
+
+Function "create_admin":
+- Missing rent exemption check before account creation
+- No validation that system_program is actually the system program
+- Uses unwrap() which can panic on conversion
+
+Function "update_admin":
+- Missing authorization check - any signer can update admin without verifying they are the current admin
+- No validation that clock_sysvar is actually the clock sysvar
+
+Function "create_account":
+- Missing rent exemption check before account creation
+- No validation that system_program is actually the system program
+- Uses unwrap() which can panic on conversion
+- Hardcoded initial governance points (10) without validation
+
+Function "open_proposal":
+- Missing rent exemption check before account creation
+- No validation that system_program is actually the system program
+- No validation that clock_sysvar is actually the clock sysvar
+- Hardcoded proposal duration (1 hour) without flexibility
+- Uses unwrap() which can panic on conversion
+
+Function "vote_process":
+- Missing rent exemption check before account creation
+- No validation that system_program is actually the system program
+- No validation that clock_sysvar is actually the clock sysvar
+- Arithmetic operations without overflow checks
+- Re-entrancy vulnerability: user can vote multiple times by calling repeatedly before state is updated
+
+Function "manage_governance_points":
+- Missing authorization check - any admin can modify any user's points
+- Arithmetic operations without overflow/underflow checks
+- No validation that the operation won't result in negative points
+
+Function "execute_instruction":
+- No validation that vault_program is actually the expected vault program
+- No validation that system_program is actually the system program
+- No validation that ix_sysvar is actually the instructions sysvar
+- Relies on previous instruction check which can be bypassed
+- Missing proper authorization checks for different instruction types
+
+Function "make_decision":
+- No validation that clock_sysvar is actually the clock sysvar
+- Missing proper authorization - any admin can execute any proposal
+- No validation that proposal hasn't already been executed
+- Missing validation of proposal state before execution

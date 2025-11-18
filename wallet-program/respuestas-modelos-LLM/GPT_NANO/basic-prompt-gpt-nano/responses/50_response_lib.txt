@@ -1,0 +1,40 @@
+Function "process_instruction":
+- Determines which instruction to execute based on unpacked instruction data.
+- Calls the corresponding function for CreateAccount, IncreaseAmount, WithdrawAmount, or TransferAmount.
+
+Function "initialize_wallet_account":
+- Creates and initializes a new wallet account with a PDA derived from user's account.
+- Checks that the system program is correct.
+- Verifies signer requirement.
+- Uses invoke_signed to create a new account with rent exemption.
+- Serializes wallet data into the account.
+
+Function "deposit_amount":
+- Adds specified amount to the wallet's current balance.
+- Checks that the wallet account is owned by the program.
+- Verifies that the user is signer.
+- Deserializes the wallet, updates amount, and serializes back.
+
+Function "withdraw_amount":
+- Subtracts specified amount from the wallet's balance.
+- Checks ownership and signer status.
+- Deserializes wallet, deducts amount, and serializes back.
+- No check for sufficient balance before withdrawal, risking underflow.
+
+Function "transfer_amount":
+- Moves specified amount from source wallet to destination wallet.
+- Checks ownership of both wallets.
+- Verifies signer.
+- Deserializes both wallets.
+- Adds amount to destination and subtracts from source.
+- No validation of sufficient funds in source wallet, risking underflow or negative balance.
+
+Potential Risks and Vulnerabilities:
+- No balance check before withdrawal or transfer: Could cause underflow/overflow if amount exceeds current balance.
+- No explicit access control for wallet operations beyond signer check, leading to possible unauthorized modifications if accounts are compromised.
+- No validation that wallet accounts are initialized before operations, risking deserialization errors.
+- No explicit handling of potential deserialization errors aside from propogating errors; might lead to panic if data is corrupted.
+- Lack of event logging for critical state changes beyond basic msgs.
+- No explicit check against integer overflow in amount additions (though in Rust, u64 wrapping is well-defined, but logic may still produce inconsistent states).
+- The transfer function adds to destination before subtracting from source; if addition fails or overflows, could result in incorrect balances.
+

@@ -1,0 +1,50 @@
+Function "vault_program_id":
+- Hardcoded program ID can lead to issues during upgrades or if the target program changes.
+- Consider making it configurable or using a more dynamic approach to retrieve the program ID.
+
+Function "send_create_vault_transaction":
+- The `vault_seeds` are hardcoded, which might not be flexible enough for all use cases.
+- The `variant_instr` parameter is not validated, so an incorrect value could lead to unexpected behavior.
+
+Function "send_instr_to_vault_transaction":
+- The `vault_seeds` are hardcoded, which might not be flexible enough for all use cases.
+- The `variant_instr` parameter is not validated, so an incorrect value could lead to unexpected behavior.
+
+Function "process_instruction":
+- This function is the entry point, and it relies on `InstructionFormat::unpack`. Errors in unpacking or handling instructions can halt the program.
+
+Function "create_admin":
+- No check on the `admin_bump` to prevent someone from creating accounts at arbitrary bumps.
+- The account size is determined dynamically, which can be a good practice to avoid over-allocation.
+- The program uses `invoke_signed`, which requires careful management of seeds to avoid signature errors.
+
+Function "update_admin":
+- There is no authentication check to ensure the `admin_payer` is the current admin before updating.
+- The program uses `invoke_signed`, which requires careful management of seeds to avoid signature errors.
+
+Function "create_account":
+- Initializing `amount_governance_points` to a fixed value (10) might not be desirable in all scenarios.
+- No check on the `user_bump` to prevent someone from creating accounts at arbitrary bumps.
+- The program uses `invoke_signed`, which requires careful management of seeds to avoid signature errors.
+
+Function "open_proposal":
+- No check to ensure that a user can't create multiple proposals with the same title which would result in the same PDA and overwrite the old proposal.
+- The proposal `end_time` is set to 1 hour after `start_time`. This might be too short or not configurable.
+- The program uses `invoke_signed`, which requires careful management of seeds to avoid signature errors.
+
+Function "vote_process":
+- No check to see if a user has already voted for a proposal to avoid double voting.
+- The program uses `invoke_signed`, which requires careful management of seeds to avoid signature errors.
+
+Function "manage_governance_points":
+- Instruction (add 1 // substract 0) is a boolean which is not descriptive. Use enum for readability and less ambiguous use.
+- No overflow/underflow checks when adding or subtracting governance points.
+
+Function "execute_instruction":
+- The nested match statement with empty `Ok(())` arms seems like an incomplete validation logic.
+- Validates that user accounts exists by checking `lamports != 0` which is incorrect since any account could have lamports. Better to check `account_type`
+- The program uses `invoke_signed`, which requires careful management of seeds to avoid signature errors.
+
+Function "make_decision":
+- The decision-making process simply compares `yes_votes` and `no_votes`. This doesn't account for scenarios where a minimum quorum or a specific ratio is required.
+- There is no check to prevent multiple executions of the same proposal. After the first execution, the `make_decision` function should be disabled for that proposal.

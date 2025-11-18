@@ -1,0 +1,43 @@
+Function "process_instruction":
+- It is the main entry point of the program.
+- It unpacks the instruction data and calls the appropriate handler function based on the instruction type.
+- A vulnerability may arise if the `InstructionFormat::unpack` function does not properly validate the instruction data, leading to unexpected behavior or program crashes.
+
+Function "initialize_wallet_account":
+- It initializes a new wallet account.
+- It checks if the system program account is valid.
+- It derives the PDA (Program Derived Address) for the wallet account.
+- It checks if the wallet account is already initialized by checking its lamport balance, but this is not secure. An attacker can bypass this check by setting lamports to 1 when creating the account.
+- It creates the wallet account using `invoke_signed`.
+- It serializes the wallet data to the account.
+- The wallet PDA is derived using user_account.key. If the user_account is a malicious program it may be possible to brute force a key such that the wallet PDA is controllable by the attacker.
+- `wallet_len.try_into().unwrap()` can cause a panic if wallet_len is too big.
+- It does not verify that the user account passed in owns the lamports being used to create the wallet account.
+
+Function "deposit_amount":
+- It deposits an amount into the wallet account.
+- It checks if the wallet account is owned by the program.
+- It deserializes the wallet data.
+- It checks if the wallet is initialized.
+- It increases the wallet amount.
+- It serializes the wallet data back to the account.
+- There is no check to prevent an integer overflow when adding the amount to the wallet.amount.
+
+Function "withdraw_amount":
+- It withdraws an amount from the wallet account.
+- It checks if the wallet account is owned by the program.
+- It deserializes the wallet data.
+- It checks if the wallet is initialized.
+- It decreases the wallet amount.
+- It serializes the wallet data back to the account.
+- There is no check to prevent an integer underflow when substracting the amount from the wallet.amount.
+
+Function "transfer_amount":
+- It transfers an amount from one wallet account to another.
+- It checks if both wallet accounts are owned by the program.
+- It deserializes both wallet data.
+- It checks if both wallets are initialized.
+- It increases the destination wallet amount and decreases the source wallet amount.
+- It serializes both wallets data back to the accounts.
+- There is no check to prevent an integer overflow when adding the amount to the dest_wallet.amount.
+- There is no check to prevent an integer underflow when substracting the amount from the src_wallet.amount.

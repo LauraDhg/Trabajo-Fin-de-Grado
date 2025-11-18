@@ -1,0 +1,66 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program changes or is deployed to a different address
+
+Function "create_admin":
+- Missing validation that admin_account_dao is owned by the program
+- Uses lamports > 0 check for initialization which may not be reliable
+- No validation that admin_bump is the correct bump for the PDA
+- Missing rent exemption validation for the created account
+
+Function "update_admin":
+- Missing validation that the current admin is the signer (allows any signer to update admin)
+- No access control to verify the caller is the current admin
+- Missing validation that new_admin is a valid Pubkey
+
+Function "create_account":
+- Hardcoded initial governance points (10) without configuration
+- Missing validation that user_account_dao is owned by the program
+- Uses lamports > 0 check for initialization which may not be reliable
+
+Function "open_proposal":
+- Uses title as PDA seed which may cause collisions if titles are similar
+- Fixed 1-hour duration without configurability
+- Missing validation that user_account_dao belongs to the user_payer
+- Missing maximum length validation for title and description strings
+
+Function "vote_process":
+- Arithmetic overflow risk in yes_votes/no_votes addition without checked math
+- User can vote multiple times by creating multiple vote records
+- Missing validation that user_account_dao belongs to user_payer
+- Time check uses current_time > end_time but should be >= for inclusivity
+
+Function "manage_governance_points":
+- Arithmetic overflow/underflow risk without checked math
+- No validation that admin is authorized to modify points
+- Missing validation that user_account_dao belongs to the intended user
+- No minimum balance check before subtraction
+
+Function "execute_instruction":
+- Relies on previous instruction check which can be bypassed
+- Missing validation that vault_program is the expected program
+- user_bump parameter is misused for different account types
+- Missing validation that vault_account is properly derived
+
+Function "make_decision":
+- Time check uses current_time < end_time but should be <= for inclusivity
+- No validation that proposal hasn't already been executed
+- Decision logic only marks as executed without actual execution
+- Missing validation that admin is authorized to make decisions
+
+Function "send_create_vault_transaction":
+- Missing validation of account ownerships
+- Hardcoded seeds may not match vault program expectations
+- Missing validation that vault_program is the expected program
+
+Function "send_instr_to_vault_transaction":
+- Missing validation of account ownerships
+- Missing system program in accounts for deposit/withdraw operations
+- Hardcoded seeds may not match vault program expectations
+
+Function "process_instruction":
+- No validation that program_id matches expected program ID
+- Missing input validation for instruction parameters
+- No access control at the instruction dispatch level
+
+Function "action_as_str":
+- No security vulnerabilities identified (helper function)

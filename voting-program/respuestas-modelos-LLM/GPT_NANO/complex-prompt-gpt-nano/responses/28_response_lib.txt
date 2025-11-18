@@ -1,0 +1,48 @@
+Function "create_admin":
+- Uses `unwrap()` on `Pubkey::from_str()`, which can cause a panic if the string is not a valid public key.
+- Does not verify that the caller has proper authority or permissions.
+- Lacks validation on the `system_program` account to ensure it is the correct system program.
+
+Function "update_admin":
+- Does not check if the caller is authorized to perform admin updates.
+- Uses `try_from_slice()` which can panic if data is malformed.
+- Assumes the `clock_sysvar` is valid and does not handle failure of `Clock::from_account_info()` properly.
+
+Function "create_account":
+- Uses `unwrap()` on `pubkey::find_program_address()`, which can panic if the derivation fails.
+- Does not verify the caller's authority or permissions.
+- Provides no validation of the `system_program` account beyond its presence.
+- Assumes that the `account_rent` calculation always produces a valid `u64`.
+
+Function "open_proposal":
+- Uses `unwrap()` on `pubkey::find_program_address()`, which can panic if derivation fails.
+- Relies on `title.as_bytes()` and `description` being safe and not exceeding size limits.
+- Does not validate the length or contents of `title` and `description`, which could lead to oversized data or storage issues.
+- Assumes `Clock::from_account_info()` always succeeds without error handling.
+
+Function "vote_process":
+- Uses `unwrap()` on `pubkey::find_program_address()`, which can panic if derivation fails.
+- Checks owner of `user_account_dao` and `proposal_account` for `ProgramError::IllegalOwner`, but does not verify permissions or roles.
+- Creates a vote record account without validating if the voter has sufficient governance points or if multiple votes are prevented.
+- Uses `try_to_vec()` and `serialize()` without explicit size checks or validation.
+- Does not verify if the vote is within the valid voting time window.
+
+Function "manage_governance_points":
+- Uses `unwrap()` on `pubkey::find_program_address()`, which can panic.
+- No check that `amount` is within reasonable bounds or not overflowed.
+- Does not verify that the caller has the authority to modify governance points beyond ownership checks.
+- Does not validate the `instruction` boolean beyond controlling add/subtract logic.
+
+Function "execute_instruction":
+- Uses `unwrap()` on `pubkey::find_program_address()`, which can panic.
+- Performs minimal validation of instruction parameters based on `variant_instr`.
+- Does not verify if the vault program ID matches expected logic beyond static comparison.
+- Assumes `load_current_index()` and `load_instruction_at()` succeed without errors or bounds checks, potential for panics.
+- Does not validate if the previous instruction in the instruction sysvar relates appropriately to the current instruction, risking an injection or replay attacks.
+
+Function "make_decision":
+- Uses `unwrap()` on `pubkey::find_program_address()`, which can panic.
+- Does not enforce that only authorized accounts (e.g., admin) can call or execute decisions.
+- Assumes `Clock::from_account_info()` always succeeds without error handling.
+- Relies on `proposal.end_time` for decision, but no explicit validation to prevent outdated or manipulated proposals.
+- Does not verify whether the proposal has already been executed or not, risking multiple decisions on the same proposal.

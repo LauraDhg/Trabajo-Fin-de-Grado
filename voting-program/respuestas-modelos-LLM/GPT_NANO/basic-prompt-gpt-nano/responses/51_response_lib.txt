@@ -1,0 +1,45 @@
+Function "action_as_str":
+- Converts an action code (u8) into a human-readable string representation.
+
+Function "send_create_vault_transaction<'info>":
+- Constructs and sends a transaction to create a vault by invoking an external Vault program.
+- Sets up instruction data and accounts, then calls invoke_signed with seeds for PDA.
+
+Function "send_instr_to_vault_transaction<'info>":
+- Constructs and sends instructions to deposit or withdraw from the vault by calling an external Vault program.
+- Sets up instruction data, accounts, and invokes the instruction with seeds for PDA.
+
+Function "process_instruction":
+- Entry point for the program; unpacks the instruction and routes it to specific handler functions based on instruction type.
+
+Function "create_admin":
+- Creates an admin account PDA if it doesn't exist.
+- Verifies the signer, initializes account with admin info, and serializes to account data.
+
+Function "update_admin":
+- Updates the admin ID and last update timestamp.
+- Checks ownership and signer, verifies current admin, and serializes data.
+
+Function "create_account":
+- Creates a user account PDA with initial governance points.
+- Verifies signer, checks account, initializes and serializes the account.
+
+Function "open_proposal":
+- Creates a proposal PDA with proposal details.
+- Sets start and end time based on clock, serializes proposal data into new account.
+
+Function "vote_process":
+- Handles voting on a proposal, increasing yes/no votes based on user's governance points.
+- Creates a vote record account, updates proposal and user data, and serializes all.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from user account by an admin.
+- Checks ownership and signer, verifies admin rights, updates and serializes user account.
+
+Function "execute_instruction":
+- Executes different instruction types (create vault, deposit, withdraw) based on instruction code.
+- Checks owner and signer, verifies account correctness, calls relevant functions.
+
+Function "make_decision":
+- Finalizes a proposal, determines approval based on votes, and marks as executed.
+- Checks admin rights, verifies signatures, and processes proposal status.

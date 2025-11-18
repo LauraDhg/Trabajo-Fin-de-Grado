@@ -1,0 +1,25 @@
+Function "process_instruction":
+- Parses instruction data using the InstructionFormat.
+- Routes the instruction to the appropriate function based on the instruction variant.
+- Returns a ProgramResult indicating success or failure.
+
+Function "initialize_wallet_account":
+- Creates a new wallet account with an associated PDA.
+- Uses system_instruction::create_account to allocate space and assign ownership.
+- Checks that the account provided matches the PDA derived address.
+- Serializes initial Wallet data into the account.
+
+Function "deposit_amount":
+- Increases the wallet amount by a specified value.
+- Checks account ownership and PDA correctness.
+- Deserializes Wallet data, updates amount with checked addition, re-serializes.
+
+Function "withdraw_amount":
+- Decreases the wallet amount by a specified value.
+- Checks account ownership and PDA correctness.
+- Deserializes Wallet data, updates amount with subtraction (potential underflow risk), re-serializes.
+
+Function "transfer_amount":
+- Transfers an amount from source wallet to destination wallet.
+- Checks ownership and PDA correctness for both wallets.
+- Deserializes both wallets, updates amounts with checked addition and subtraction (underflow risk in subtraction), re-serializes both wallets.

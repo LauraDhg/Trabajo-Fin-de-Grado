@@ -1,0 +1,68 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program ID changes or differs between environments
+- No validation that the returned Pubkey corresponds to an actual deployed program
+
+Function "send_create_vault_transaction":
+- Missing proper validation of account ownership and program IDs
+- No checks to ensure the vault_program account actually corresponds to the expected program
+- Potential for incorrect account ordering in the instruction accounts list
+
+Function "send_instr_to_vault_transaction":
+- Missing system program account in instruction accounts for deposit/withdraw operations
+- No validation that vault_program account matches the expected vault program
+- Potential incorrect account ordering
+
+Function "process_instruction":
+- No input validation on instruction_data before unpacking
+- No access control checks at the entry point level
+
+Function "create_admin":
+- Uses deprecated try_to_vec() method for serialization
+- Missing rent exemption check after account creation
+- No validation that system_program account is actually the system program
+- Potential reinitialization attack if account data is manipulated
+
+Function "update_admin":
+- No authorization check to verify the current admin is the one making the update
+- Allows any signer to change the admin without verifying they are the current admin
+- Missing validation that clock_sysvar is actually the clock sysvar
+
+Function "create_account":
+- Uses deprecated try_to_vec() method for serialization
+- Missing rent exemption check after account creation
+- No validation that system_program account is actually the system program
+- Hardcodes initial governance points (10) without configurable mechanism
+
+Function "open_proposal":
+- Uses deprecated try_to_vec() method for serialization
+- Missing rent exemption check after account creation
+- No validation that system_program account is actually the system program
+- Fixed 1-hour proposal duration without configurability
+- No validation that clock_sysvar is actually the clock sysvar
+
+Function "vote_process":
+- Uses deprecated try_to_vec() method for serialization
+- Missing rent exemption check after account creation
+- No validation that system_program account is actually the system program
+- No validation that clock_sysvar is actually the clock sysvar
+- Arithmetic overflow risk in vote counting (unchecked addition)
+- Users can vote multiple times by creating multiple accounts
+
+Function "manage_governance_points":
+- No authorization check to verify the signer is actually an admin
+- Arithmetic underflow risk in subtraction operation
+- Missing overflow check in addition operation
+- Allows arbitrary point manipulation without constraints
+
+Function "execute_instruction":
+- Incomplete PDA validation for different instruction types
+- Relies on previous instruction check which can be manipulated
+- No validation that ix_sysvar is actually the instructions sysvar
+- No validation that vault_program account matches the expected program
+- Missing validation that system_program account is actually the system program
+
+Function "make_decision":
+- No validation that clock_sysvar is actually the clock sysvar
+- Uses parentheses in condition ((current_time < proposal.end_time)) which is unnecessary but not harmful
+- Missing overflow/underflow protection in vote comparison
+- No mechanism to prevent repeated execution of the same proposal

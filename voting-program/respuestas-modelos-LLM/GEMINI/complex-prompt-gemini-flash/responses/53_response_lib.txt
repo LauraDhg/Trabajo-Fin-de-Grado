@@ -1,0 +1,49 @@
+Function "vault_program_id":
+- Hardcoded program ID, which might need to be changed and redeployed.
+
+Function "process_instruction":
+- This function acts as the main dispatcher, calling other functions based on the `instruction` argument. No immediate vulnerabilities, but the security depends on the functions it calls.
+
+Function "create_admin":
+- Uses `try_from_slice_unchecked` without proper size checks, which can lead to vulnerabilities if the data is not the expected size.
+- Relies on `invoke_signed` to create the account, which is the correct way to create accounts owned by the program.
+- The `admin` PDA is created without checking if another account is already using the same PDA, which could lead to unexpected behavior.
+- Missing admin verification. Any user can create the admin account.
+
+Function "update_admin":
+- Uses `try_from_slice_unchecked` without proper size checks, which can lead to vulnerabilities if the data is not the expected size.
+- The `admin` PDA is created without checking if another account is already using the same PDA, which could lead to unexpected behavior.
+- There is no control that verifies that the user who is calling the function is actually the admin. This poses a risk as anyone could change the admin.
+
+Function "create_account":
+- Uses `try_from_slice_unchecked` without proper size checks, which can lead to vulnerabilities if the data is not the expected size.
+- The `userAccount` PDA is created without checking if another account is already using the same PDA, which could lead to unexpected behavior.
+- The initial governance points are hardcoded to 10. This might be undesirable.
+
+Function "open_proposal":
+- Uses `try_from_slice_unchecked` without proper size checks, which can lead to vulnerabilities if the data is not the expected size.
+- The `proposal` PDA is created without checking if another account is already using the same PDA, which could lead to unexpected behavior.
+- The `title` is used as part of the seed for the PDA. It may be too long, and could cause collision issues.
+- There is no restriction on the length of the `title` and `description`, which can lead to rent exhaustion issues or DoS.
+- The proposal time frame is hardcoded for one hour, which might be undesirable.
+
+Function "vote_process":
+- Uses `try_from_slice_unchecked` without proper size checks, which can lead to vulnerabilities if the data is not the expected size.
+- The `vote` PDA is created without checking if another account is already using the same PDA, which could lead to unexpected behavior.
+- Deserializes `proposal` and `user` without re-serializing them if `current_time > proposal.end_time`, which can lead to unexpected behavior.
+- Allows users to vote multiple times.
+
+Function "manage_governance_points":
+- Uses `try_from_slice_unchecked` without proper size checks, which can lead to vulnerabilities if the data is not the expected size.
+- There is no validation to restrict how many governance points an admin can assign to a user. An admin can cause an overflow if he assigns a lot of governance points to a user.
+- Substracting governance points can cause an underflow, since the `checked_sub` method is not used.
+
+Function "execute_instruction":
+- Uses `try_from_slice_unchecked` without proper size checks, which can lead to vulnerabilities if the data is not the expected size.
+- This function contains a vulnerability where, depending on the `variant_instr`, it doesn't validate if the `user_account_dao` is actually the admin.
+- Uses `load_current_index` and `load_instruction_at` to check the previous instruction. This is not a reliable way to ensure the previous instruction was the intended one. Instructions can be reordered or dropped, so this check can be bypassed.
+- The `id_pubkey` is set to `program_id`, which might not be the intended behavior. It should be the ID of the account being created or interacted with.
+
+Function "make_decision":
+- Uses `try_from_slice_unchecked` without proper size checks, which can lead to vulnerabilities if the data is not the expected size.
+- The admin can make a decision before the `end_time` of a proposal.

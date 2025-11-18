@@ -1,0 +1,65 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for the vault program
+- Uses unwrap which may panic if the string is invalid
+
+Function "action_as_str":
+- Converts a u8 action code to a string description
+- Returns "Create" for 0, "Deposit" for 1, "Withdraw" for 2, "Unknown" for other values
+
+Function "send_create_vault_transaction":
+- Constructs and sends a CPI instruction to create a vault
+- Uses invoke_signed with vault seeds for PDA signing
+- Handles vault creation with specific account structure
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends CPI instructions for vault operations (deposit/withdraw)
+- Uses invoke_signed with vault seeds for PDA signing
+- Handles vault transactions with amount parameter
+
+Function "process_instruction":
+- Main entry point that unpacks and routes instructions
+- Matches instruction variants to appropriate handler functions
+- Handles all program instruction types
+
+Function "create_admin":
+- Creates admin PDA account with system program CPI
+- Validates signer and account ownership
+- Stores admin ID and timestamp in account data
+
+Function "update_admin":
+- Updates admin account with new admin public key
+- Validates current admin is signer
+- Updates timestamp on admin change
+
+Function "create_account":
+- Creates user PDA account with initial governance points
+- Uses system program CPI for account creation
+- Stores user ID and governance points in account data
+
+Function "open_proposal":
+- Creates proposal PDA account with title and description
+- Sets proposal time limits (1 hour duration)
+- Stores voting state and execution status
+
+Function "vote_process":
+- Processes user votes on proposals
+- Creates vote record PDA account
+- Adds governance points to yes/no vote counts
+- Validates proposal is still active
+
+Function "manage_governance_points":
+- Admin function to add or subtract governance points from users
+- Uses checked arithmetic to prevent underflow
+- Validates admin authority
+
+Function "execute_instruction":
+- Handles vault operations through CPI calls
+- Validates instruction types and account authorities
+- Checks previous instruction for vault program confirmation
+- Routes to appropriate vault transaction functions
+
+Function "make_decision":
+- Finalizes proposal voting and determines outcome
+- Validates proposal has ended
+- Compares yes/no votes and marks proposal as executed
+- Requires admin authority to execute

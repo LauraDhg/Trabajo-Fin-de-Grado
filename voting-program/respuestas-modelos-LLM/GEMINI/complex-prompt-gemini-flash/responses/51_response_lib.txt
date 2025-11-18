@@ -1,0 +1,45 @@
+Function "vault_program_id":
+- Hardcoded program ID which is a major security risk. If the program ID changes, the program will stop working.
+
+Function "action_as_str":
+- The function doesn't check if the `action` value is within the range of known actions. This could lead to unexpected behavior if an unknown value is passed.
+
+Function "send_create_vault_transaction":
+- The `vault_seeds` used for signing the CPI don't include any unique identifier for the specific vault instance. This could potentially allow an attacker to manipulate the vault.
+
+Function "send_instr_to_vault_transaction":
+- The `vault_seeds` used for signing the CPI don't include any unique identifier for the specific vault instance. This could potentially allow an attacker to manipulate the vault.
+
+Function "process_instruction":
+- This function acts as the main entry point and uses `InstructionFormat::unpack`. Ensure the unpacking logic is robust against malformed or malicious instruction data to prevent unexpected behavior or crashes.
+
+Function "create_admin":
+- The account length is calculated using `account.try_to_vec()?.len()`. If the serialization fails, the program will crash.
+- The `create_account` instruction uses `admin_payer.key` as the funder and `admin_account_dao.key` as the account to be created.
+
+Function "update_admin":
+- Checks if `config_admin.admin_id != *admin_payer.key` to authorize the transaction.
+- It does not perform any checks to ensure that the `new_admin` key is a valid address or meets specific criteria. This could lead to unintended admin assignment.
+
+Function "create_account":
+- The account length is calculated using `account.try_to_vec()?.len()`. If the serialization fails, the program will crash.
+
+Function "open_proposal":
+- The `end_time` is calculated by adding a fixed duration (3600 seconds) to the `start_time`. This could lead to proposals having a fixed duration, regardless of the context or requirements. Consider making the duration configurable.
+- The account length is calculated using `proposal.try_to_vec()?.len()`. If the serialization fails, the program will crash.
+
+Function "vote_process":
+- Checks if the current time is within the proposal's `end_time`.
+- The account length is calculated using `vote_record.try_to_vec()?.len()`. If the serialization fails, the program will crash.
+
+Function "manage_governance_points":
+- Relies on a boolean `instruction` to determine whether to add or subtract governance points. This is not very explicit. An enum would be better.
+- No overflow check when adding points, could lead to unexpected behavior if the amount exceeds the maximum value.
+
+Function "execute_instruction":
+- It retrieves the previous instruction using `load_instruction_at` and checks if it belongs to the vault program. This check can be bypassed if a malicious user crafts a series of transactions where the instruction immediately preceding this one is from the vault program, even if it's unrelated to the intended operation.
+- The program uses nested matching. This can be simplified and made more readable.
+
+Function "make_decision":
+- Checks if the current time is after `proposal.end_time` before making a decision.
+- There is no check to prevent the same admin from repeatedly calling this function and potentially manipulating the outcome if the votes change slightly over time.

@@ -1,0 +1,102 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey.
+
+Function "action_as_str":
+- Converts a u8 representing an action to a string slice.
+- Returns "Create" for 0, "Deposit" for 1, "Withdraw" for 2, and "Unknown" for other values.
+
+Function "send_create_vault_transaction":
+- Constructs and sends a CPI (Cross-Program Invocation) to a vault program to create a vault.
+- Serializes the `variant_instr`, `id_pubkey`, and `vault_bump` into the instruction data.
+- Includes accounts for the admin payer, admin account, vault account, and system program.
+- Signs the CPI with the `vault_seeds`.
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends a CPI to a vault program for deposit or withdraw actions.
+- Serializes the `variant_instr`, `amount`, and `id_pubkey` into the instruction data.
+- Includes accounts for the user payer, user account, and vault account.
+- Signs the CPI with the `vault_seeds`.
+
+Function "process_instruction":
+- Main entry point for the Solana program.
+- Deserializes the instruction data into an `InstructionFormat` enum.
+- Matches the instruction and calls the corresponding function.
+
+Function "create_admin":
+- Creates an admin account.
+- Checks if the admin payer is a signer.
+- Checks if the admin account has already been initialized.
+- Derives the admin PDA (Program Derived Address) using `create_program_address`.
+- Creates the admin account using a CPI to the system program.
+- Serializes the `Admin_Account` struct into the account data.
+
+Function "update_admin":
+- Updates the admin account with a new admin.
+- Checks if the admin account is owned by the program.
+- Checks if the admin payer is a signer.
+- Deserializes the `Admin_Account` from the account data.
+- Derives the admin PDA (Program Derived Address) using `create_program_address`.
+- Checks if the current admin has the correct privileges.
+- Updates the admin_id and last_update fields.
+- Serializes the updated `Admin_Account` back into the account data.
+
+Function "create_account":
+- Creates a user account.
+- Checks if the user payer is a signer.
+- Checks if the user account has already been initialized.
+- Derives the user PDA (Program Derived Address) using `create_program_address`.
+- Creates the user account using a CPI to the system program.
+- Serializes the `User_Account` struct into the account data.
+
+Function "open_proposal":
+- Creates a new proposal account.
+- Checks if the user account is owned by the program.
+- Checks if the user payer is a signer.
+- Checks if the proposal account has already been initialized.
+- Derives the proposal PDA (Program Derived Address) using `create_program_address`.
+- Creates the proposal account using a CPI to the system program.
+- Sets the start and end times for the proposal.
+- Serializes the `Proposal` struct into the account data.
+
+Function "vote_process":
+- Processes a user's vote on a proposal.
+- Checks if the user account and proposal account are owned by the program.
+- Checks if the user payer is a signer.
+- Checks if the vote record account has already been initialized.
+- Derives the vote PDA (Program Derived Address) using `create_program_address`.
+- Deserializes the `Proposal` and `User_Account` from their respective account data.
+- Checks if the voting period is still open.
+- Increments the yes_votes or no_votes based on the vote_answer.
+- Creates a vote record account.
+- Serializes the `Vote_Record`, `Proposal`, and `User_Account` back into their account data.
+
+Function "manage_governance_points":
+- Manages the governance points of a user account.
+- Checks if the admin account and user account are owned by the program.
+- Checks if the admin payer is a signer.
+- Derives the admin PDA (Program Derived Address) using `create_program_address`.
+- Deserializes the `Admin_Account` and `User_Account` from their respective account data.
+- Checks if the admin has the correct privileges.
+- Adds or subtracts governance points from the user account based on the instruction parameter.
+- Serializes the updated `User_Account` back into the account data.
+
+Function "execute_instruction":
+- Executes instructions related to a vault program (create, deposit, withdraw).
+- Checks if the user account is owned by the program.
+- Checks if the user payer is a signer.
+- Performs different checks based on the `variant_instr`.
+- Validates that the vault program ID is correct.
+- Checks for CPI confirmation from the vault program.
+- Calls `send_create_vault_transaction` or `send_instr_to_vault_transaction` based on the instruction type.
+
+Function "make_decision":
+- Allows an admin to finalize a proposal and mark it as executed.
+- Checks if the admin account and proposal account are owned by the program.
+- Checks if the admin payer is a signer.
+- Derives the admin PDA (Program Derived Address) using `create_program_address`.
+- Deserializes the `Admin_Account` and `Proposal` from their respective account data.
+- Checks if the admin has the correct privileges.
+- Checks if the voting period has ended.
+- Determines if the proposal is approved based on the yes_votes vs. no_votes.
+- Sets the executed flag to true.
+- Serializes the updated `Proposal` back into the account data.

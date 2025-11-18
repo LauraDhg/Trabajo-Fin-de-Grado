@@ -1,0 +1,31 @@
+Function "process_instruction":
+- No direct vulnerabilities found in this routing function
+- Properly unpacks instruction data before delegation
+- Correctly matches instruction variants to handler functions
+
+Function "initialize_wallet_account":
+- Missing validation that wallet_account is uninitialized before creating
+- No explicit check that system_program is actually the system program
+- Uses unwrap() on try_into() conversion which could panic
+- PDA derivation uses correct seeds but doesn't validate wallet_bump matches
+- Serializes wallet data after account creation, which is correct but could fail if account creation succeeds but serialization fails
+
+Function "deposit_amount":
+- Uses checked_add() to prevent integer overflow (secure)
+- Properly validates user is signer
+- Correctly verifies PDA account matches derivation
+- Proper error handling for arithmetic operations
+
+Function "withdraw_amount":
+- Uses unchecked subtraction (wallet.amount -= amount) which can cause integer underflow
+- No validation that wallet has sufficient balance before withdrawal
+- Missing overflow/underflow protection
+- No transfer of actual SOL tokens, only updates internal accounting
+
+Function "transfer_amount":
+- Uses unchecked subtraction (src_wallet.amount -= amount) which can cause integer underflow
+- Uses checked_add() for destination (secure)
+- No validation that source wallet has sufficient balance before transfer
+- Missing overflow/underflow protection for source amount
+- No actual token transfer mechanism, only internal accounting update
+- No validation that destination wallet is initialized

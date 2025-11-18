@@ -1,0 +1,76 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for the vault program
+- Uses unwrap which may panic if the string is invalid
+
+Function "action_as_str":
+- Converts a u8 action code to a string description
+- Handles unknown actions with "Unknown"
+
+Function "send_create_vault_transaction":
+- Constructs an instruction for creating a vault
+- Uses invoke_signed to call an external program
+- Includes system program in accounts
+- Uses vault_bump for PDA derivation
+
+Function "send_instr_to_vault_transaction":
+- Constructs instructions for vault operations (deposit/withdraw)
+- Uses invoke_signed to call an external program
+- Does not include system program in accounts
+- Uses vault_bump for PDA derivation
+
+Function "process_instruction":
+- Main entry point that routes to different instructions
+- Unpacks instruction data using InstructionFormat
+- Matches on instruction variants to call appropriate handlers
+
+Function "create_admin":
+- Creates an admin PDA account
+- Checks for signer and account initialization
+- Validates PDA derivation with admin bump
+- Uses system_instruction::create_account
+- Stores admin ID and timestamp
+
+Function "update_admin":
+- Updates the admin account with new admin pubkey
+- Validates PDA derivation and ownership
+- Updates timestamp on change
+- Requires current admin signature
+
+Function "create_account":
+- Creates a user PDA account
+- Initializes with 10 governance points
+- Uses user's pubkey in PDA seeds
+- Validates PDA derivation with user bump
+
+Function "open_proposal":
+- Creates a proposal PDA account
+- Uses proposal title in PDA seeds
+- Sets start and end times (1 hour duration)
+- Stores proposal metadata and voting counts
+
+Function "vote_process":
+- Records a vote on a proposal
+- Creates vote record PDA account
+- Checks proposal is still active
+- Adds user's governance points to vote count
+- Prevents double voting by checking account initialization
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from user account
+- Requires admin signature
+- Uses checked arithmetic to prevent underflow
+- Validates admin PDA derivation
+
+Function "execute_instruction":
+- Executes vault operations through CPI
+- Validates instruction variant (0-2)
+- Checks previous instruction was from vault program
+- Routes to appropriate transaction sending function
+- Validates user account type based on operation
+
+Function "make_decision":
+- Finalizes proposal execution after end time
+- Compares yes/no votes to determine outcome
+- Marks proposal as executed
+- Requires admin signature
+- Validates proposal has ended

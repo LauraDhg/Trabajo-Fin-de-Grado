@@ -1,0 +1,75 @@
+Function "vault_program_id":
+- Hardcoded program ID, which might need to be changed.
+
+Function "process_instruction":
+- This function acts as the main dispatcher for instructions. It unpacks the instruction data and calls the appropriate handler function.
+- It relies on the `InstructionFormat::unpack` function to correctly deserialize the instruction data, which is a potential vulnerability point if the unpacking logic is flawed.
+
+Function "create_admin":
+- Checks if the `admin_payer` is a signer.
+- Checks if the `admin_account_dao` account has already been initialized.
+- Derives a program address (PDA) for the admin account using `Pubkey::find_program_address`.
+- Creates the admin account using `invoke_signed` with the derived PDA as a signer.
+- Serializes the admin account data using `account.serialize`.
+
+Function "update_admin":
+- Checks if the `admin_account_dao` account is owned by the program.
+- Checks if the `admin_payer` is a signer.
+- Deserializes the admin account data using `Admin_Account::try_from_slice`.
+- Derives a program address (PDA) for the admin account using `Pubkey::find_program_address`.
+- Checks if the current admin (`config_admin.admin_id`) matches the `admin_payer`.
+- Updates the admin ID and last update timestamp.
+- Serializes the updated admin account data using `config_admin.serialize`.
+
+Function "create_account":
+- Checks if the `user_payer` is a signer.
+- Checks if the `user_account_dao` account has already been initialized.
+- Derives a program address (PDA) for the user account using `Pubkey::find_program_address`.
+- Creates the user account using `invoke_signed` with the derived PDA as a signer.
+- Serializes the user account data using `account.serialize`.
+
+Function "open_proposal":
+- Checks if the `user_account_dao` account is owned by the program.
+- Checks if the `user_payer` is a signer.
+- Checks if the `proposal_account` account has already been initialized.
+- Derives a program address (PDA) for the proposal account using `Pubkey::find_program_address`.
+- Creates the proposal account using `invoke_signed` with the derived PDA as a signer.
+- Serializes the proposal account data using `proposal.serialize`.
+
+Function "vote_process":
+- Checks if the `user_account_dao` and `proposal_account` accounts are owned by the program.
+- Checks if the `user_payer` is a signer.
+- Checks if the `vote_record_account` account has already been initialized.
+- Derives a program address (PDA) for the vote record account using `Pubkey::find_program_address`.
+- Deserializes the proposal and user account data using `Proposal::try_from_slice` and `User_Account::try_from_slice`.
+- Checks if the voting time limit has expired.
+- Updates the vote counts (`yes_votes` or `no_votes`) based on the `vote_answer`.
+- Creates the vote record account using `invoke_signed` with the derived PDA as a signer.
+- Serializes the vote record, proposal, and user account data using their respective `serialize` methods.
+
+Function "manage_governance_points":
+- Checks if the `admin_account_dao` and `user_account_dao` accounts are owned by the program.
+- Checks if the `admin_payer` is a signer.
+- Derives a program address (PDA) for the admin account using `Pubkey::find_program_address`.
+- Deserializes the admin and user account data using `Admin_Account::try_from_slice` and `User_Account::try_from_slice`.
+- Checks if the admin has privileges.
+- Adds or subtracts governance points from the user account based on the `instruction` flag.
+- Serializes the updated user account data using `user.serialize`.
+
+Function "execute_instruction":
+- Checks if the `user_account_dao` account is owned by the program.
+- Checks if the `user_payer` is a signer.
+- Performs different actions based on the `variant_instr` value (0, 1, or 2).
+- Checks if the previous instruction confirms this execution by checking against the vault program.
+- Calls either `send_create_vault_transaction` or `send_instr_to_vault_transaction` based on the `variant_instr` value.
+
+Function "make_decision":
+- Checks if the `admin_account_dao` and `proposal_account` accounts are owned by the program.
+- Checks if the `admin_payer` is a signer.
+- Derives a program address (PDA) for the admin account using `Pubkey::find_program_address`.
+- Deserializes the admin and proposal account data using `Admin_Account::try_from_slice` and `Proposal::try_from_slice`.
+- Checks if the admin has privileges.
+- Checks if the proposal is still active.
+- Determines the outcome of the proposal based on the vote counts.
+- Sets the `executed` flag on the proposal.
+- Serializes the updated proposal account data using `proposal.serialize`.

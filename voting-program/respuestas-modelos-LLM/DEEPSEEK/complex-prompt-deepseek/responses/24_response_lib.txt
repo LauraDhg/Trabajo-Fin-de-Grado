@@ -1,0 +1,70 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program changes or is redeployed
+- No validation that the program ID corresponds to an actual deployed program
+
+Function "send_create_vault_transaction":
+- Uses hardcoded seeds "vault" which may conflict with other programs
+- No validation of vault_program account ownership before invocation
+- Missing proper error handling for invoke_signed failures
+
+Function "send_instr_to_vault_transaction":
+- Missing system_program account in invoke_signed call for deposit/withdraw operations
+- No validation that vault_program is actually the expected program
+- Uses hardcoded seeds without proper validation
+
+Function "process_instruction":
+- No instruction data validation beyond unpacking
+- Missing proper access control checks before delegating to specific functions
+
+Function "create_admin":
+- Uses deprecated try_from_slice_unchecked pattern
+- No validation that admin_payer has sufficient funds for account creation
+- Missing rent exemption validation after account creation
+- Potential reinitialization attack if account is closed and recreated
+
+Function "update_admin":
+- No authorization check to ensure current admin is the one making the update
+- Allows any signer to change admin without verifying they are the current admin
+- Missing validation that new_admin is a valid Pubkey
+
+Function "create_account":
+- Hardcodes initial governance points (10) without configurable mechanism
+- Uses user-provided bump seed without validation
+- Missing validation that user_account_dao is actually uninitialized
+
+Function "open_proposal":
+- Fixed 1-hour proposal duration (3600 seconds) without configurability
+- Uses title as part of PDA seeds which may cause collisions with long titles
+- No validation that user has sufficient governance points to create proposal
+- Missing maximum length validation for title and description strings
+
+Function "vote_process":
+- Allows multiple votes from same user if vote record account is recreated
+- No check if user has already voted on this proposal
+- Missing validation that vote_amount is positive
+- Arithmetic operations without proper overflow/underflow protection in all cases
+
+Function "manage_governance_points":
+- No access control beyond admin check - any admin can modify any user's points
+- Subtraction operation (instruction=false) doesn't use checked_sub, risking underflow
+- No validation that amount is reasonable or within bounds
+- Missing event logging for governance point changes
+
+Function "execute_instruction":
+- Complex control flow with multiple validation paths
+- Uses instruction sysvar to check previous instruction, which can be manipulated
+- Missing proper validation of vault_account ownership
+- No validation that user has sufficient permissions for the specific operation
+- Potential reentrancy issues with external program calls
+
+Function "make_decision":
+- Time comparison uses current_time < proposal.end_time instead of current_time >= proposal.end_time
+- No validation that proposal hasn't already been executed
+- Missing proper threshold calculation for proposal approval
+- No mechanism to actually execute the proposal decision
+
+Function "action_as_str":
+- No security vulnerabilities identified (helper function)
+
+Function "From<MyError> for ProgramError":
+- No security vulnerabilities identified (trait implementation)

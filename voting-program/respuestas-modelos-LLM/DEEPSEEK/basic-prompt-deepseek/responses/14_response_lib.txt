@@ -1,0 +1,76 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for the vault program
+- Uses unwrap which may panic if the string is invalid
+
+Function "action_as_str":
+- Converts a u8 action code to a string description
+- Returns "Unknown" for invalid action codes
+
+Function "send_create_vault_transaction":
+- Constructs an instruction for creating a vault
+- Uses invoke_signed to call an external vault program
+- Includes system program in account metas
+- Uses program-derived address seeds for signing
+
+Function "send_instr_to_vault_transaction":
+- Constructs instructions for deposit/withdraw operations
+- Uses invoke_signed to call external vault program
+- Does not include system program in account metas
+- Uses program-derived address seeds for signing
+
+Function "process_instruction":
+- Main entry point that unpacks and routes instructions
+- Handles 8 different instruction types
+- Calls appropriate handler functions based on instruction format
+
+Function "create_admin":
+- Creates an admin account with program-derived address
+- Checks for signer and account initialization status
+- Validates clock sysvar account
+- Uses invoke_signed to create account with system program
+- Stores admin ID and timestamp in account data
+
+Function "update_admin":
+- Updates the admin account with a new admin ID
+- Validates current admin privileges
+- Updates timestamp using clock sysvar
+- Requires signer authorization
+
+Function "create_account":
+- Creates a user account with program-derived address
+- Initializes user with 10 governance points
+- Uses invoke_signed with user-specific seeds
+- Stores user ID and governance points
+
+Function "open_proposal":
+- Creates a proposal account with title-based derivation
+- Sets proposal duration to 1 hour from creation
+- Validates clock sysvar
+- Stores proposal metadata and voting counters
+
+Function "vote_process":
+- Processes user votes on proposals
+- Creates vote record accounts
+- Checks proposal expiration time
+- Updates vote counts with arithmetic overflow protection
+- Validates user governance points
+
+Function "manage_governance_points":
+- Allows admin to add or subtract governance points from users
+- Validates admin privileges
+- Uses checked arithmetic to prevent overflow/underflow
+- Updates user account data
+
+Function "execute_instruction":
+- Executes vault operations (create, deposit, withdraw)
+- Validates user/admin privileges based on operation type
+- Checks instruction sysvar for previous vault operations
+- Calls appropriate vault transaction functions
+- Has inconsistent user_bump parameter usage
+
+Function "make_decision":
+- Finalizes proposal voting and determines outcome
+- Checks proposal expiration time
+- Validates admin privileges
+- Marks proposal as executed
+- Compares yes/no votes to determine result

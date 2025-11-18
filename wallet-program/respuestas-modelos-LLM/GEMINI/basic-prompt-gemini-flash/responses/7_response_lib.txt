@@ -1,0 +1,46 @@
+Function "process_instruction":
+- Unpacks the instruction data into an `InstructionFormat` enum.
+- Matches the instruction to the corresponding handler function (`initialize_wallet_account`, `deposit_amount`, `withdraw_amount`, or `transfer_amount`).
+
+Function "initialize_wallet_account":
+- Retrieves the user account, wallet account, and system program account from the provided `accounts` slice.
+- Checks if the system program account is the correct system program.
+- Derives the Program Derived Address (PDA) for the wallet account using `Pubkey::find_program_address`.
+- Validates if the provided wallet account matches the derived PDA.
+- Checks if the wallet account has already been initialized by verifying if it has lamports.
+- Creates a `Wallet` struct with an initial amount of 0 and sets the `initialized` flag to `true`.
+- Serializes the `Wallet` struct to determine the required account size.
+- Calculates the rent-exempt minimum balance for the wallet account.
+- Invokes the system program to create the wallet account with the calculated rent and size, using the PDA as the signer.
+- Serializes the `Wallet` struct into the newly created account's data.
+
+Function "deposit_amount":
+- Retrieves the user and wallet accounts from the provided `accounts` slice.
+- Checks if the wallet account's owner is the current program.
+- Derives the Program Derived Address (PDA) for the wallet account.
+- Validates if the provided wallet account matches the derived PDA.
+- Deserializes the `Wallet` struct from the wallet account's data.
+- Checks if the wallet has been initialized.
+- Safely adds the deposit amount to the wallet's current amount using `checked_add`, returning an `ArithmeticError` if the operation overflows.
+- Serializes the updated `Wallet` struct back into the wallet account's data.
+
+Function "withdraw_amount":
+- Retrieves the user and wallet accounts from the provided `accounts` slice.
+- Checks if the wallet account's owner is the current program.
+- Derives the Program Derived Address (PDA) for the wallet account.
+- Validates if the provided wallet account matches the derived PDA.
+- Deserializes the `Wallet` struct from the wallet account's data.
+- Checks if the wallet has been initialized.
+- Subtracts the specified `amount` from `wallet.amount` using the `-` operator. This operation is not checked and can lead to underflow.
+- Serializes the updated `Wallet` struct back into the wallet account's data.
+
+Function "transfer_amount":
+- Retrieves the user account, source wallet account, destination user account, and destination wallet account.
+- Checks if the source and destination wallet accounts are owned by the program.
+- Derives the PDAs for both the source and destination wallets.
+- Validates that the provided wallet accounts match their respective derived PDAs.
+- Deserializes the `Wallet` structs from both the source and destination wallet account's data.
+- Checks if both wallets have been initialized.
+- Safely adds the transfer amount to the destination wallet's amount using `checked_add`, returning an `ArithmeticError` if the operation overflows.
+- Subtracts the specified `amount` from `src_wallet.amount` using the `-` operator. This operation is not checked and can lead to underflow.
+- Serializes the updated `Wallet` structs back into their respective account datas.

@@ -1,0 +1,40 @@
+Function "process_instruction":
+- Routes the incoming instruction data to the appropriate handler function based on the instruction type.
+- Deserializes instruction data using the InstructionFormat.
+- Handles four instruction types: CreateAccount, IncreaseAmount, WithdrawAmount, and TransferAmount.
+
+Function "initialize_wallet_account":
+- Creates and initializes a new wallet account for a user.
+- Checks if the system program ID is correct.
+- Derives the PDA (Program Derived Address) for the wallet.
+- Ensures the account to be created matches the derived PDA.
+- Checks if the account already has lamports (funds), preventing re-initialization.
+- Calculates rent exemption and invokes system create_account instruction with correct seeds.
+- Serializes the initial Wallet data into the account.
+
+Function "deposit_amount":
+- Adds an amount to the wallet balance.
+- Checks if the wallet account owner is the program.
+- Ensures the wallet account matches the PDA derived from the user's key.
+- Unpacks and verifies the wallet is initialized.
+- Adds the specified amount to the wallet's balance with checked arithmetic.
+- Serializes the updated wallet data back into the account.
+
+Function "withdraw_amount":
+- Subtracts an amount from the wallet balance.
+- Checks account ownership and that the account matches the PDA.
+- Unpacks and verifies the wallet is initialized.
+- Checks if wallet has sufficient funds.
+- Subtracts the specified amount with checked arithmetic.
+- Serializes the updated wallet data.
+
+Function "transfer_amount":
+- Transfers an amount from one wallet to another.
+- Checks ownership of source and destination accounts.
+- Derives PDAs for both source and destination wallets.
+- Ensures account keys match derived PDAs.
+- Unpacks both wallets and verifies they are initialized.
+- Adds amount to the destination wallet's balance with checked addition.
+- Checks if source wallet has sufficient funds.
+- Subtracts amount from source wallet with checked subtraction.
+- Serializes both updated wallets into their respective accounts.

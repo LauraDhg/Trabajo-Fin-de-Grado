@@ -1,0 +1,55 @@
+Function "send_create_vault_transaction":
+- Uses invoke_signed() to call another program, which can be insecure if input data or accounts are not properly validated.
+- Does not verify that the vault_bump is correct or that the account belongs to the expected vault, risking configuration errors.
+- No checks are implemented to ensure idempotency or prevent replay attacks when creating vaults.
+
+Function "send_instr_to_vault_transaction":
+- Similar to send_create_vault_transaction, relies on invoke_signed() with potential attack surface if input is not properly validated.
+- Does not verify that the amount is within acceptable bounds or that it will not cause overflows.
+- Does not validate the vault_bump or that the vault account is correctly derived, which could lead to incorrect or malicious program invocation.
+
+Function "process_instruction":
+- Uses try_from_slice to deserialize instruction data without explicit validation, which risks malformed data causing panics or undefined behavior.
+- Does not validate whether the provided account references are correct or correspond to the expected program state/actions.
+- The matching on instruction variants doesn't include a default case handling potentially invalid variants thoroughly, risking unintended behavior.
+
+Function "create_admin":
+- Doesn't check if the admin account already has existing locked funds that might prevent proper reinitialization.
+- Relies solely on the absence of lamports (balance=0) to determine if account is initialized, which might be bypassed or manipulated.
+- Uses create_program_address (PDA derivation) without handling potential collisions or multiple admin accounts, possibly leading to account conflicts.
+
+Function "update_admin":
+- No validation that the new_admin pubkey is a valid and authorized admin, beyond current admin_id check.
+- Does not validate state transitions; an attacker might attempt to update admin to a malicious pubkey repeatedly without additional safeguards.
+
+Function "create_account":
+- Similar to create_admin, relies on lamports==0 as a check for uninitialized states.
+- No validation to prevent multiple account creation or account overwrite attempts.
+- Does not verify ownership or linkage to the DAO beyond PDA derivation, which could lead to account hijacking if pawned or derived incorrectly.
+
+Function "open_proposal":
+- Uses the proposal title as part of PDA derivation, which can lead to collisions if two proposals have the same title.
+- Does not verify that the creator has authority or governance rights to open a proposal.
+- No validation of the description length or content, potentially leading to buffer overflows or oversized data.
+
+Function "vote_process":
+- No explicit validation that the user has not already voted, leading to potential double voting or attack vectors.
+- Uses invoke_signed to create a vote record without checks on the amount or state, which could allow overwriting or duplicate votes.
+- Does not verify that the proposal is active or within the voting window before creating vote records or updating counts.
+- Does not prevent voting after the proposal has been executed or closed.
+
+Function "manage_governance_points":
+- No checks to prevent admin from decreasing governance points below zero, risking negative balances or underflows.
+- No validation that the amount is within a sensible range.
+- No timelock or access control beyond owner verification, allowing possible malicious governance modifications.
+
+Function "execute_instruction":
+- Match block with multiple branches does not ensure atomicity across operations, risking state inconsistency on partial failures.
+- Potential race conditions if multiple execution commands are sent simultaneously.
+- No validation of vault program state or confirmation that the vault instruction is valid before execution.
+- Does not verify the source or destination accounts, potentially enabling malicious CPI calls or asset transfers.
+
+Function "make_decision":
+- Does not perform checks on the proposal status besides timestamps, letting proposals be executed multiple times or prematurely.
+- Relies solely on timestamps to determine the state; no safeguards for multiple execution or re-entrancy prevention.
+- Does not verify the admin's authority or ensure that the proposal hasn't already been executed, leading to potential replay vulnerabilities.

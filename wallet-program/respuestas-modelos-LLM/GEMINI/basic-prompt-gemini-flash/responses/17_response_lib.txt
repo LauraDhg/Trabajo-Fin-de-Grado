@@ -1,0 +1,41 @@
+Function "process_instruction":
+- Unpacks the instruction data into an `InstructionFormat` enum.
+- Matches the unpacked instruction to determine which action to take.
+- Calls the appropriate function based on the instruction type: `initialize_wallet_account`, `deposit_amount`, `withdraw_amount`, or `transfer_amount`.
+
+Function "initialize_wallet_account":
+- Retrieves the user account, wallet account, and system program account from the provided accounts.
+- Derives the Program Derived Address (PDA) for the wallet account using `Pubkey::find_program_address`.
+- Validates that the wallet account key matches the derived PDA.
+- Checks if the wallet account has already been initialized by verifying if it has lamports.
+- Creates a `Wallet` struct with an initial amount of 0 and sets `initialized` to true.
+- Calculates the rent required for the wallet account.
+- Invokes the system program to create the wallet account, transferring the rent-exempt lamports and assigning ownership to the program.
+- Serializes the `Wallet` struct into the wallet account's data.
+
+Function "deposit_amount":
+- Retrieves the user and wallet accounts from the provided accounts.
+- Derives the PDA for the wallet account and validates that the provided wallet account matches.
+- Deserializes the `Wallet` data from the wallet account.
+- Validates that the wallet is initialized.
+- Adds the specified amount to the wallet's amount using `checked_add` to prevent overflows.
+- Serializes the updated `Wallet` data back into the wallet account.
+
+Function "withdraw_amount":
+- Retrieves the user and wallet accounts.
+- Derives the PDA for the wallet and validates the wallet account.
+- Deserializes the `Wallet` data from the wallet account.
+- Validates that the wallet is initialized.
+- Checks if the wallet has sufficient funds. Returns an error if not.
+- Subtracts the specified amount from the wallet's amount using `checked_sub` to prevent underflows.
+- Serializes the updated `Wallet` data back into the wallet account.
+
+Function "transfer_amount":
+- Retrieves the user, source wallet, destination user, and destination wallet accounts.
+- Derives the PDAs for both the source and destination wallet accounts and validates that they match.
+- Deserializes the `Wallet` data from both source and destination wallet accounts.
+- Validates that both wallets are initialized.
+- Adds the specified amount to the destination wallet's amount using `checked_add` to prevent overflows.
+- Checks if the source wallet has sufficient funds.
+- Subtracts the specified amount from the source wallet's amount using `checked_sub` to prevent underflows.
+- Serializes the updated `Wallet` data back into both the source and destination wallet accounts.

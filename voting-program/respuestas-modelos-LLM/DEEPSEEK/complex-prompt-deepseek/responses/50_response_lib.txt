@@ -1,0 +1,68 @@
+Function "vault_program_id":
+- Hardcoded program ID which cannot be changed after deployment
+- Uses unwrap() which will panic if the string is invalid
+
+Function "send_create_vault_transaction":
+- Missing proper validation of account ownership and program IDs
+- Uses invoke_signed with potentially insecure seeds
+- No validation that the vault program is the expected program
+
+Function "send_instr_to_vault_transaction":
+- Missing system program account in instruction accounts for token transfers
+- No validation of account ownership
+- Uses invoke_signed with potentially insecure seeds
+
+Function "process_instruction":
+- No validation that the program_id parameter matches the expected program ID
+- No access control checks at the entry point level
+
+Function "create_admin":
+- Uses create_program_address without proper error handling for potential bumps
+- Missing rent exemption check before account creation
+- No validation that system_program is actually the system program
+
+Function "update_admin":
+- No authorization check beyond the current admin - missing multi-sig or timelock
+- No validation that new_admin is a valid pubkey
+- Missing rent exemption checks
+
+Function "create_account":
+- Hardcoded initial governance points (10) without configurable parameters
+- Missing validation that user_account_dao is uninitialized beyond lamports check
+- Uses create_program_address without proper error handling
+
+Function "open_proposal":
+- Fixed 1-hour voting period without configurability
+- Title used in PDA seeds without length validation (potential truncation issues)
+- Missing validation that user has sufficient governance points to create proposal
+
+Function "vote_process":
+- Arithmetic operations without overflow checks (yes_votes +=, no_votes +=)
+- User can vote multiple times by creating different vote record accounts
+- No validation that user hasn't already voted on this proposal
+
+Function "manage_governance_points":
+- Arithmetic operations without overflow/underflow checks
+- Admin can arbitrarily modify any user's governance points without restrictions
+- No validation that amount doesn't cause integer underflow when subtracting
+
+Function "execute_instruction":
+- Uses deprecated load_current_index and load_instruction_at functions
+- Instruction sysvar validation is incomplete and potentially bypassable
+- Missing proper validation of CPI instruction parameters
+- Variant_instr parameter not properly validated
+
+Function "make_decision":
+- Decision logic only compares yes_votes >= no_votes without quorum requirements
+- No validation that proposal hasn't already been executed
+- Missing validation of vote results integrity
+- Admin can execute decision regardless of voting outcome
+
+Function "action_as_str":
+- No security vulnerabilities identified (helper function)
+
+Function "try_from_slice_unchecked":
+- Not a function in this code (appears to be an imported function usage)
+
+Function "hashv":
+- Not a function in this code (appears to be an imported function usage)

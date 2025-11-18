@@ -1,0 +1,34 @@
+Function "process_instruction":
+- The function serves as the main entry point for processing instructions.
+- It unpacks the instruction data to determine which action to take.
+- It calls the appropriate handler function based on the unpacked instruction.
+
+Function "initialize_wallet_account":
+- Checks if the provided `wallet_account` matches the PDA derived from the `user_account` and the program ID.
+- Creates a new account for the wallet using `invoke_signed`.
+- Seeds used to create the PDA include the user account, which helps to ensure each user has their own associated wallet.
+- The program derives the account size and rent exemption.
+- Serializes the initial `Wallet` state (amount: 0, initialized: true) into the newly created account.
+- Relies on the system program to create a new account.
+
+Function "deposit_amount":
+- Checks if the provided `wallet_account` matches the PDA derived from the `user_account` and the program ID.
+- Deserializes the `Wallet` state from the account data.
+- Increases the `amount` field of the `Wallet` struct.
+- Serializes the updated `Wallet` state back into the account data.
+- It is possible to overflow the `amount` field of the `Wallet` struct if a very large deposit is made. Consider using `checked_add` to prevent overflow and return an error instead.
+
+Function "withdraw_amount":
+- Checks if the provided `wallet_account` matches the PDA derived from the `user_account` and the program ID.
+- Deserializes the `Wallet` state from the account data.
+- Checks if the `amount` field is sufficient for the withdrawal.
+- Decreases the `amount` field of the `Wallet` struct using `checked_sub` to prevent underflow.
+- Serializes the updated `Wallet` state back into the account data.
+
+Function "transfer_amount":
+- Checks if the provided `src_wallet_account` and `dest_wallet_account` match the PDA derived from the `user_account`, `dest_user_account` and the program ID.
+- Deserializes the `Wallet` state from both source and destination account data.
+- Increases the destination `amount` field of the `Wallet` struct by directly adding amount. It is possible to overflow the `amount` field of the `dest_wallet` struct if a very large amount is transfered. Consider using `checked_add` to prevent overflow and return an error instead.
+- Checks if the source `amount` field is sufficient for the transfer.
+- Decreases the source `amount` field of the `Wallet` struct using `checked_sub` to prevent underflow.
+- Serializes the updated `Wallet` states back into their respective account data.

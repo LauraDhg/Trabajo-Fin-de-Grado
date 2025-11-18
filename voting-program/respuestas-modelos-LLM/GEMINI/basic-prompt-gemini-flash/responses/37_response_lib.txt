@@ -1,0 +1,107 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey.
+
+Function "MyError::from":
+- Converts the custom error type `MyError` into a `ProgramError`.
+
+Function "action_as_str":
+- Takes a `u8` representing an action and returns a string slice describing the action.
+- Returns "Create", "Deposit", "Withdraw", or "Unknown" based on the input.
+
+Function "send_create_vault_transaction":
+- Constructs and sends a CPI (Cross-Program Invocation) to a vault program to create a vault.
+- Takes several account infos as parameters, as well as a variant instruction, a pubkey, and a vault bump.
+- Signs the CPI with the vault's seeds.
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends a CPI to a vault program for deposit/withdraw operations.
+- Takes several account infos as parameters, as well as a variant instruction, a pubkey, an amount and a vault bump.
+- Signs the CPI with the vault's seeds.
+
+Function "process_instruction":
+- Main entry point of the program.
+- Deserializes the instruction data into an `InstructionFormat` enum.
+- Matches the instruction and calls the corresponding handler function.
+
+Function "create_admin":
+- Creates an admin account.
+- Checks if the admin payer is a signer.
+- Checks if the account is already initialized.
+- Derives the admin PDA (Program Derived Address).
+- Creates the admin account using `system_instruction::create_account`.
+- Serializes the `Admin_Account` data into the created account.
+
+Function "update_admin":
+- Updates the admin account with a new admin Pubkey.
+- Checks if the admin payer is a signer.
+- Deserializes the `Admin_Account`.
+- Derives the admin PDA.
+- Updates the admin_id field.
+- Serializes the updated `Admin_Account` back into the account.
+
+Function "create_account":
+- Creates a user account.
+- Checks if the user payer is a signer.
+- Checks if the account is already initialized.
+- Derives the user PDA.
+- Creates the user account using `system_instruction::create_account`.
+- Serializes the `User_Account` data into the created account.
+- Mints 10 governance points to the user.
+
+Function "open_proposal":
+- Creates a proposal account.
+- Checks if the user payer is a signer.
+- Checks if the account is already initialized.
+- Derives the proposal PDA.
+- Creates the proposal account using `system_instruction::create_account`.
+- Serializes the `Proposal` data into the created account.
+- Sets the start and end times for the proposal.
+
+Function "vote_process":
+- Processes a vote on a proposal.
+- Checks if the user payer is a signer.
+- Checks if the account is already initialized.
+- Derives the vote record PDA.
+- Deserializes the `Proposal` and `User_Account`.
+- Creates a `Vote_Record`.
+- Checks if the voting time limit has passed.
+- Increments the `yes_votes` or `no_votes` count in the `Proposal` based on the `vote_answer`.
+- Creates a vote record account.
+- Serializes the `Vote_Record`, `Proposal` and `User_Account` data into their respective accounts.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user account.
+- Checks if the admin payer is a signer.
+- Derives the admin PDA.
+- Deserializes the `User_Account`.
+- Adds or subtracts the specified `amount` from the user's `amount_governance_points`.
+- Serializes the updated `User_Account` back into the account.
+
+Function "execute_instruction":
+- Executes different instructions related to a vault program based on `variant_instr`.
+- Checks if the user payer is a signer.
+- Performs different checks based on the instruction type, including PDA checks.
+- Loads the current instruction index and checks the previous instruction's program ID.
+- Calls `send_create_vault_transaction` or `send_instr_to_vault_transaction` based on the `variant_instr`.
+
+Function "make_decision":
+- Determines whether a proposal is approved or denied based on the votes.
+- Checks if the admin payer is a signer.
+- Derives the admin PDA.
+- Deserializes the `Proposal`.
+- Checks if the proposal is still active.
+- Compares `yes_votes` and `no_votes` to determine the outcome.
+- Sets the `executed` flag in the `Proposal`.
+- Serializes the updated `Proposal` back into the account.
+
+Potential Risks and Vulnerabilities:
+
+- **Hardcoded Program ID:** The `vault_program_id` function returns a hardcoded Pubkey. This makes the program inflexible, as any change in the Vault program's ID requires a code update and redeployment.
+- **Lack of Access Control on Critical Functions:** The `execute_instruction` function has checks related to admin accounts, but it lacks proper access control mechanisms. An attacker might be able to manipulate the instruction flow or exploit vulnerabilities in the Vault program.
+- **Integer Overflow/Underflow:** While `checked_add` and `checked_sub` are used in `vote_process` and `manage_governance_points`, other arithmetic operations (e.g., in the Vault program CPI) should also use checked arithmetic to prevent potential overflows/underflows.
+- **Time-Based Vulnerabilities:** The `open_proposal` function sets the `end_time` by adding a fixed duration (3600 seconds) to the `start_time`. This approach is susceptible to clock drifts or manipulations, potentially leading to unexpected behavior. The `make_decision` function relies on clock sysvar and may be vulnerable if the sysvar is manipulated.
+- **CPI without input validation**: The `execute_instruction` function calls CPIs to the vault program. It's essential to validate the input parameters and the state of accounts before making the CPI to avoid unexpected behavior or vulnerabilities in the vault program.
+- **Missing input validation**: The `open_proposal` function takes title and description as input, but lacks input validation. This could lead to issues like denial of service if overly large strings are provided, or injection attacks if these strings are used in other contexts without sanitization.
+- **Admin Bump Seed Exposure:** Although the program uses `find_program_address`, the bump seed for the admin PDA is not stored on-chain, but rather recalculated every time. If an attacker could somehow front-run the creation of the admin account with a carefully chosen key, they could potentially brick the program by making it impossible to create the admin account at the intended PDA.
+- **Reentrancy Risk:** The program interacts with an external vault program via CPI. There is a potential reentrancy risk if the vault program calls back into this program during the CPI. While there's no obvious reentrancy vulnerability in the provided code, it's important to consider this possibility when designing interactions with other programs.
+- **Unnecessary Account Clones:** The `send_create_vault_transaction` and `send_instr_to_vault_transaction` functions clone `AccountInfo` structs. Cloning `AccountInfo` is usually not necessary and can be avoided by passing references or using the `&` operator.

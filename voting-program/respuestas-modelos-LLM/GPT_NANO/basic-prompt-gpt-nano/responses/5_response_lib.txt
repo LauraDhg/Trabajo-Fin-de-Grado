@@ -1,0 +1,92 @@
+Function "vault_program_id":
+- Returns the published key string as a Pubkey for the vault program.
+
+Function "MyError":
+- Defines custom error types, such as TimeLimit and ArithmeticError.
+
+Function "From<MyError> for ProgramError":
+- Converts MyError enum variants into ProgramError to integrate with Solana's error handling.
+
+Function "Vote_Record":
+- Struct to hold individual vote records, including proposal ID and vote amount.
+
+Function "User_Account":
+- Struct representing user account data with user ID and governance points.
+
+Function "Admin_Account":
+- Struct representing admin account data with admin ID and last update timestamp.
+
+Function "Proposal":
+- Struct representing a proposal with details such as user ID, title, description, votes, execution status, and timing.
+
+Function "action_as_str":
+- Converts a numerical action code into a human-readable string for debugging or logging.
+
+Function "send_create_vault_transaction":
+- Constructs and executes a cross-program invocation (CPI) to create a vault.
+- Prepares instruction data and accounts, then invokes the target vault program with seeds derived from "vault" and the bump.
+
+Function "send_instr_to_vault_transaction":
+- Constructs and executes a CPI to perform deposit or withdrawal in a vault.
+- Prepares instruction data including amount, proposal ID, and invokes the vault program with seeds.
+
+Function "process_instruction":
+- Entry point of the program.
+- Unpacks instruction data into InstructionFormat.
+- Dispatches to specific function based on the instruction variant.
+
+Function "create_admin":
+- Initializes an admin account.
+- Checks signature, account initialization, and program-derived address (PDA) correctness.
+- Creates the account with rent exemption and serializes admin data.
+
+Function "update_admin":
+- Updates the admin account with a new admin ID.
+- Verifies owner, signer, PDA match, and current admin privileges.
+- Updates timestamp and serializes data.
+
+Function "create_account":
+- Creates a user account with governance points.
+- Checks signer, account state, PDA correctness, creates account with rent exemption, and serializes data.
+
+Function "open_proposal":
+- Creates a proposal account with title, description, start/end times.
+- Checks signer, account ownership, PDA correctness, creates account, and serializes proposal data.
+
+Function "vote_process":
+- Records a vote on a proposal.
+- Checks signer, account ownership, PDA, and proposal timing.
+- Updates vote tallies with checked addition, creates a vote record account, serializes states.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user.
+- Checks admin privileges, owner, signer, updates user points, and serializes.
+
+Function "execute_instruction":
+- Executes specific instructions for vault management or admin check.
+- Verifies owner, signer, and correct vault program.
+- Loads current instruction index, verifies previous instructions, then calls appropriate transaction functions.
+
+Function "make_decision":
+- Finalizes a proposal by comparing votes.
+- Checks owner, signer, PDA, and proposal timing.
+- Declares the decision and marks proposal as executed.
+
+Potential Risks and Vulnerabilities:
+- Unwrapping without handling None cases (e.g., find_program_address) could panic.
+- No explicit checks on instruction data length or correctness.
+- No validation that the proposal title/description length fits within on-chain storage limits.
+- Possible replay of instructions due to lack of unique nonces or idempotency.
+- No explicit reentrancy or concurrent modification protection.
+- Absence of role-based access control beyond admin checks.
+- Use of unwrap() in secret places could cause panics if assumptions are broken.
+- Potential for state inconsistencies if serialization fails after partial writes.
+- No explicit limits on the number of votes or proposals created.
+- No validation on timestamps or timing correctness, which might allow voting outside intended windows if system time is manipulated.
+- Cross-program invocation (CPI) calls do not verify the success of the callee beyond returning an error.
+- No explicit event logs for critical actions, reducing observability.
+- No fallback or rollback mechanisms on failure.
+- Relying on PDA derivation alone for access control may lead to vulnerabilities if seed derivation is predictable.
+- No checks on the maximum value of vote counts or governance points, risking overflow (though checked_add is used to prevent overflow).
+- The `unwrap()` in `vault_program_id()` could panic if the string is malformed, but unlikely here since hardcoded.
+- Overall, the program assumes correctness of PDA derivation and no malicious accounts reuse, which must be carefully managed.

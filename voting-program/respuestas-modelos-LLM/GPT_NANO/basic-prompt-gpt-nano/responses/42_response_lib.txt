@@ -1,0 +1,68 @@
+Function "vault_program_id":
+- Returns the hardcoded Pubkey of the vault program.
+
+Function "MyError":
+- Defines custom error types for TimeLimit and ArithmeticError.
+
+Function "From<MyError> for ProgramError":
+- Converts custom MyError into a ProgramError for compatibility.
+
+Function "Vote_Record":
+- Defines the structure to record votes, associating proposal_id, and vote_amount.
+
+Function "User_Account":
+- Defines the user account data structure with user_id and governance points.
+
+Function "Admin_Account":
+- Defines admin account data with admin_id and last_update timestamp.
+
+Function "Proposal":
+- Represents a proposal with details such as user_id, title, description, votes, status, and timing.
+
+Function "action_as_str":
+- Converts an action byte into a string description.
+
+Function "send_create_vault_transaction":
+- Builds and invokes an instruction to create a vault, including account validation and PDA derivation.
+
+Function "send_instr_to_vault_transaction":
+- Creates and sends an instruction (deposit/withdraw) to the vault, validating accounts and PDA.
+
+Function "process_instruction":
+- Entry point; unpacks the instruction and routes to specific functions based on instruction type.
+
+Function "create_admin":
+- Creates an admin account PDA, initializing it with the current timestamp, with signature and rent exemption checks.
+
+Function "update_admin":
+- Updates the admin account with a new admin ID and timestamp, with owner and PDA validation.
+
+Function "create_account":
+- Creates a user account PDA, initializing governance points, with signature and rent checks.
+
+Function "open_proposal":
+- Opens a new proposal account PDA with proposal details, timestamp, and validation.
+
+Function "vote_process":
+- Processes a vote, including accounting for governance points, proposal timing, and creating a vote record.
+
+Function "manage_governance_points":
+- Modifies governance points of a user, adding or subtracting, with owner PDA validation and safe arithmetic.
+
+Function "execute_instruction":
+- Executes vault-related instructions (create, deposit, withdraw) based on the provided action byte, validating account owners, signatures, and last instruction index.
+
+Function "make_decision":
+- Implements decision logic for proposals; checks if the voting period is over, compares votes, updates proposal status, with PDA validation.
+
+Potential risks and vulnerabilities:
+- Use of unwrap() on Pubkey::from_str, which can panic if the string is invalid.
+- No explicit access control beyond signatures and PDAs; actions rely on PDA validation.
+- No checks for reentrancy or replay attacks, but these are less typical in Solana due to stateless transactions.
+- Usage of try_from_slice for account state deserialization without checks for data integrity.
+- Invoking `invoke_signed()` assumes the accounts are correctly set and PDAs are accurately derived.
+- No explicit limit or validation on user input like strings (title, description) in proposals, which could cause issues.
+- The transaction data length is derived from to_vec()?.len(), which can be expensive and might cause issues if the data is malformed.
+- No explicit checks for overflow in vote tallying, but generally safe as u64 is used and checked arithmetic is applied.
+- No auditing or logging for critical actions beyond `msg!`, which might be insufficient for production environments.
+- Hardcoded program IDs and seeds could lead to potential issues if not managed properly.

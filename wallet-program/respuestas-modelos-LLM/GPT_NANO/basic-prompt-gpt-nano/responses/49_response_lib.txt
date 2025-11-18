@@ -1,0 +1,30 @@
+Function "process_instruction":
+- Parses the instruction data into a specific instruction format.
+- Routes the instruction to corresponding handler functions based on instruction type.
+
+Function "initialize_wallet_account":
+- Creates a new wallet account associated with a user if it does not already exist.
+- Uses PDA to derive the wallet address.
+- Checks if the account already has lamports to prevent re-initialization.
+- Allocates space and rent exemption for the wallet account.
+- Serializes wallet data into the account.
+
+Function "deposit_amount":
+- Deposits a specified amount into the wallet.
+- Unpacks and verifies wallet account data.
+- Adds the deposit amount to the current wallet amount with checked arithmetic.
+- Serializes the updated wallet data.
+
+Function "withdraw_amount":
+- Withdraws a specified amount from the wallet.
+- Unpacks and verifies wallet account data.
+- Deducts the amount without explicitly checking for sufficient funds, which is a risk.
+- Serializes the updated wallet data.
+
+Function "transfer_amount":
+- Transfers a specified amount from a source wallet to a destination wallet.
+- Unpacks both source and destination wallet data.
+- Checks if both wallets are initialized.
+- Adds the amount to the destination wallet with checked arithmetic.
+- Deducts the amount from the source wallet without checking for sufficient funds, which is a potential risk.
+- Serializes both wallet data back into their accounts.

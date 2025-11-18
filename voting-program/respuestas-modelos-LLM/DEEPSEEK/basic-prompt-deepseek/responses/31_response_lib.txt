@@ -1,0 +1,72 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for the vault program
+- Uses unwrap which may panic if the string is invalid
+
+Function "action_as_str":
+- Converts a u8 action code to a string description
+- Handles unknown actions by returning "Unknown"
+
+Function "send_create_vault_transaction":
+- Constructs an instruction for creating a vault
+- Uses invoke_signed to call the vault program with PDA seeds
+- Includes system program in account metas
+
+Function "send_instr_to_vault_transaction":
+- Constructs instructions for deposit/withdraw operations
+- Uses invoke_signed with vault PDA seeds
+- Handles amount conversion to little-endian bytes
+
+Function "process_instruction":
+- Entry point that unpacks instruction data
+- Routes to appropriate handler functions based on instruction type
+- Handles multiple instruction formats including CreateAdmin, UpdateAdmin, CreateAccount, etc.
+
+Function "create_admin":
+- Creates an admin PDA account
+- Validates signer and account initialization status
+- Uses invoke_signed for account creation with admin seeds
+- Stores admin ID and timestamp in account data
+
+Function "update_admin":
+- Updates the admin account with a new admin ID
+- Validates current admin privileges
+- Updates timestamp when changing admin
+- Requires signer to be current admin
+
+Function "create_account":
+- Creates a user account PDA
+- Initializes with 10 governance points
+- Uses user's public key in PDA seeds
+- Validates signer and account initialization
+
+Function "open_proposal":
+- Creates a proposal account with title and description
+- Sets voting period to 1 hour from creation
+- Uses proposal title in PDA seeds
+- Stores proposal creator and voting metrics
+
+Function "vote_process":
+- Processes user votes on proposals
+- Creates vote record account for each vote
+- Validates voting period is active
+- Adds user's governance points to yes/no votes
+- Prevents double voting by checking vote record existence
+
+Function "manage_governance_points":
+- Admin function to add or subtract governance points
+- Validates admin privileges
+- Uses checked arithmetic to prevent underflow
+- Updates user's governance point balance
+
+Function "execute_instruction":
+- Handles cross-program invocations to vault program
+- Validates user privileges based on instruction type
+- Checks previous instruction was from vault program
+- Routes to appropriate vault transaction functions
+
+Function "make_decision":
+- Finalizes proposal voting after end time
+- Validates admin privileges
+- Compares yes vs no votes to determine outcome
+- Marks proposal as executed
+- Prevents execution before voting period ends

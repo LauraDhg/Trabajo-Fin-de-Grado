@@ -1,0 +1,62 @@
+Function "vault_program_id":
+- Hardcoded program ID, consider making it configurable or using a more robust method for discovery.
+
+Function "process_instruction":
+- The `match` statement exhaustively covers all instructions, which is good.
+
+Function "create_admin":
+- Checks if the admin account has already been initialized, preventing accidental overwrites.
+- Uses `find_program_address` to derive the admin PDA, mitigating risk of rogue accounts.
+- Employs `invoke_signed` to create the admin account, ensuring only the program can create it.
+- Serializes the `Admin_Account` data into the created account, persisting the admin information.
+
+Function "update_admin":
+- Checks that the admin account is owned by the program.
+- Verifies the transaction is signed by the current admin.
+- Validates that the admin account matches the derived PDA.
+- Ensures the user attempting the update has admin privileges.
+- Updates the admin ID and timestamp, then serializes the updated data.
+
+Function "create_account":
+- Checks if the account has already been initialized.
+- Derives the user account PDA using `find_program_address`.
+- Assigns initial governance points (10) to the new user account.
+- Employs `invoke_signed` for account creation, ensuring program control.
+- Serializes the `User_Account` data into the created account.
+
+Function "open_proposal":
+- Checks if the user account is owned by the program.
+- Generates the proposal PDA.
+- Sets a fixed proposal duration of 1 hour.
+- Uses `invoke_signed` to create the proposal account.
+- Serializes the `Proposal` data into the account.
+
+Function "vote_process":
+- Checks ownership of both user and proposal accounts.
+- Derives the vote record PDA.
+- Deserializes the `Proposal` and `User_Account` data.
+- Checks for time limit before allowing vote.
+- Directly increments the `yes_votes` or `no_votes` field in the `Proposal` based on the vote.
+- Employs `invoke_signed` for creating the vote record account.
+
+Function "manage_governance_points":
+- Checks ownership of both admin and user accounts.
+- Derives the admin PDA.
+- Deserializes the `Admin_Account` and `User_Account` data.
+- Adds or subtracts governance points based on the instruction.
+
+Function "execute_instruction":
+- Implements a dispatch mechanism based on the `variant_instr` byte.
+- Includes a check for a previous vault program instruction.
+- Uses `send_create_vault_transaction` or `send_instr_to_vault_transaction` to invoke the vault program.
+- Validates admin privileges before allowing certain actions based on the `variant_instr`.
+- There are several validations of PDA which are redundant given that the invoked instructions of the vault program are expected to validate the parameters again (vault_bump).
+- Missing error handling for CPI call to vault program.
+
+Function "make_decision":
+- Checks ownership of both admin and proposal accounts.
+- Derives the admin PDA.
+- Deserializes the `Admin_Account` and `Proposal` data.
+- Validates admin privileges.
+- Checks the proposal's end time before allowing a decision.
+- Sets the `executed` flag on the `Proposal` based on the vote outcome.

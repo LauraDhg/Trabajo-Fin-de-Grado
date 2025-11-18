@@ -1,0 +1,36 @@
+Function "process_instruction":
+- Matches the instruction data with the corresponding functions.
+- Could be made more robust by including a default case that returns an error if the instruction is not recognized.
+
+Function "initialize_wallet_account":
+- Uses `Pubkey::find_program_address` to derive the wallet's PDA.
+- Checks if the wallet account already has lamports.
+- Creates the wallet account using `invoke_signed`.
+- Serializes the wallet data to the account.
+- The PDA derivation uses the user account's public key. If the user changes keys, they lose access to the wallet.
+- The `unwrap()` call on `wallet_len.try_into()` could cause a crash if `wallet_len` is too large.
+- It's missing an important check: that the `wallet_account` passed in is actually the PDA derived. A malicious user could pass any other account to overwrite it.
+
+Function "deposit_amount":
+- Deserializes the wallet data from the account.
+- Checks if the wallet is initialized.
+- Adds the deposit amount to the wallet's amount.
+- Serializes the wallet data back to the account.
+- It doesn't check that the `wallet_account` passed in is actually the PDA derived from the user. A malicious user could pass any other account to overwrite it.
+
+Function "withdraw_amount":
+- Deserializes the wallet data from the account.
+- Checks if the wallet is initialized.
+- Checks if the wallet has sufficient funds.
+- Subtracts the withdrawal amount from the wallet's amount.
+- Serializes the wallet data back to the account.
+- It doesn't check that the `wallet_account` passed in is actually the PDA derived from the user. A malicious user could pass any other account to overwrite it.
+
+Function "transfer_amount":
+- Deserializes the source and destination wallet data from their respective accounts.
+- Checks if both wallets are initialized.
+- Adds the transfer amount to the destination wallet's amount.
+- Subtracts the transfer amount from the source wallet's amount.
+- Serializes both wallets' data back to their respective accounts.
+- It doesn't check that the `src_wallet_account` and `dest_wallet_account` passed in are actually the PDAs derived from their users. A malicious user could pass any other account to overwrite it.
+- It does not verify that the `dest_user_account` passed in actually owns the `dest_wallet_account`. This would allow any user to transfer funds to any other account.

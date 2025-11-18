@@ -1,0 +1,67 @@
+Function "vault_program_id":
+- Hardcoded program ID which may be incorrect if the vault program is redeployed
+- Uses unwrap() which can panic if the string is invalid
+
+Function "create_admin":
+- Does not validate that the provided bump seed matches the derived PDA
+- Uses unwrap() on try_into() which can panic on conversion error
+- Missing proper access control - anyone can create admin account
+- No validation that the created account has the expected size
+
+Function "update_admin":
+- Allows any current admin to transfer admin rights without additional authorization
+- No validation that new_admin is a valid pubkey or different from current
+- Missing proper access control checks
+
+Function "create_account":
+- Automatically grants 10 governance points without any mechanism to prevent spam
+- Uses user-provided bump seed without validation
+- No maximum limit on governance points creation
+
+Function "open_proposal":
+- Proposal duration is hardcoded to 1 hour (3600 seconds)
+- Uses title as part of PDA seeds which could cause collisions with long titles
+- No validation on title/description length which could cause account size issues
+
+Function "vote_process":
+- Allows multiple votes from same user if they create multiple accounts
+- No mechanism to prevent double voting
+- Vote weight based on governance points which can be manipulated
+- Uses user-provided bump seed without proper validation
+
+Function "manage_governance_points":
+- Admin can arbitrarily add/subtract any amount of governance points
+- No limits or checks on governance point manipulation
+- No logging or event emission for governance point changes
+
+Function "execute_instruction":
+- Uses instruction sysvar to check previous instruction, which can be manipulated
+- User-provided bump seeds are used without proper validation
+- Cross-program invocation to hardcoded vault program without proper validation
+- Missing proper authorization checks for different instruction types
+
+Function "make_decision":
+- Only checks if current time > end_time, no validation that proposal actually ended
+- Simple majority voting without quorum requirements
+- No mechanism to actually execute the proposal decision
+
+Function "send_create_vault_transaction":
+- Hardcoded vault program ID instead of using the provided account
+- Missing proper account validation for cross-program invocation
+- Uses user-provided bump seed without validation
+
+Function "send_instr_to_vault_transaction":
+- Missing system program account for deposit/withdraw operations
+- No validation that the vault program is the expected program
+- Uses user-provided bump seed without proper validation
+
+Function "process_instruction":
+- No input validation on instruction data before unpacking
+- Missing proper error handling for invalid instructions
+
+Function "action_as_str":
+- No security vulnerabilities identified (helper function)
+
+Function "try_from_slice_unchecked":
+- Usage of unsafe deserialization without proper validation
+- Potential for malformed data to cause panics or undefined behavior

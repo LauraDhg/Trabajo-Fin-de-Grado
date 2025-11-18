@@ -1,0 +1,33 @@
+Function "process_instruction":
+- No direct vulnerabilities found in the dispatch function itself
+- Relies on proper validation in the individual instruction handlers
+
+Function "initialize_wallet_account":
+- Missing validation that user_account is signer
+- Missing validation that wallet_account is not already initialized
+- Uses unwrap() on try_into() conversion which could panic
+- Does not verify that user_account has sufficient lamports to create the PDA
+- Missing rent exemption check for the created account
+
+Function "deposit_amount":
+- Missing validation that user_account is signer
+- Missing validation that wallet_account is initialized
+- No overflow protection for amount addition (wallet.amount += amount)
+- Missing validation that the deposited amount corresponds to an actual token transfer
+- Pure state modification without value transfer creates inconsistency
+
+Function "withdraw_amount":
+- Missing validation that user_account is signer
+- Missing validation that wallet_account is initialized
+- Uses checked_sub but error handling converts to custom error instead of proper ProgramError
+- No mechanism to actually transfer funds out of the account
+- Pure state reduction without value transfer creates inconsistency
+
+Function "transfer_amount":
+- Missing validation that user_account is signer (source account owner)
+- Missing validation that both wallet accounts are initialized
+- No overflow protection for destination amount addition (dest_wallet.amount += amount)
+- Missing validation that destination user account is valid/owned by correct program
+- Uses checked_sub but error handling converts to custom error instead of proper ProgramError
+- No actual value transfer between accounts, only state modification
+- Missing reentrancy protection for cross-account state updates

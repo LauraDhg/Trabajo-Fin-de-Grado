@@ -1,0 +1,60 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program is redeployed or changes
+- No validation that the provided address corresponds to an actual vault program
+
+Function "send_create_vault_transaction":
+- Missing validation of account ownership and program IDs
+- Potential for reentrancy attacks through CPI calls
+- No access control checks on who can create vaults
+
+Function "send_instr_to_vault_transaction":
+- Missing validation of account ownership and program IDs
+- No access control checks on who can execute vault operations
+- Potential for unauthorized fund transfers
+
+Function "process_instruction":
+- No validation of instruction data length before unpacking
+- No access control at the entry point level
+
+Function "create_admin":
+- Uses deprecated `try_from_slice_unchecked` pattern (should use `try_from_slice`)
+- No validation that admin_bump is correct before PDA creation
+- Missing rent exemption check before account creation
+
+Function "update_admin":
+- No authorization check to ensure only current admin can update
+- Allows any signer to change admin without permission validation
+- Missing validation of new_admin parameter
+
+Function "create_account":
+- Hardcodes initial governance points (10) without configurable mechanism
+- No maximum limit on governance points creation
+- Uses user-provided bump without validation
+
+Function "open_proposal":
+- Fixed 1-hour voting period may not be suitable for all use cases
+- Title used in PDA seeds without length validation or sanitization
+- No maximum length checks on title and description strings
+
+Function "vote_process":
+- Arithmetic overflow risk in vote counting (yes_votes/no_votes += amount)
+- No check for duplicate votes from same user
+- User can vote multiple times by creating different vote records
+
+Function "manage_governance_points":
+- Admin can arbitrarily modify any user's governance points without restrictions
+- No upper bound check when adding points (potential overflow)
+- No minimum balance check when subtracting points
+
+Function "execute_instruction":
+- Instruction validation logic has incorrect bump usage (uses user_bump for admin validation)
+- Relies on previous instruction check which can be manipulated
+- Missing proper authorization for different instruction types
+
+Function "make_decision":
+- Time comparison uses parentheses unnecessarily (potential logic error)
+- No threshold mechanism for proposal approval (simple majority only)
+- Once executed, proposal cannot be modified even if circumstances change
+
+Function "action_as_str":
+- No security vulnerabilities identified (helper function only)

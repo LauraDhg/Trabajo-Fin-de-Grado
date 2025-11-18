@@ -1,0 +1,97 @@
+Function "vault_program_id":
+- The function returns a hardcoded Pubkey. If the vault program ID changes, this function needs to be updated, which requires redeploying the program. Consider making this configurable via on-chain configuration.
+
+Function "MyError::from":
+- This function converts the custom error type MyError into a ProgramError. This is a standard practice for handling custom errors in Solana programs.
+
+Function "Vote_Record::BorshSerialize":
+- Standard serialization implementation using Borsh.
+
+Function "Vote_Record::BorshDeserialize":
+- Standard deserialization implementation using Borsh.
+
+Function "User_Account::BorshSerialize":
+- Standard serialization implementation using Borsh.
+
+Function "User_Account::BorshDeserialize":
+- Standard deserialization implementation using Borsh.
+
+Function "Admin_Account::BorshSerialize":
+- Standard serialization implementation using Borsh.
+
+Function "Admin_Account::BorshDeserialize":
+- Standard deserialization implementation using Borsh.
+
+Function "Proposal::BorshSerialize":
+- Standard serialization implementation using Borsh.
+
+Function "Proposal::BorshDeserialize":
+- Standard deserialization implementation using Borsh.
+
+Function "action_as_str":
+- This function maps a u8 action code to a string. It's useful for debugging and logging, but doesn't directly introduce vulnerabilities.
+
+Function "send_create_vault_transaction":
+- It constructs and invokes a cross-program invocation (CPI) to a vault program.
+- It uses `invoke_signed`, which requires providing the necessary seeds and bumps for signing. Ensure the seeds are correctly derived and the `vault_bump` is the correct bump seed.
+- The program ID of the vault program is hardcoded.
+
+Function "send_instr_to_vault_transaction":
+- It constructs and invokes a cross-program invocation (CPI) to a vault program.
+- It uses `invoke_signed`, which requires providing the necessary seeds and bumps for signing. Ensure the seeds are correctly derived and the `vault_bump` is the correct bump seed.
+- The program ID of the vault program is hardcoded.
+
+Function "process_instruction":
+- This is the main entry point of the program.
+- It unpacks the instruction data using `InstructionFormat::unpack`. Ensure that the `InstructionFormat` enum and its `unpack` method properly handle all possible instruction variants and perform necessary validation.
+
+Function "create_admin":
+- It creates an admin account.
+- The admin account is created using a PDA derived from the "admin" seed. Ensure that the seed is unique and cannot be easily predicted or manipulated.
+- It checks if the admin account has already been initialized.
+- It uses `invoke_signed` to create the account. Ensure that the seeds and bump are correct.
+
+Function "update_admin":
+- It updates the admin account with a new admin Pubkey.
+- It checks if the account owner is the program itself.
+- It updates the `admin_id` field in the `Admin_Account` struct.
+
+Function "create_account":
+- It creates a user account.
+- The user account is created using a PDA derived from the "userAccount" seed and the user's Pubkey. Ensure that the seed is unique and cannot be easily predicted or manipulated.
+- It checks if the user account has already been initialized.
+- It uses `invoke_signed` to create the account. Ensure that the seeds and bump are correct.
+
+Function "open_proposal":
+- It creates a proposal account.
+- The proposal account is created using a PDA derived from the "proposal" seed and the proposal's title. Ensure that the seed is unique and cannot be easily predicted or manipulated.
+- The `title` and `description` are passed as strings. There is no length validation, which could lead to excessive data being stored in the account. Limit the length of the title and description.
+- It checks if the proposal account has already been initialized.
+- It uses `invoke_signed` to create the account. Ensure that the seeds and bump are correct.
+
+Function "vote_process":
+- It processes a user's vote on a proposal.
+- The vote record account is created using a PDA derived from the "vote" seed, the user's Pubkey, and the proposal's Pubkey. Ensure that the seed is unique and cannot be easily predicted or manipulated.
+- It checks if the vote record account has already been initialized.
+- It retrieves the proposal and user account data, and updates the vote counts based on the `vote_answer`.
+- It checks if the proposal is still open for voting based on the `start_time` and `end_time` fields.
+- It uses `checked_add` to prevent arithmetic overflows when updating the vote counts.
+- It uses `invoke_signed` to create the vote record account. Ensure that the seeds and bump are correct.
+
+Function "manage_governance_points":
+- It manages (adds or subtracts) governance points for a user.
+- It checks if the admin account is the correct PDA.
+- It uses `checked_add` to prevent arithmetic overflows when adding governance points.
+- It directly subtracts `amount` from `user.amount_governance_points` with the `-` operator, which can cause underflow if amount is bigger. This could be avoided using the `checked_sub` method to prevent this underflow.
+
+Function "execute_instruction":
+- It executes instructions related to a vault program.
+- It performs checks based on the `variant_instr` to determine the action to be performed (create, deposit, withdraw).
+- It verifies that the `vault_program` key matches the expected `vault_program_id`.
+- It retrieves and validates the previous instruction using `load_current_index` and `load_instruction_at`.
+- It calls `send_create_vault_transaction` or `send_instr_to_vault_transaction` based on the `variant_instr`.
+
+Function "make_decision":
+- It finalizes a proposal and determines if it's approved or denied based on the vote counts.
+- It checks if the proposal is still active based on the `end_time` field.
+- It sets the `executed` field to `true` to prevent further voting or execution.

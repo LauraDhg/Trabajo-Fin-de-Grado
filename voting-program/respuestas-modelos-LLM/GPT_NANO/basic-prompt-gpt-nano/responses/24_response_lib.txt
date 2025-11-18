@@ -1,0 +1,83 @@
+Function "send_create_vault_transaction":
+- Constructs and sends a transaction to create a vault by invoking another program.
+- Prepares instruction data and specifies required accounts.
+- Uses `invoke_signed` with vault seeds for PDA signing.
+- Potential Risk: Incorrect seed or account references may cause transaction failure or unintended behavior.
+- Potential Risk: No explicit check for the success of `invoke_signed`, but it returns a `ProgramResult`.
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends a transaction to perform vault operations (deposit/withdraw).
+- Prepares instruction data with amount and proposal ID.
+- Uses `invoke_signed` with vault seeds.
+- Potential Risk: Incorrect account references or seeds may cause failed or malicious transactions.
+- Potential Risk: No validation of amounts or state before transaction.
+
+Function "process_instruction":
+- Main entrypoint, routes instructions to specific handlers based on instruction data.
+- Calls different functions for various actions like creating admin, accounts, proposals, votes, etc.
+- Potential Risk: Deserialization errors if instruction data is malformed.
+- Potential Risk: Not explicitly handling unknown instruction variants.
+
+Function "create_admin":
+- Initializes an admin account associated with the program.
+- Checks signer and account state, creates via `invoke_signed`.
+- Potential Risk: Reinitialization if account already has lamports.
+- Potential Risk: No explicit check for admin account already existing (but it checks lamports > 0).
+
+Function "update_admin":
+- Updates admin info in the stored admin account.
+- Checks owner, signer, and correctness of PDA.
+- Potential Risk: Malicious update if caller is not authorized (assumes only current admin has access).
+- Potential Risk: No explicit access control beyond owner check.
+
+Function "create_account":
+- Creates a user account with governance points.
+- Checks signer, account state, and ownership.
+- Potential Risk: Reinitialization of existing account if lamports > 0.
+- Potential Risk: No validation on user data beyond owner and type checks.
+
+Function "open_proposal":
+- Creates a proposal with a title and description.
+- Checks owner, signer, and account initialization.
+- Uses PDA based on title string.
+- Potential Risk: Collisions if titles are not unique or repeated.
+- Potential Risk: No validation on lengths of title/description strings.
+
+Function "vote_process":
+- Processes a vote on a proposal.
+- Checks owner, signer, and proposal timing.
+- Creates a vote record account.
+- Adds vote weight from user's governance points.
+- Potential Risk: Double voting if vote record account is not properly checked or if the orbit is not managed.
+- Potential Risk: Arithmetic checked, but if user governance points are large, overflow could be a concern.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points for users by admin.
+- Checks owner, signer, and PDA validity.
+- Potential Risk: Negative governance points if subtraction occurs; no explicit check preventing underflow.
+- Potential Risk: No restrictions on the amount; could result in negative points.
+
+Function "execute_instruction":
+- Handles vault-related instructions including creation, deposit, withdrawal.
+- Checks owner, signer, and seed correctness.
+- Uses `load_current_index` and `load_instruction_at` for instruction sequence.
+- Potential Risk: Race conditions if concurrent transactions modify instruction sequence.
+- Potential Risk: No validation that vault program ID is correct besides equality check.
+
+Function "make_decision":
+- Executes the decision on a proposal based on votes.
+- Checks owner, signer, and that proposal is past end time.
+- Declares result based on votes.
+- Potential Risk: Race condition if votes change immediately after check but before execution.
+- Potential Risk: No mechanism to prevent re-execution or multiple calls.
+
+Overall Risks and Vulnerabilities:
+- No explicit access control beyond owner/signature checks, relying on PDA derivations.
+- Rely on correct PDA seed derivations; incorrect seeds could lead to account hijacking.
+- No checks for double spending or re-entrancy; susceptible if not managed at higher level.
+- No explicit validation of string length for titles/descriptions, risking storage issues.
+- Arithmetic operations could overflow or underflow if not carefully checked.
+- Potential for account reinitialization if account already exists and has lamports.
+- Error handling mostly relies on `?`, assumes `invoke_signed` executes correctly.
+- No explicit escrow or withdrawal limits; vulnerable if misused.
+- No explicit code to prevent replay or double voting beyond standard account checks.

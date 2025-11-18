@@ -1,0 +1,93 @@
+Function "vault_program_id":
+- Returns the hardcoded public key of the vault program.
+
+Function "MyError":
+- Defines custom error types for time limit exceeded and arithmetic errors.
+
+Function "From<MyError> for ProgramError":
+- Converts custom errors into ProgramError types for Solana program compatibility.
+
+Function "Vote_Record":
+- Defines the structure to hold votes related to proposals, including proposal ID and vote amount.
+
+Function "User_Account":
+- Defines user account structure with user ID and governance points.
+
+Function "Admin_Account":
+- Defines admin account structure with admin ID and last update timestamp.
+
+Function "Proposal":
+- Defines proposal structure with user ID, title, description, votes, status, and timing info.
+
+Function "action_as_str":
+- Converts action byte code into a string description.
+
+Function "send_create_vault_transaction":
+- Constructs and sends a transaction to create a vault.
+- Uses program derived addresses (PDAs) for security.
+- Invokes a CPI (Cross-Program Invocation) to vault program with signed seeds.
+- Risks: PDA derivation issues, incorrect account list, unchecked invoke result handling.
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends a transaction to interact with the vault (deposit or withdraw).
+- Uses PDAs and signed invoke.
+- Risks: PDA derivation errors, invalid accounts, unchecked invoke result.
+
+Function "process_instruction":
+- Entrypoint that unpacks instruction data into specific function calls depending on instructions enum.
+- Risks: Unhandled invalid instructions, possible panic if unpack fails.
+
+Function "create_admin":
+- Creates an admin account as a PDA, initializes it with signer’s info and timestamp.
+- Checks for existing account before creation.
+- Risks: Race conditions if account already exists, no explicit checks for account data consistency.
+
+Function "update_admin":
+- Updates admin account information if the caller is the current admin.
+- Checks PDA derivation and admin rights before updating.
+- Risks: Potential for incorrect account ownership, stale data if concurrent updates occur.
+
+Function "create_account":
+- Creates user account PDA with initial governance points.
+- Checks for existing account, and initializes account data.
+- Risks: Race conditions, incorrect PDA derivation, unchecked invoke result.
+
+Function "open_proposal":
+- Creates a proposal PDA with provided title and description.
+- Sets start and end times based on current clock.
+- Risks: Duplicate proposal titles leading to same PDA, unchecked invoke result.
+
+Function "vote_process":
+- Allows users to vote on proposals, recording votes with a vote record account.
+- Checks proposal timing and updates votes.
+- Risks: Re-entrancy or multiple votes from same user if vote record account is reused improperly, unchecked invoke result, potential vote weight manipulation.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points for a user, authorized by admin.
+- Checks admin rights.
+- Risks: Underflow or overflow in governance points, admin rights not properly enforced, unchecked data serialization.
+
+Function "execute_instruction":
+- Executes different actions (create vault, deposit, withdraw) based on instruction variant.
+- Checks signer and account ownership.
+- Uses CPI to vault program with seeds.
+- Risks: Incorrect PDA derivation, unchecked invoke result, re-entrancy, race conditions.
+
+Function "make_decision":
+- Finalizes a proposal, determines outcome based on votes after end time.
+- Checks admin rights.
+- Risks: Timing issues if time calculations are incorrect, unchecked serialize, logical errors if votes tie or are close.
+
+Overall potential risks and vulnerabilities:
+- PDA derivation errors leading to mismatched accounts.
+- Lack of proper result handling after invoke (errors may go unnoticed).
+- Race conditions on account creation/checks.
+- Insufficient validation of input data, especially strings for proposals.
+- No explicit re-entrancy protections.
+- No explicit access controls beyond admin checks.
+- Potential unchecked overflow/underflow in vote and governance point calculations.
+- Hardcoded program ID makes upgradeability or migration complex.
+- Possible account data corruption if accounts are reused or improperly serialized/deserialized.
+- No explicit checks to prevent multiple votes from same user per proposal beyond account existence.
+- No explicit handling of instruction data integrity or input size validation.
+

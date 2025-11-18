@@ -1,0 +1,74 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for the vault program
+- Uses unwrap which could panic if the string is invalid
+
+Function "action_as_str":
+- Converts a u8 action code to a string description
+- Handles unknown actions by returning "Unknown"
+
+Function "send_create_vault_transaction":
+- Constructs an instruction for creating a vault
+- Uses invoke_signed to call the vault program
+- Includes system program in accounts
+- Uses vault_bump for PDA derivation
+
+Function "send_instr_to_vault_transaction":
+- Constructs instructions for deposit/withdraw operations
+- Uses invoke_signed to call the vault program
+- Does not include system program in accounts
+- Uses vault_bump for PDA derivation
+
+Function "process_instruction":
+- Entry point that unpacks instruction data
+- Routes to appropriate handler functions based on instruction type
+- Handles multiple instruction formats
+
+Function "create_admin":
+- Creates an admin account PDA
+- Checks for signer and account initialization
+- Validates PDA derivation
+- Uses system_instruction::create_account
+- Stores admin ID and timestamp
+
+Function "update_admin":
+- Updates the admin account with new admin ID
+- Validates current admin privileges
+- Updates timestamp
+- Checks PDA derivation
+
+Function "create_account":
+- Creates a user account PDA
+- Initializes with 10 governance points
+- Uses system_instruction::create_account
+- Validates PDA derivation
+
+Function "open_proposal":
+- Creates a proposal account
+- Sets start and end times (1 hour duration)
+- Stores proposal metadata
+- Uses PDA derivation with title bytes
+
+Function "vote_process":
+- Processes user votes on proposals
+- Creates vote record account
+- Checks proposal time limits
+- Updates vote counts with governance points
+- Uses checked_add to prevent overflow
+
+Function "manage_governance_points":
+- Admin function to add/subtract governance points
+- Validates admin privileges
+- Uses checked_add for addition but unchecked subtraction
+- Updates user account points
+
+Function "execute_instruction":
+- Handles vault operations (create/deposit/withdraw)
+- Validates different account types based on operation
+- Checks instruction sysvar for previous vault calls
+- Calls appropriate vault transaction functions
+
+Function "make_decision":
+- Finalizes proposal execution after end time
+- Compares yes/no votes
+- Marks proposal as executed
+- Validates admin privileges

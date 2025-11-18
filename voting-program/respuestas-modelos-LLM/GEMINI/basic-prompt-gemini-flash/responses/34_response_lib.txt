@@ -1,0 +1,88 @@
+Function "vault_program_id":
+- Returns a Pubkey.
+- The Pubkey is hardcoded.
+
+Function "process_instruction":
+- Unpacks the instruction data into an `InstructionFormat` enum.
+- Matches the unpacked instruction and calls the corresponding handler function.
+- Dispatches to different functions based on the instruction.
+
+Function "create_admin":
+- Creates an admin account.
+- Checks if the admin payer is a signer.
+- Checks if the admin account has already been initialized.
+- Derives a program address for the admin account using `Pubkey::create_program_address`.
+- Creates the admin account using `system_instruction::create_account` and `invoke_signed`.
+- Serializes the admin account data using `BorshSerialize`.
+
+Function "update_admin":
+- Updates the admin account with a new admin Pubkey.
+- Checks if the admin account is owned by the program.
+- Checks if the admin payer is a signer.
+- Deserializes the admin account data using `BorshDeserialize`.
+- Derives a program address for the admin account.
+- Checks if the current admin is the signer.
+- Updates the admin_id and last_update fields in the admin account.
+- Serializes the updated admin account data.
+
+Function "create_account":
+- Creates a user account.
+- Checks if the user payer is a signer.
+- Checks if the user account has already been initialized.
+- Derives a program address for the user account using `Pubkey::create_program_address`.
+- Creates the user account using `system_instruction::create_account` and `invoke_signed`.
+- Serializes the user account data.
+
+Function "open_proposal":
+- Creates a proposal account.
+- Checks if the user account is owned by the program.
+- Checks if the user payer is a signer.
+- Checks if the proposal account has already been initialized.
+- Derives a program address for the proposal account.
+- Deserializes the user account to check its type.
+- Creates the proposal account using `system_instruction::create_account` and `invoke_signed`.
+- Serializes the proposal account data.
+
+Function "vote_process":
+- Processes a vote on a proposal.
+- Checks if the user and proposal accounts are owned by the program.
+- Checks if the user payer is a signer.
+- Checks if the vote record account has already been initialized.
+- Derives a program address for the vote record account.
+- Deserializes the proposal and user accounts.
+- Validates the user account type.
+- Checks if the proposal is still open.
+- Updates the proposal's vote count based on the user's vote.
+- Creates the vote record account using `system_instruction::create_account` and `invoke_signed`.
+- Serializes the vote record and updates the proposal and user accounts.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user account.
+- Checks if the admin and user accounts are owned by the program.
+- Checks if the admin payer is a signer.
+- Derives a program address for the admin account.
+- Deserializes the admin and user accounts.
+- Validates the admin's privileges.
+- Updates the user's governance points based on the instruction.
+- Serializes the updated user account data.
+
+Function "execute_instruction":
+- Executes an instruction by calling a vault program.
+- Checks if the user account is owned by the program.
+- Checks if the user payer is a signer.
+- Based on the `variant_instr`, it validates the instruction.
+- Loads the current instruction index.
+- Checks if the previous instruction was from the vault program.
+- Calls `send_create_vault_transaction` or `send_instr_to_vault_transaction` to execute the instruction.
+
+Function "make_decision":
+- Makes a decision on a proposal.
+- Checks if the admin and proposal accounts are owned by the program.
+- Checks if the admin payer is a signer.
+- Derives a program address for the admin account.
+- Deserializes the admin and proposal accounts.
+- Validates the admin's privileges.
+- Checks if the proposal's voting period has ended.
+- Determines whether the proposal is approved or denied based on the vote count.
+- Updates the proposal's executed status.
+- Serializes the updated proposal account data.

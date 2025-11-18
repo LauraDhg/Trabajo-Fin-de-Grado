@@ -1,0 +1,64 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program changes or is redeployed
+- No validation that the provided address is a valid program ID
+
+Function "action_as_str":
+- No security vulnerabilities identified in this helper function
+
+Function "send_create_vault_transaction":
+- Missing validation of account ownership for vault_program and system_program
+- No check that vault_program is actually the expected program
+- Potential reentrancy risk when calling external program
+
+Function "send_instr_to_vault_transaction":
+- Missing validation of account ownership for vault_program
+- No check that vault_program is actually the expected program
+- Potential reentrancy risk when calling external program
+
+Function "process_instruction":
+- No input validation on instruction_data before unpacking
+- Potential denial-of-service if malformed instruction data is provided
+
+Function "create_admin":
+- Uses deprecated try_to_vec() method which may panic on large data
+- No rent exemption check after account creation
+- Potential arithmetic overflow in account_len.try_into().unwrap()
+
+Function "update_admin":
+- No access control beyond admin check - any admin can change to any address
+- No validation that new_admin is a valid pubkey
+- No timestamp validation to prevent rapid admin changes
+
+Function "create_account":
+- Uses deprecated try_to_vec() method
+- Hardcoded initial governance points (10) without configurable mechanism
+- No rent exemption check after account creation
+
+Function "open_proposal":
+- Fixed 1-hour duration (3600 seconds) without configurability
+- Uses title bytes for PDA without length validation
+- Potential for PDA collision with similar titles
+- No maximum length validation for title and description
+
+Function "vote_process":
+- Arithmetic overflow risk in yes_votes/no_votes addition without bounds checking
+- No check if user has already voted on this proposal
+- Vote weight based on current governance points, which can be manipulated
+- No minimum governance points requirement to vote
+
+Function "manage_governance_points":
+- No bounds checking on governance points subtraction (potential underflow)
+- Admin can arbitrarily modify any user's governance points without restrictions
+- No audit trail for governance point changes
+
+Function "execute_instruction":
+- Relies on previous instruction check which can be bypassed by malicious actors
+- Instruction sysvar usage without proper validation
+- Multiple redundant PDA checks that don't add security
+- Cross-program invocation without proper validation of external program
+
+Function "make_decision":
+- Time comparison uses current_time < proposal.end_time instead of current_time > proposal.end_time
+- Boolean condition with parentheses that may cause confusion
+- No mechanism to prevent double execution of decision
+- Simple majority voting without quorum requirements

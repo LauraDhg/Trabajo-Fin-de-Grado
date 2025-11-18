@@ -1,0 +1,19 @@
+Function "process_instruction":
+- The function uses a match statement on the unpacked instruction. Ensure that all possible instruction variants are handled to prevent unexpected behavior if a new instruction is added later but not handled in this function.
+
+Function "initialize_wallet_account":
+- Checks if the account has already been initialized by verifying if lamports > 0. This is a good practice.
+- The program derives a PDA (Program Derived Address) for the wallet account, which is standard and good for security.
+- Uses invoke_signed to create the account, which correctly signs the transaction using the program's authority.
+- The size of the account is determined by serializing the initial state of the Wallet struct. This could lead to issues if the `Wallet` struct is updated in the future without updating the size calculation accordingly.
+- The account needs to be rent exempt. Make sure that the account holds enough SOL to be rent exempt or it will be garbage collected.
+
+Function "deposit_amount":
+- Uses checked_add to prevent arithmetic overflows, mapping the error to a custom program error.
+
+Function "withdraw_amount":
+- The function uses direct subtraction `wallet.amount -= amount;` without any overflow/underflow checks. This can lead to underflow if the withdrawal amount is greater than the current wallet amount, resulting in a large value due to wrapping.
+
+Function "transfer_amount":
+- The function uses direct subtraction `src_wallet.amount -= amount;` without any overflow/underflow checks, similar to withdraw_amount. This can lead to underflow if the transfer amount is greater than the current source wallet amount.
+- Uses checked_add to prevent arithmetic overflows, mapping the error to a custom program error.

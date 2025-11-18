@@ -1,0 +1,89 @@
+Function "vault_program_id":
+- Hardcoded program ID.
+
+Function "process_instruction":
+- Dispatches instructions based on the `InstructionFormat` enum.
+
+Function "create_admin":
+- Checks if the `admin_payer` is a signer.
+- Checks if the admin account has already been initialized.
+- Uses `Pubkey::find_program_address` to derive the admin account PDA.
+- Creates the admin account using `invoke_signed` with the admin PDA as a signer.
+- Serializes the `Admin_Account` data into the created account.
+
+Function "update_admin":
+- Checks if the `admin_account_dao` is owned by the program.
+- Checks if the `admin_payer` is a signer.
+- Deserializes the `Admin_Account` data.
+- Uses `Pubkey::find_program_address` to derive the admin account PDA.
+- Updates the `admin_id` and `last_update` fields.
+- Serializes the updated `Admin_Account` data back into the account.
+
+Function "create_account":
+- Checks if the `user_payer` is a signer.
+- Checks if the user account has already been initialized.
+- Derives the user account PDA using `Pubkey::find_program_address`.
+- Creates the user account using `invoke_signed` with the user PDA as a signer.
+- Serializes the `User_Account` data into the created account.
+- Assigns 10 governance points to the new user account.
+
+Function "open_proposal":
+- Checks if the `user_account_dao` is owned by the program.
+- Checks if the `user_payer` is a signer.
+- Checks if the proposal account has already been initialized.
+- Derives the proposal account PDA using `Pubkey::find_program_address` with the proposal title.
+- Deserializes and reserializes `User_Account` to ensure it is a valid account.
+- Sets the proposal's `start_time` to the current timestamp and `end_time` to 1 hour later.
+- Creates the proposal account using `invoke_signed` with the proposal PDA as a signer.
+- Serializes the `Proposal` data into the created account.
+
+Function "vote_process":
+- Checks if the `user_account_dao` and `proposal_account` are owned by the program.
+- Checks if the `user_payer` is a signer.
+- Checks if the vote record account has already been initialized.
+- Derives the vote record PDA using `Pubkey::find_program_address`.
+- Deserializes the `Proposal` and `User_Account` data.
+- Validates that `User_Account` is valid.
+- Records the vote by increasing either `yes_votes` or `no_votes` based on `vote_answer`.
+- Checks if the proposal is open based on `start_time` and `end_time`.
+- Creates the vote record account using `invoke_signed` with the vote PDA as a signer.
+- Serializes the `Vote_Record` data into the created account.
+- Serializes changes to the proposal and user accounts.
+
+Function "manage_governance_points":
+- Checks if the `admin_account_dao` and `user_account_dao` are owned by the program.
+- Checks if the `admin_payer` is a signer.
+- Uses `Pubkey::find_program_address` to derive the admin account PDA.
+- Deserializes the `User_Account` data.
+- Validates that `User_Account` is valid.
+- Adds or subtracts `amount` from `amount_governance_points` based on the `instruction` flag.
+- Uses `checked_sub` to prevent underflow.
+- Serializes the updated `User_Account` data back into the account.
+
+Function "execute_instruction":
+- Checks if the `user_account_dao` is owned by the program.
+- Checks if the `user_payer` is a signer.
+- Checks if the `user_account_dao` has lamports.
+- Executes different logic based on the `variant_instr`.
+- Verifies the user account based on the `variant_instr`.
+- Checks the previous instruction.
+- CPI to a vault program using `invoke_signed`.
+
+Function "make_decision":
+- Checks if the `admin_account_dao` and `proposal_account` are owned by the program.
+- Checks if the `admin_payer` is a signer.
+- Uses `Pubkey::find_program_address` to derive the admin account PDA.
+- Deserializes the `Proposal` data.
+- Checks if the proposal has ended based on `end_time`.
+- Determines if the proposal passes based on `yes_votes` vs `no_votes`.
+- Sets the `executed` flag.
+- Serializes the updated `Proposal` data back into the account.
+
+Function "action_as_str":
+- Returns a string representation of the action based on the input `action` value.
+
+Function "send_create_vault_transaction":
+- Creates and sends a transaction to the vault program to create a vault.
+
+Function "send_instr_to_vault_transaction":
+- Creates and sends a transaction to the vault program to deposit or withdraw from a vault.

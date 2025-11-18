@@ -1,0 +1,60 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program ID changes or is deployed differently
+- Uses unwrap() which can panic if the string is invalid, should use proper error handling
+
+Function "action_as_str":
+- No apparent vulnerabilities, but match on u8 without bounds check could return "Unknown" for invalid values
+
+Function "send_create_vault_transaction":
+- Uses hardcoded seeds "vault" which might conflict if other programs use similar seeds
+- No validation that vault_program is the expected program
+- No checks on account ownership or types before CPI
+
+Function "send_instr_to_vault_transaction":
+- Similar to send_create_vault_transaction, lacks validation of accounts
+- Missing system program in accounts for certain vault operations that might require it
+
+Function "process_instruction":
+- No input validation on instruction data before unpacking
+- No access control checks at the entry point level
+
+Function "create_admin":
+- Uses create_program_address without verifying the derived address matches
+- No rent exemption check before creating account
+- Potential reinitialization attack if account already exists but has zero lamports
+
+Function "update_admin":
+- No authorization check to ensure the current admin is the one making the update
+- Allows any signer to change admin without verifying they are the current admin
+- No timestamp validation to prevent rapid admin changes
+
+Function "create_account":
+- Hardcoded initial governance points (10) without configurable mechanism
+- Uses user-provided bump seed without validation
+- No check to prevent duplicate user accounts
+
+Function "open_proposal":
+- Uses title as part of PDA seeds which could lead to collisions if titles are similar
+- Fixed 1-hour proposal duration without configurability
+- No maximum length checks on title and description strings
+
+Function "vote_process":
+- Arithmetic overflow risk in vote counting (yes_votes += amount, no_votes += amount)
+- No check to prevent double voting by the same user
+- No validation that user has sufficient governance points
+
+Function "manage_governance_points":
+- Arithmetic overflow/underflow risk in point management
+- No authorization check beyond admin signature - any admin can modify any user's points
+- No minimum balance check when subtracting points
+
+Function "execute_instruction":
+- Complex control flow with multiple variant paths increases attack surface
+- Uses instruction sysvar to check previous instruction, which can be manipulated
+- Inconsistent account validation across different instruction variants
+- No proper validation that vault_program is the expected program
+
+Function "make_decision":
+- No validation that proposal hasn't already been executed
+- Simple majority voting without quorum requirements
+- No mechanism to actually execute the proposal decision

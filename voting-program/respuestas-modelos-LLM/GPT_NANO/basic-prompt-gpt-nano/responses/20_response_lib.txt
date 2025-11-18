@@ -1,0 +1,83 @@
+Function "action_as_str":
+- Converts an action byte into a corresponding string description.
+
+Function "send_create_vault_transaction":
+- Creates and sends a transaction to instantiate a vault in another program.
+- Uses program-derived address (PDA) for authority.
+- Invokes a signed instruction through invoke_signed.
+
+Function "send_instr_to_vault_transaction":
+- Creates and sends an instruction to interact with a vault (deposit/withdraw).
+- Uses program-derived address (PDA) for authority.
+- Invokes a signed instruction through invoke_signed.
+
+Function "process_instruction":
+- Entry point for executing instructions, dispatches to specific functions based on instruction data.
+- Parses instruction data into InstructionFormat.
+- Calls the corresponding function for each instruction type.
+
+Function "create_admin":
+- Creates an admin PDA account if it doesn't exist.
+- Checks signatures and account ownership.
+- Stores admin info including last_update timestamp.
+- Uses System Program's create_account with invoke_signed.
+
+Function "update_admin":
+- Updates the admin PDA account with a new admin ID.
+- Verifies signatures, ownership, and admin privileges.
+- Serializes updated admin account data.
+
+Function "create_account":
+- Creates a user account PDA with initial governance points.
+- Checks for existing account, proper ownership, and signatures.
+- Uses System Program's create_account via invoke_signed.
+
+Function "open_proposal":
+- Creates a proposal PDA account containing proposal details.
+- Checks for existing account, signatures, and correct owner.
+- Stores proposal info and sets start and end times.
+- Uses create_account via invoke_signed.
+
+Function "vote_process":
+- Allows a user to vote on a proposal.
+- Checks account ownership, signatures, and that the vote record doesn't exist.
+- Loads proposal and user info.
+- Checks voting time constraints.
+- Updates votes based on vote answer.
+- Creates a vote record account via create_account.
+- Serializes updated data for vote record, proposal, and user.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from user account.
+- Checks for proper admin privileges.
+- Serializes updated user account data.
+
+Function "execute_instruction":
+- Executes different instructions related to vaults based on variant_instr.
+- Validates owner signatures and accounts.
+- Finds program addresses for admin or user accounts.
+- Calls functions to process specific instruction types.
+- Validates that the instruction is called in a valid sequence via instruction sysvar.
+- Calls send_create_vault_transaction or send_instr_to_vault_transaction accordingly.
+
+Function "make_decision":
+- Finalizes a proposal based on votes.
+- Checks admin privileges.
+- Validates timing to ensure proposal has ended.
+- Declares the result based on votes.
+- Marks proposal as executed.
+- Serializes the proposal.
+
+Potential risks and vulnerabilities:
+- Lack of explicit access control: Functions like manage_governance_points and update_admin rely on PDA checks and signature verification, but no additional role checks may be enforced.
+- Overflow/underflow risks: In manage_governance_points, checked_sub is used, but addition doesn't check for overflow, which could lead to vulnerabilities if not carefully managed.
+- Use of unwrap(): In vault_program_id(), unwrap() is used which could cause panic if string parsing fails.
+- Insufficient validation of input data: String parameters like title and description are directly used to create account PDAs without sanitization or length checks, risking large or malicious inputs.
+- Race condition potential in account creation: Accounts are checked for lamports > 0 before creation. Without atomicity, there could be race conditions allowing re-creation or reuse.
+- Reentrancy risk: Not explicitly high, but complex interactions with cross-program invocations could reveal reentrancy issues if other external programs interact unexpectedly.
+- No explicit limit on voting duration: Proposal voting window is fixed; long durations might be exploited or cause storage bloat.
+- Missing further validation on cross-program invocation success: The code expects invoke_signed to succeed, but any failure could be unchecked if not properly handled.
+- The code does not verify the content or authenticity of instruction sysvar data beyond basic checks, which could potentially lead to validation issues.
+- Use of raw account data without re-verification: Accounts are deserialized directly; if accounts are tampered with, the program may accept corrupt data.
+- No explicit upgradeability control: The code does not contain mechanisms for contract upgrade or access control beyond admin checks, potentially risking unauthorized changes.
+

@@ -1,0 +1,49 @@
+Function "vault_program_id":
+- Hardcoded program ID which is not ideal. This limits the program's flexibility and reusability.
+
+Function "action_as_str":
+- This function does not pose a security risk, it is just a helper function for printing out the type of action.
+
+Function "send_create_vault_transaction":
+- This function could be vulnerable if the `vault_bump` is not properly validated before being used in `invoke_signed`. A malicious actor could potentially derive the PDA with a different bump and cause unexpected behavior.
+- The `admin_account_dao` account is not read-only, but it is not modified in this function, only passed to another program.
+
+Function "send_instr_to_vault_transaction":
+- This function could be vulnerable if the `vault_bump` is not properly validated before being used in `invoke_signed`. A malicious actor could potentially derive the PDA with a different bump and cause unexpected behavior.
+
+Function "process_instruction":
+- This function acts as the main entry point, dispatching instructions to different handlers. There are no specific vulnerabilities in this function itself, but it relies on the security of the individual instruction handlers.
+
+Function "create_admin":
+- There is no check to prevent the same `admin_payer` from creating multiple admin accounts with different bumps.
+- It is important to validate that the account being created does not already exist to prevent potential issues. The check for `lamports > 0` is good, but can be circumvented if the account exists with 0 lamports. A more robust solution is to check if the account is already initialized with the correct program ID.
+
+Function "update_admin":
+- There is no timelock or multi-sig mechanism to prevent a compromised admin from immediately updating the admin to an attacker-controlled account.
+- The program checks if the current admin matches the payer, but doesn't verify if the `new_admin` is a valid address or meets any specific criteria.
+
+Function "create_account":
+- There is no check to prevent the same `user_payer` from creating multiple accounts with different bumps.
+- Assigns a fixed amount of governance points (10) upon account creation. This could be subject to abuse if account creation is permissionless and very cheap.
+- It is important to validate that the account being created does not already exist to prevent potential issues. The check for `lamports > 0` is good, but can be circumvented if the account exists with 0 lamports. A more robust solution is to check if the account is already initialized with the correct program ID.
+
+Function "open_proposal":
+- Proposal titles are used directly in PDA derivation. Ensure there are reasonable restrictions on the length and allowed characters of the title to prevent excessive storage usage or denial-of-service attacks by creating many unique proposals.
+- Proposal descriptions are not validated for size, potentially leading to excessive storage usage.
+
+Function "vote_process":
+- The voting power is directly tied to the `amount_governance_points` in the `User_Account`. This means that if a user gains more governance points, their previous votes are not updated automatically.
+- The proposal can be voted multiple times by the same user by providing different bumps.
+
+Function "manage_governance_points":
+- This function relies on the `instruction` boolean parameter to determine whether to add or subtract governance points. This is prone to errors if the caller provides the wrong value. Using an enum for the instruction type (add or subtract) would be more robust.
+- No limit on how many governance points can be added or subtracted, which could lead to potential abuse or unintended consequences.
+
+Function "execute_instruction":
+- The logic for checking admin privileges in the match statement (cases 0 and 2) duplicates code. This can be refactored into a single function to reduce redundancy and potential errors.
+- There are checks related to the admin account PDA for variant instructions 0 and 2, but not for variant instruction 1.
+- Inside the `match variant_instr`, the `admin` and `user` accounts are serialized even if the validation fails (e.g., "User with no admin privileges"). This is unnecessary and wastes compute units.
+
+Function "make_decision":
+- Relies on `clock.unix_timestamp` for determining whether a proposal has ended. This is susceptible to manipulation if the clock is not reliable. Consider using a more robust time source or a fixed block height.
+- The function only sets `proposal.executed = true;`. There is no mechanism to actually execute the logic related to the proposal's decision. This needs to be implemented separately.

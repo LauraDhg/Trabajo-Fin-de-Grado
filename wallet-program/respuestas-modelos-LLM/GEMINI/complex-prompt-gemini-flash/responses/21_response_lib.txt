@@ -1,0 +1,30 @@
+Function "process_instruction":
+- It uses `InstructionFormat::unpack` which could lead to a denial of service if the instruction format is incorrect, making the program unable to process any further instructions.
+
+Function "initialize_wallet_account":
+- It checks if the provided `system_program` account is the actual system program.
+- It verifies that the `user_account` is a signer.
+- It uses `find_program_address` to derive the PDA and validates that the `wallet_account` matches the derived PDA.
+- It creates a new account using `invoke_signed` with the PDA as the signer, preventing unauthorized account creation.
+- It initializes the `Wallet` struct with `initialized: true`.
+- The account size is determined dynamically based on `wallet.try_to_vec()?.len()`.
+- It checks for rent exemption using `Rent::get()` and `rent.minimum_balance()`.
+
+Function "deposit_amount":
+- It checks if the `wallet_account` owner is the `program_id`.
+- It verifies that the `user_account` is a signer.
+- It uses `find_program_address` to derive the PDA and validates that the `wallet_account` matches the derived PDA.
+- It uses `checked_add` to prevent integer overflows.
+
+Function "withdraw_amount":
+- It checks if the `wallet_account` owner is the `program_id`.
+- It verifies that the `user_account` is a signer.
+- It uses `find_program_address` to derive the PDA and validates that the `wallet_account` matches the derived PDA.
+- It directly subtracts the amount using `-` without checking for underflow. This could lead to the wallet having a very large amount if the subtraction results in a negative value.
+
+Function "transfer_amount":
+- It checks if the `src_wallet_account` and `dest_wallet_account` owners are the `program_id`.
+- It verifies that the `user_account` is a signer.
+- It uses `find_program_address` to derive the PDAs for both source and destination wallets and validates that the provided accounts match.
+- It uses `checked_add` when crediting the destination wallet to prevent overflows.
+- It directly subtracts the amount from the source wallet using `-` without checking for underflow. This could lead to the wallet having a very large amount if the subtraction results in a negative value.

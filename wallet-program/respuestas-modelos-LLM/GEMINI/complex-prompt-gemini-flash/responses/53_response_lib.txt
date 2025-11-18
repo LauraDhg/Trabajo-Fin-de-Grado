@@ -1,0 +1,37 @@
+Function "process_instruction":
+- This function acts as the main dispatcher, calling different functions based on the instruction.
+- It deserializes the instruction data. Incorrect instruction data could lead to unexpected behavior.
+
+Function "initialize_wallet_account":
+- Checks if the provided `wallet_account` matches the PDA.
+- Checks if the wallet account has already been initialized (lamports > 0).
+- Creates a new account using `invoke_signed`, transferring rent to it.
+- Serializes the initial `Wallet` state into the newly created account.
+- It does not check if the user_account is a signer.
+- The `try_into().unwrap()` operation could panic if `wallet_len` is too large to fit into a `u32`.
+- The system program account is not checked to be the actual system program.
+
+Function "deposit_amount":
+- Checks if the provided `wallet_account` matches the PDA.
+- Deserializes the `Wallet` state.
+- Checks if the wallet is initialized.
+- Adds the provided `amount` to the wallet's `amount`.
+- Serializes the updated `Wallet` state.
+- Does not perform overflow checks when adding the amount, which may lead to unexpected behavior.
+
+Function "withdraw_amount":
+- Checks if the provided `wallet_account` matches the PDA.
+- Deserializes the `Wallet` state.
+- Checks if the wallet is initialized.
+- Subtracts the provided `amount` from the wallet's `amount`.
+- Serializes the updated `Wallet` state.
+- Does not perform underflow checks when subtracting the amount, which may lead to unexpected behavior.
+
+Function "transfer_amount":
+- Checks if the provided `src_wallet_account` and `dest_wallet_account` match their respective PDAs.
+- Deserializes both the source and destination `Wallet` states.
+- Checks if both wallets are initialized.
+- Adds the provided `amount` to the destination wallet's `amount` and subtracts it from the source wallet's `amount`.
+- Serializes the updated `Wallet` states for both accounts.
+- Does not perform overflow/underflow checks, leading to potential vulnerabilities.
+- It does not check if the user_account is a signer for the src_wallet.

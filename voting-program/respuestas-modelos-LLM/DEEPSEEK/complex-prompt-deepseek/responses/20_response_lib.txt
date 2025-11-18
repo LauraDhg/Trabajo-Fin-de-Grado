@@ -1,0 +1,64 @@
+Function "vault_program_id":
+- Hardcoded program ID may be insecure if the vault program changes
+- No validation of the derived Pubkey
+
+Function "action_as_str":
+- No security vulnerabilities identified
+
+Function "send_create_vault_transaction":
+- Missing validation of account ownerships
+- No checks for signer permissions on all required accounts
+- Potential reentrancy risk with external program call
+
+Function "send_instr_to_vault_transaction":
+- Missing validation of account ownerships
+- No checks for signer permissions on all required accounts
+- Potential reentrancy risk with external program call
+
+Function "process_instruction":
+- No input validation on instruction_data before unpacking
+- No access control checks at entry point
+
+Function "create_admin":
+- Uses deprecated try_from_slice_unchecked pattern (should use try_from_slice)
+- Missing rent exemption check after account creation
+- No validation that system_program is actually the system program
+
+Function "update_admin":
+- Missing rent exemption check
+- No validation of account data size before deserialization
+- Potential state inconsistency if serialization fails
+
+Function "create_account":
+- Hardcoded initial governance points (10) without validation
+- Missing rent exemption check after account creation
+- No validation that system_program is actually the system program
+
+Function "open_proposal":
+- Fixed 1-hour duration may not be appropriate for all use cases
+- Missing rent exemption check after account creation
+- No validation that system_program is actually the system program
+- Title used in PDA derivation without length validation
+
+Function "vote_process":
+- Arithmetic overflow risk in vote counting (yes_votes +=, no_votes +=)
+- Missing rent exemption check after account creation
+- No validation that system_program is actually the system program
+- Reentrancy risk with multiple votes from same user
+
+Function "manage_governance_points":
+- Arithmetic overflow/underflow risk in point management
+- No upper bound validation on governance points
+- Admin can arbitrarily modify any user's points without restrictions
+
+Function "execute_instruction":
+- Uses deprecated sysvar instruction loading methods
+- Missing validation of vault_account ownership
+- No proper cross-program invocation security checks
+- Potential reentrancy with external vault program calls
+
+Function "make_decision":
+- Time comparison may have precision issues with i64 timestamps
+- No validation of proposal state before execution
+- Admin can execute decisions multiple times (no check on proposal.executed)
+- Missing validation that clock_sysvar is actually the clock sysvar

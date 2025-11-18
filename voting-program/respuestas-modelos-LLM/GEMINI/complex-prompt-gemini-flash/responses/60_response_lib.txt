@@ -1,0 +1,80 @@
+Function "vault_program_id":
+- Hardcoded program ID, which should be configurable or dynamically derived.
+
+Function "send_create_vault_transaction":
+- Uses `invoke_signed` with seeds. Ensure the `vault_seeds` are derived and used consistently across the program to prevent signature mismatches.
+
+Function "send_instr_to_vault_transaction":
+- Uses `invoke_signed` with seeds. Ensure the `vault_seeds` are derived and used consistently across the program to prevent signature mismatches.
+
+Function "process_instruction":
+- Dispatches instructions based on the `InstructionFormat` enum. Ensure the unpacking logic in `InstructionFormat::unpack` is robust and handles invalid data gracefully to prevent unexpected behavior.
+
+Function "create_admin":
+- Checks if `admin_payer` is a signer.
+- Checks if the `admin_account_dao` account is already initialized.
+- Derives a program address (PDA) for the admin account using `Pubkey::create_program_address`.
+- Creates the admin account using `invoke_signed` with the derived PDA as a signer seed.
+- Serializes the `Admin_Account` struct into the account data.
+
+Function "update_admin":
+- Checks if `admin_account_dao` owner is the program id.
+- Checks if `admin_payer` is a signer.
+- Deserializes the `Admin_Account` from the account data.
+- Derives a program address (PDA) for the admin account using `Pubkey::create_program_address`.
+- Checks if the admin's id matches the `admin_payer`.
+- Updates the admin's id and last update timestamp.
+- Serializes the updated `Admin_Account` back into the account data.
+
+Function "create_account":
+- Checks if `user_payer` is a signer.
+- Checks if `user_account_dao` is already initialized.
+- Derives a program address (PDA) for the user account using `Pubkey::create_program_address`.
+- Creates the user account using `invoke_signed` with the derived PDA as a signer seed.
+- Serializes the `User_Account` struct into the account data, initializing it with 10 governance points.
+
+Function "open_proposal":
+- Checks if `user_account_dao` owner is the program id.
+- Checks if `user_payer` is a signer.
+- Checks if `proposal_account` is already initialized.
+- Derives a program address (PDA) for the proposal account using `Pubkey::create_program_address`.
+- Creates the proposal account using `invoke_signed` with the derived PDA as a signer seed.
+- Serializes the `Proposal` struct into the account data.
+
+Function "vote_process":
+- Checks if `user_account_dao` and `proposal_account` owners are the program id.
+- Checks if `user_payer` is a signer.
+- Checks if `vote_record_account` is already initialized.
+- Derives a program address (PDA) for the vote record account using `Pubkey::create_program_address`.
+- Deserializes the `Proposal` and `User_Account` structs from their respective account data.
+- Creates the vote record account using `invoke_signed` with the derived PDA as a signer seed.
+- Updates the yes/no votes count based on `vote_answer` and the user's governance points.
+- Serializes the `Vote_Record`, `Proposal`, and `User_Account` structs back into their respective account data.
+
+Function "manage_governance_points":
+- Checks if `admin_account_dao` and `user_account_dao` owners are the program id.
+- Checks if `admin_payer` is a signer.
+- Derives a program address (PDA) for the admin account using `Pubkey::create_program_address`.
+- Deserializes the `Admin_Account` and `User_Account` structs from their respective account data.
+- Checks if the admin's id matches the `admin_payer`.
+- Adds/subtracts governance points from the user account based on the `instruction` boolean.
+- Serializes the updated `User_Account` struct back into the account data.
+- Serializes the `Admin_Account` struct back into the account data.
+
+Function "execute_instruction":
+- Checks if `user_account_dao` owner is the program id.
+- Checks if `user_payer` is a signer.
+- Validation based on `variant_instr` with admin and user PDAs.
+- Reads the instruction sysvar to potentially confirm the previous instruction was from the vault program.
+- Calls either `send_create_vault_transaction` or `send_instr_to_vault_transaction` based on `variant_instr`.
+
+Function "make_decision":
+- Checks if `admin_account_dao` and `proposal_account` owners are the program id.
+- Checks if `admin_payer` is a signer.
+- Derives a program address (PDA) for the admin account using `Pubkey::create_program_address`.
+- Deserializes the `Admin_Account` and `Proposal` structs from their respective account data.
+- Checks if the admin's id matches the `admin_payer`.
+- Determines the outcome of the proposal based on yes/no votes.
+- Sets the `executed` flag in the `Proposal` struct.
+- Serializes the updated `Proposal` struct back into the account data.
+- Serializes the `Admin_Account` struct back into the account data.

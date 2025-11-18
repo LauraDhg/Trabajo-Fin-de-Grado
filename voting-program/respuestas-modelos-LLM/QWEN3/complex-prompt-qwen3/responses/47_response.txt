@@ -1,0 +1,67 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey, which could be a security risk if the Vault program address ever changes or is incorrectly set; consider making it configurable or verifying it against a known valid address.
+
+Function "action_as_str":
+- Pure utility function with no security implications; safely maps instruction variants to string labels.
+
+Function "send_create_vault_transaction":
+- Constructs a CPI (Cross-Program Invocation) to an external vault program without validating that `vault_program.key` matches the expected `vault_program_id()`; this allows potential redirection of CPI to a malicious program.
+- Uses `invoke_signed` with signer seeds but does not verify that the `vault_account` is derived correctly from the expected PDA using `vault_bump`.
+- Does not validate that `system_program` is the actual system program, which could lead to CPI failure or exploitation if a fake system program is passed.
+
+Function "send_instr_to_vault_transaction":
+- Similar to `send_create_vault_transaction`, it performs a CPI without validating that `vault_program.key` matches the expected `vault_program_id()`.
+- Does not validate the correctness of the `vault_account` PDA or the authenticity of the `vault_program`.
+- Accepts arbitrary `variant_instr` and `amount`, relying only on upstream validation; should include additional sanity checks.
+
+Function "process_instruction":
+- Dispatches instructions based on unpacked data; uses `InstructionFormat::unpack` which should handle deserialization safely, but no explicit input validation is shown in this function.
+- Relies entirely on downstream functions for security checks; no centralized authorization or validation.
+
+Function "create_admin":
+- Correctly checks that `admin_payer` is a signer and initializes a PDA-based admin account securely.
+- Validates that the provided `admin_account_dao` matches the expected PDA, preventing arbitrary account initialization.
+- Uses `invoke_signed` with correct seeds and enforces rent exemption; however, it does not check whether the admin account is already initialized before creating it (though it checks lamports, which is a proxy but not foolproof).
+- Potential race condition if multiple transactions attempt to create the admin account simultaneously; should include explicit state initialization flag.
+
+Function "update_admin":
+- Allows only the current admin to update the admin key, but does not enforce multi-sig or delay, making it susceptible to immediate takeover if admin key is compromised.
+- Does not validate that `new_admin` is a valid Pubkey or non-zero; could allow setting an invalid admin.
+- Correctly uses PDA verification and clock for timestamping.
+
+Function "create_account":
+- Securely creates a user PDA account with signer check and lamports check.
+- Initializes governance points to a fixed value (10), which may be arbitrary but is not a vulnerability.
+- Correctly uses `invoke_signed` with proper seeds; ensures account ownership and rent exemption.
+
+Function "open_proposal":
+- Allows any user with a DAO account to create a proposal; no spam protection or cost associated, which could lead to denial-of-service via proposal flooding.
+- Uses title bytes in PDA derivation, which may cause collisions if titles are not unique; consider using a counter or hash instead.
+- Hardcodes proposal duration to 1 hour; not configurable, which may be inflexible but not a security issue.
+- Properly validates PDA, signer, and ownership.
+
+Function "vote_process":
+- Checks that voting occurs before `end_time` using clock; prevents late voting.
+- Does not prevent double voting because it creates a new vote record account each time; relies on client to avoid duplicate accounts — this is a critical vulnerability.
+- No check to ensure that the voter has not already voted; allows multiple votes by creating different vote record accounts.
+- Uses PDA for vote record, but attacker could precompute and spoof if not enforced strictly.
+- Updates proposal votes and serializes changes correctly.
+
+Function "manage_governance_points":
+- Allows admin to add or subtract governance points; subtract operation uses `checked_sub` to prevent underflow (good practice).
+- No access control beyond signer and PDA check; admin can arbitrarily manipulate user balances, which may be intended but should be clearly documented.
+- Does not emit events or log changes, reducing auditability.
+
+Function "execute_instruction":
+- Performs CPI to vault program based on `variant_instr`, but only validates caller PDA depending on instruction type (admin for 0 and 2, user for 1).
+- For `variant_instr == 0`, incorrectly checks `user_account_dao.key` against admin PDA, but `user_account_dao` should be admin account — naming is misleading and could cause confusion.
+- Relies on instruction ordering via `instructions sysvar` to confirm previous Vault program call, but this is easily spoofed or bypassed; sysvar-based confirmation is not secure and is deprecated/abusable.
+- Does not validate that `vault_program.key` equals `vault_program_id()` before CPI — critical vulnerability allowing CPI to malicious program.
+- Accepts `vault_bump` from user input without verifying it matches the actual bump from `find_program_address` — allows invalid seeds in `invoke_signed`.
+- Uses `program_id.clone()` as `id_pubkey`, which may not be the correct identifier expected by the vault program.
+
+Function "make_decision":
+- Allows execution of proposal decisions only after `end_time`, preventing early execution.
+- Does not verify that decision is being made by the admin or a quorum; only checks that caller is admin — acceptable if intentional.
+- Sets `executed = true` but does not prevent re-execution of the same proposal; no check if already executed — allows replay attacks.
+- No additional actions are taken upon approval (e.g., executing actual instructions), so likely relies on external logic.

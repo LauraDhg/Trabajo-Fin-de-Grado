@@ -1,0 +1,100 @@
+Function "vault_program_id":
+- Returns a hardcoded `Pubkey`.
+
+Function "action_as_str":
+- Takes a `u8` representing an action.
+- Returns a string slice representing the action (e.g., "Create", "Deposit", "Withdraw").
+- Returns "Unknown" if the input `u8` doesn't match any known action.
+
+Function "send_create_vault_transaction":
+- Sends a cross-program invocation (CPI) to the "vault_program".
+- The CPI creates a vault account.
+- Includes the `variant_instr`, `id_pubkey`, and `vault_bump` in the instruction data.
+- Signs the CPI with the `vault_seeds`.
+
+Function "send_instr_to_vault_transaction":
+- Sends a cross-program invocation (CPI) to the "vault_program".
+- The CPI deposits or withdraws from a vault account.
+- Includes the `variant_instr`, `amount`, and `id_pubkey` in the instruction data.
+- Signs the CPI with the `vault_seeds`.
+
+Function "process_instruction":
+- Deserializes the instruction data into an `InstructionFormat` enum.
+- Matches on the `InstructionFormat` to call the appropriate handler function.
+- Dispatches to functions like `create_admin`, `update_admin`, `create_account`, `open_proposal`, `vote_process`, `manage_governance_points`, `execute_instruction`, and `make_decision`.
+
+Function "create_admin":
+- Creates an admin account.
+- Checks that the `admin_payer` is a signer.
+- Checks that the admin account has not been initialized.
+- Derives the admin account PDA using `Pubkey::find_program_address`.
+- Creates the admin account using `system_instruction::create_account`.
+- Serializes an `Admin_Account` struct into the admin account.
+
+Function "update_admin":
+- Updates the admin account with a new admin `Pubkey`.
+- Checks that the `admin_account_dao` is owned by the program.
+- Checks that the `admin_payer` is a signer.
+- Deserializes the `Admin_Account` from the account data.
+- Derives the admin account PDA and validates it.
+- Updates the `admin_id` field in the `Admin_Account` struct.
+- Serializes the updated `Admin_Account` back into the account data.
+
+Function "create_account":
+- Creates a user account.
+- Checks that the `user_payer` is a signer.
+- Checks that the user account has not been initialized.
+- Derives the user account PDA using `Pubkey::find_program_address`.
+- Creates the user account using `system_instruction::create_account`.
+- Serializes a `User_Account` struct into the user account.
+- Initializes the `amount_governance_points` to 10.
+
+Function "open_proposal":
+- Creates a proposal account.
+- Checks that the `user_account_dao` is owned by the program.
+- Checks that the `user_payer` is a signer.
+- Checks that the proposal account has not been initialized.
+- Derives the proposal account PDA using `Pubkey::find_program_address`.
+- Creates the proposal account using `system_instruction::create_account`.
+- Serializes a `Proposal` struct into the proposal account.
+- Sets the `start_time` and `end_time` for the proposal.
+
+Function "vote_process":
+- Processes a user's vote on a proposal.
+- Checks that the `user_account_dao` and `proposal_account` are owned by the program.
+- Checks that the `user_payer` is a signer.
+- Checks that the vote record account has not been initialized.
+- Derives the vote record account PDA using `Pubkey::find_program_address`.
+- Deserializes the `Proposal` and `User_Account` from their respective account data.
+- Creates a `Vote_Record` struct and serializes it into the `vote_record_account`.
+- Updates the `yes_votes` or `no_votes` field in the `Proposal` based on the `vote_answer`.
+- Checks if the proposal is still open based on the current time and the proposal's `end_time`.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user account.
+- Checks that the `admin_account_dao` and `user_account_dao` are owned by the program.
+- Checks that the `admin_payer` is a signer.
+- Derives the admin account PDA and validates it.
+- Deserializes the `User_Account` from the account data.
+- Updates the `amount_governance_points` field in the `User_Account` struct.
+- Serializes the updated `User_Account` back into the account data.
+
+Function "execute_instruction":
+- Executes an instruction by calling another program (vault program).
+- Checks that the `user_account_dao` is owned by the program.
+- Checks that the `user_payer` is a signer.
+- Checks that `user_account_dao` contains lamports
+- Uses a `match` statement to handle different instruction variants (create, deposit, withdraw).
+- Loads the previous instruction using `load_instruction_at` to check if it was a confirmation from the vault program.
+- Calls `send_create_vault_transaction` or `send_instr_to_vault_transaction` based on the instruction variant.
+
+Function "make_decision":
+- Finalizes a proposal based on the votes.
+- Checks that the `admin_account_dao` and `proposal_account` are owned by the program.
+- Checks that the `admin_payer` is a signer.
+- Derives the admin account PDA and validates it.
+- Deserializes the `Proposal` from the account data.
+- Checks if the proposal is still active based on the current time and the proposal's `end_time`.
+- Determines if the proposal is approved based on the `yes_votes` and `no_votes`.
+- Sets the `executed` field in the `Proposal` to `true`.
+- Serializes the updated `Proposal` back into the account data.

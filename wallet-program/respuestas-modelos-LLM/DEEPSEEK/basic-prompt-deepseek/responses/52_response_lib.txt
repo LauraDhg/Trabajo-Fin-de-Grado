@@ -1,0 +1,48 @@
+Function "process_instruction":
+- Unpacks instruction data using InstructionFormat::unpack
+- Routes to appropriate handler function based on instruction type
+- Handles CreateAccount, IncreaseAmount, WithdrawAmount, and TransferAmount instructions
+
+Function "initialize_wallet_account":
+- Creates a PDA wallet account using find_program_address with "wallet" prefix and user key
+- Checks if account already has lamports and returns error if initialized
+- Calculates required rent for wallet account
+- Uses invoke_signed to create account with proper program-derived address seeds
+- Serializes initial wallet state with amount=0 and initialized=true
+- Missing validation that wallet_account matches the derived PDA address
+- Missing validation that user_account is signer
+- Missing validation that system_program is actually the system program
+
+Function "deposit_amount":
+- Unpacks wallet data from account storage
+- Validates that wallet is initialized
+- Increases wallet amount by specified value
+- Serializes updated wallet state back to account
+- Missing validation that user_account owns/controls the wallet
+- Missing validation that user_account is signer
+- No access control - anyone can deposit to any wallet
+- No transfer of actual tokens/lamports - only updates internal state
+
+Function "withdraw_amount":
+- Unpacks wallet data from account storage
+- Validates that wallet is initialized
+- Checks for sufficient balance before withdrawal
+- Uses checked_sub to prevent arithmetic overflow
+- Serializes updated wallet state
+- Missing validation that user_account owns/controls the wallet
+- Missing validation that user_account is signer
+- No actual transfer of funds/lamports out of account
+- No PDA verification for wallet account ownership
+
+Function "transfer_amount":
+- Unpacks both source and destination wallet data
+- Validates both wallets are initialized
+- Updates both wallet amounts (adds to destination, subtracts from source)
+- Checks for sufficient balance in source wallet
+- Uses checked_sub to prevent arithmetic overflow
+- Serializes both updated wallet states
+- Missing validation that user_account owns source wallet
+- Missing validation that user_account is signer
+- Missing validation of destination wallet PDA derivation
+- No actual transfer of funds between accounts
+- No cross-program invocation for actual value transfer

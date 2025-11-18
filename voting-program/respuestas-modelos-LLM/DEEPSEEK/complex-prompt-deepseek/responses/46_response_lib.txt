@@ -1,0 +1,63 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program ID changes or is incorrect
+
+Function "create_admin":
+- Does not validate that the provided bump seed is correct for the PDA
+- Uses `try_from_slice_unchecked` which could lead to deserialization issues
+- Missing proper access control checks beyond signature verification
+
+Function "update_admin":
+- Allows any signer to update admin without verifying they are the current admin
+- Missing authorization check to ensure only current admin can update
+- Uses unchecked deserialization which could be vulnerable to malformed data
+
+Function "create_account":
+- Hardcodes initial governance points (10) without configurable mechanism
+- Uses `try_from_slice_unchecked` for deserialization
+- Missing validation that user account doesn't already exist beyond lamports check
+
+Function "open_proposal":
+- Fixed 1-hour proposal duration may not be suitable for all use cases
+- Uses title bytes directly in PDA derivation without length validation
+- Potential for PDA collisions with similar titles
+- No maximum length validation for title and description
+
+Function "vote_process":
+- Arithmetic operations on vote counts could overflow if not properly checked
+- Users can vote multiple times by creating different vote record accounts
+- No check to prevent duplicate voting by same user
+- Uses unchecked addition which could overflow
+
+Function "manage_governance_points":
+- Admin can arbitrarily modify any user's governance points without restrictions
+- No validation that amount is reasonable or within bounds
+- Missing access control beyond admin signature
+- Potential arithmetic underflow in subtraction operation
+
+Function "execute_instruction":
+- Relies on previous instruction check which could be manipulated
+- Instruction sysvar usage may be vulnerable to instruction injection
+- Missing proper validation of vault program interactions
+- Uses hardcoded program ID comparison which could be spoofed
+
+Function "make_decision":
+- Only checks if current time > end_time, missing validation that voting period has actually ended
+- Binary decision making without threshold configuration
+- No mechanism for proposal execution beyond status update
+- Missing validation that proposal hasn't already been decided
+
+Function "send_create_vault_transaction":
+- Hardcoded seeds ("vault") may conflict with other programs
+- Missing validation of vault program ID and account structures
+- No verification that the created vault matches expected format
+
+Function "send_instr_to_vault_transaction":
+- Missing validation of vault program instructions and parameters
+- No error handling for vault program specific errors
+- Potential for reentrancy or unexpected vault behavior
+
+Function "action_as_str":
+- No security vulnerabilities identified (utility function only)
+
+Function "process_instruction":
+- No security vulnerabilities identified (entry point dispatcher)

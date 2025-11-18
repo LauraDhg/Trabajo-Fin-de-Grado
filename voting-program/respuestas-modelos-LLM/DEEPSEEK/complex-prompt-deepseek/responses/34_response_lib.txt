@@ -1,0 +1,62 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program ID changes or is incorrect
+- No validation that the provided string is a valid Pubkey
+
+Function "action_as_str":
+- No security vulnerabilities identified in this helper function
+
+Function "send_create_vault_transaction":
+- Uses hardcoded seeds "vault" which could conflict with other programs
+- No validation that vault_program is actually the expected vault program
+- Missing proper account validation for all passed accounts
+
+Function "send_instr_to_vault_transaction":
+- Missing system program account in CPI call for deposit/withdraw operations
+- No validation that vault_program is actually the expected vault program
+- Uses hardcoded seeds "vault" which could conflict with other programs
+
+Function "process_instruction":
+- No security vulnerabilities identified in this entry point router
+
+Function "create_admin":
+- Uses create_account instead of create_account_with_seed for PDA creation
+- Missing proper rent exemption validation
+- No validation that system_program is actually the system program
+
+Function "update_admin":
+- No reinitialization protection after account data modification
+- Missing proper access control beyond admin ID check
+- No validation that the new_admin is a valid pubkey
+
+Function "create_account":
+- Hardcodes initial governance points (10) without configurable mechanism
+- Uses create_account instead of create_account_with_seed for PDA creation
+- No validation that system_program is actually the system program
+
+Function "open_proposal":
+- Fixed 1-hour voting period may not be suitable for all use cases
+- Proposal title used in PDA derivation could cause collisions with long titles
+- No validation that system_program is actually the system program
+- Uses create_account instead of create_account_with_seed for PDA creation
+
+Function "vote_process":
+- No prevention of double voting (only checks if vote record account exists)
+- Missing validation that user hasn't already voted on this proposal
+- Uses create_account instead of create_account_with_seed for PDA creation
+- No validation that system_program is actually the system program
+
+Function "manage_governance_points":
+- Subtraction operation (instruction=false) doesn't use checked_sub, risking underflow
+- No validation that amount is reasonable or within bounds
+- Admin can arbitrarily modify any user's governance points without restrictions
+
+Function "execute_instruction":
+- Instruction sysvar usage for checking previous instruction may be unreliable
+- Missing proper validation of vault_program account
+- Complex branching logic with multiple security checks that could be bypassed
+- Uses instruction sysvar in a way that might not be secure for cross-program invocation validation
+
+Function "make_decision":
+- Only checks if current time > end_time, but doesn't validate proposal hasn't already been executed
+- No mechanism to prevent repeated execution of the same proposal
+- Simple majority voting without quorum requirements or other governance mechanisms

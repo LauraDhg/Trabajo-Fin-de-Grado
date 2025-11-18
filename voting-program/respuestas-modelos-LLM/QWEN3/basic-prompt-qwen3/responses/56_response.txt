@@ -1,0 +1,84 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey derived from the string "6dVLkpmd5BvVQF7oXpipnQFtKwba2uQkMMwzHnaqf8Gr".
+- This function does not validate or parameterize the program ID, making it a potential risk if the Vault program changes or is upgraded.
+
+Function "action_as_str":
+- Maps instruction variant codes (0, 1, 2) to human-readable strings ("Create", "Deposit", "Withdraw").
+- Returns "Unknown" for any other value, which may hide invalid or malicious instruction types during logging.
+
+Function "send_create_vault_transaction":
+- Constructs and sends a cross-program invocation (CPI) to the Vault program to create a vault.
+- Uses a PDA derived with seed "vault" and a bump, signed via invoke_signed.
+- The instruction data includes variant, ID pubkey, and bump.
+- Does not validate that the vault account is owned by the Vault program before CPI, risking unintended behavior.
+- The account list in CPI includes system_program as readonly, but it's passed as mutable in arguments.
+
+Function "send_instr_to_vault_transaction":
+- Sends CPI to Vault program for deposit or withdraw actions.
+- Includes amount and ID in instruction data.
+- Uses same PDA signing logic as create_vault.
+- Lacks validation that vault_account is owned by the Vault program, which could lead to CPI to incorrect program.
+
+Function "process_instruction":
+- Entrypoint function that unpacks instruction data into an InstructionFormat enum.
+- Routes execution to appropriate handler functions based on instruction type.
+- Relies on InstructionFormat::unpack to parse data, which must be trusted and safe.
+- No default case or error handling for unknown instructions — handled by match exhaustion.
+
+Function "create_admin":
+- Initializes a new Admin_Account PDA with payer as admin and current timestamp.
+- Validates signer, checks for uninitialized account, and derives PDA using "admin" seed and bump.
+- Uses system_instruction::create_account with invoke_signed to allocate space and pay rent.
+- Serializes Admin_Account data after creation.
+- Potential risk: does not validate that system_program is the actual System Program.
+
+Function "update_admin":
+- Allows updating the admin ID and timestamp in Admin_Account.
+- Validates ownership, signer, and correct PDA derivation.
+- Deserializes, modifies, and reserializes account data.
+- No time-based or permission escalation guard — any valid signer can transfer admin rights.
+
+Function "create_account":
+- Creates a User_Account PDA with 10 governance points.
+- Uses "userAccount" + user pubkey + bump as seed.
+- Allocates and initializes account via CPI to System Program.
+- Hardcodes 10 governance points — no flexibility or validation on initial value.
+- No check that user isn't already registered.
+
+Function "open_proposal":
+- Creates a Proposal account with title, description, and 1-hour voting window.
+- Derives PDA using "proposal" + title bytes + bump.
+- Starts timer from current clock timestamp.
+- No validation on title or description length — could lead to large accounts or DoS.
+- Uses title bytes directly in PDA — case sensitivity or encoding differences could allow duplicate proposals.
+
+Function "vote_process":
+- Allows a user to vote on a proposal using their governance points.
+- Creates a Vote_Record PDA to prevent double voting.
+- Checks that voting period is still active using clock.
+- Updates proposal yes/no vote counts based on user's total governance points.
+- Uses checked_add to prevent overflow, returning custom error if overflow occurs.
+- Deserializes and reserializes user, proposal, and vote accounts.
+- Risk: user can vote with full balance even if they later lose points — no snapshot mechanism.
+
+Function "manage_governance_points":
+- Allows admin to add or subtract governance points from a user.
+- Add uses checked_add; subtract uses direct subtraction without underflow check (risk of panic or incorrect behavior).
+- No event logging or limits on amount — could be abused.
+- Critical vulnerability: subtraction can underflow if amount > user.points, causing panic or wrapping (unchecked).
+
+Function "execute_instruction":
+- Executes CPI to Vault program based on variant (create, deposit, withdraw).
+- Validates user is signer and owns a DAO account.
+- Uses instruction sysvar to check previous CPI was from Vault program (security check).
+- However, this check is weak: it only verifies program_id, not instruction data or outcome.
+- Variant 0 and 2 incorrectly use user_bump with "admin" PDA seed — likely bug (should use admin_bump).
+- id_pubkey is set to program_id, but passed to Vault — unclear if this is intended.
+- No validation that vault_account is a valid PDA of Vault program.
+- Risk: CPI can be forged if seeds or accounts are miscalculated.
+
+Function "make_decision":
+- Allows admin to finalize a proposal after voting period ends.
+- Sets executed = true and logs outcome based on vote comparison.
+- Does not enforce that proposal hasn't already been executed — could be replayed.
+- No actions taken based on outcome (e.g., triggering a DAO action) — currently only marks as executed.

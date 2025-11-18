@@ -1,0 +1,90 @@
+Function "vault_program_id":
+- Returns a hardcoded `Pubkey`.
+
+Function "process_instruction":
+- Unpacks the instruction data into an `InstructionFormat` enum.
+- Matches on the enum and calls the corresponding function.
+- Dispatches instructions based on the `InstructionFormat`.
+
+Function "create_admin":
+- Creates an admin account.
+- Checks if the admin payer is a signer.
+- Checks if the admin account has already been initialized.
+- Derives a program address (PDA) for the admin account using `Pubkey::create_program_address`.
+- Validates that the derived PDA matches the admin account's key.
+- Creates an `Admin_Account` struct with the admin's `Pubkey` and the current timestamp.
+- Serializes the account data and writes it to the admin account.
+- Uses `invoke_signed` to call the system program to create the account.
+
+Function "update_admin":
+- Updates the admin account with a new admin `Pubkey`.
+- Checks if the admin account's owner is the program.
+- Checks if the admin payer is a signer.
+- Deserializes the `Admin_Account` from the account data.
+- Derives a PDA for the admin account and validates that it matches the admin account's key.
+- Updates the `admin_id` field in the `Admin_Account` struct.
+- Serializes the updated account data back into the admin account.
+
+Function "create_account":
+- Creates a user account.
+- Checks if the user payer is a signer.
+- Checks if the user account has already been initialized.
+- Derives a PDA for the user account using `Pubkey::create_program_address`.
+- Validates that the derived PDA matches the user account's key.
+- Creates a `User_Account` struct with the user's `Pubkey` and an initial amount of governance points.
+- Serializes the account data and writes it to the user account.
+- Uses `invoke_signed` to call the system program to create the account.
+
+Function "open_proposal":
+- Creates a proposal account.
+- Checks if the user account's owner is the program.
+- Checks if the user payer is a signer.
+- Checks if the proposal account has already been initialized.
+- Derives a PDA for the proposal account using `Pubkey::create_program_address`.
+- Validates that the derived PDA matches the proposal account's key.
+- Deserializes the user account to verify its type.
+- Creates a `Proposal` struct with the provided title, description, and timestamps.
+- Serializes the proposal data and writes it to the proposal account.
+- Uses `invoke_signed` to call the system program to create the account.
+
+Function "vote_process":
+- Records a user's vote on a proposal.
+- Checks if the user and proposal account's owner is the program.
+- Checks if the user payer is a signer.
+- Checks if the vote record account has already been initialized.
+- Derives a PDA for the vote record account using `Pubkey::create_program_address`.
+- Validates that the derived PDA matches the vote record account's key.
+- Deserializes the proposal and user accounts.
+- Creates a `Vote_Record` struct.
+- Checks if the proposal is still open for voting.
+- Updates the proposal's vote counts based on the user's vote and governance points.
+- Serializes the vote record and updates proposal and user accounts.
+- Uses `invoke_signed` to call the system program to create the vote record account.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user account.
+- Checks if the admin and user account's owner is the program.
+- Checks if the admin payer is a signer.
+- Derives a PDA for the admin account and validates that it matches the admin account's key.
+- Deserializes the user account.
+- Updates the user's governance points based on the provided amount and instruction.
+- Serializes the updated user account data.
+
+Function "execute_instruction":
+- Executes an instruction by calling an external vault program using CPI (Cross-Program Invocation).
+- Checks account ownership and signer status.
+- Performs different checks based on the `variant_instr`.
+- Loads the current instruction index from the instructions sysvar.
+- Checks if the previous instruction was from the vault program.
+- Constructs and sends a CPI to the vault program based on the `variant_instr`.
+
+Function "make_decision":
+- Finalizes a proposal based on the votes.
+- Checks if the admin and proposal account's owner is the program.
+- Checks if the admin payer is a signer.
+- Derives a PDA for the admin account and validates that it matches the admin account's key.
+- Deserializes the proposal account.
+- Checks if the proposal's voting period has ended.
+- Determines if the proposal passes or fails based on the vote counts.
+- Updates the proposal's `executed` field.
+- Serializes the updated proposal account data.

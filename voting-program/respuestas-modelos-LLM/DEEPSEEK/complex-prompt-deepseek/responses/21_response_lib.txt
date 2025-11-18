@@ -1,0 +1,64 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program changes or is redeployed
+- No validation that the program ID is correct or owned by the expected program
+
+Function "try_from_slice_unchecked":
+- Unsafe deserialization that can lead to malformed data or program crashes
+- Should use try_from_slice with proper validation instead
+
+Function "send_create_vault_transaction":
+- Missing proper account validation for the vault program accounts
+- No validation that the vault_bump is correct for the derived address
+- Potential for incorrect CPI if seeds don't match expected vault account
+
+Function "send_instr_to_vault_transaction":
+- Missing system program account in instruction accounts for deposit/withdraw operations
+- No validation of vault_bump correctness
+- Potential for incorrect CPI if seeds don't match
+
+Function "process_instruction":
+- No validation of instruction data length before unpacking
+- Missing proper error handling for malformed instruction data
+
+Function "create_admin":
+- Missing rent exemption check before account creation
+- No validation that system_program is actually the system program
+- Potential reinitialization vulnerability if account has data but zero lamports
+
+Function "update_admin":
+- Missing authorization check - anyone can update admin if they have access to admin account
+- No validation that the caller is the current admin
+- Missing rent exemption check
+
+Function "create_account":
+- Fixed governance points allocation (10) without validation
+- Missing proper account ownership validation
+- No validation that system_program is actually the system program
+
+Function "open_proposal":
+- Uses title as PDA seed which could cause collisions with similar titles
+- Fixed 1-hour duration without configurability
+- Missing validation that user has sufficient governance points to create proposal
+- No validation that system_program is actually the system program
+
+Function "vote_process":
+- Arithmetic overflow risk in vote counting (yes_votes += amount)
+- Missing check for duplicate votes from same user
+- No validation that system_program is actually the system program
+- User can vote multiple times by creating multiple accounts
+
+Function "manage_governance_points":
+- Missing authorization check - anyone with admin account access can modify points
+- No validation that the caller is actually an admin
+- Arithmetic underflow risk in subtraction operation
+
+Function "execute_instruction":
+- Incomplete account validation in match arms (admin_bump and user__bump unused)
+- Relies on previous instruction check which can be bypassed
+- Missing proper validation of vault program ownership
+- Instruction variant 0, 1, 2 have inconsistent validation logic
+
+Function "make_decision":
+- Missing proper vote threshold validation (simple majority may not be sufficient)
+- No mechanism to prevent repeated execution of the same proposal
+- Missing validation that proposal hasn't already been executed

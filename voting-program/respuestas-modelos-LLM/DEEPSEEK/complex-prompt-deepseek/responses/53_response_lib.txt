@@ -1,0 +1,56 @@
+Function "vault_program_id":
+- Hardcodes a program ID which may be incorrect for different deployments or networks
+- Uses unwrap() which can panic if the string is invalid
+
+Function "send_create_vault_transaction":
+- Does not validate that the vault_program account matches the hardcoded program ID
+- Uses a fixed seed "vault" which might conflict with other programs
+- Missing validation of account ownerships and types
+
+Function "send_instr_to_vault_transaction":
+- Missing system program account which might be required for token transfers
+- No validation that vault_program is the expected program
+- Uses fixed seed "vault" without proper namespace isolation
+
+Function "process_instruction":
+- No input validation on instruction_data before unpacking
+- No access control checks before routing to specific functions
+
+Function "create_admin":
+- Does not verify that system_program is actually the system program
+- Missing rent exemption check before account creation
+- Uses unwrap() on length conversion which could panic
+
+Function "update_admin":
+- No authorization check to ensure the caller is the current admin
+- Allows any signer to change the admin without permission validation
+
+Function "create_account":
+- Automatically grants 10 governance points without any validation
+- No prevention of duplicate account creation for same user
+- Missing validation that system_program is the actual system program
+
+Function "open_proposal":
+- Uses title bytes directly as PDA seeds without length validation
+- Fixed 1-hour duration without configurability
+- No maximum length validation for title and description strings
+
+Function "vote_process":
+- Allows users to vote multiple times by creating new vote records
+- No check if user has already voted on this proposal
+- Subtracts governance points from user without overflow check
+
+Function "manage_governance_points":
+- No authorization check beyond admin signature
+- Allows arbitrary point manipulation without constraints
+- Uses unchecked subtraction which could underflow
+
+Function "execute_instruction":
+- Relies on previous instruction check which can be bypassed
+- Missing validation that vault_program matches expected program
+- Inconsistent account validation across different instruction variants
+
+Function "make_decision":
+- Only requires admin signature without proposal ownership validation
+- Allows admin to execute any proposal regardless of ownership
+- No threshold validation for proposal execution

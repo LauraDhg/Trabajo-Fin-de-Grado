@@ -1,0 +1,36 @@
+Function "process_instruction":
+- Unpacks instruction data using InstructionFormat::unpack
+- Matches instruction variant to call appropriate handler function
+- Handles CreateAccount, IncreaseAmount, WithdrawAmount, and TransferAmount instructions
+
+Function "initialize_wallet_account":
+- Creates a PDA wallet account using find_program_address with seeds ["wallet", user_account.key]
+- Validates that the provided wallet account matches the expected PDA
+- Calculates required rent for the wallet account
+- Uses invoke_signed to create the account with proper program-derived address signing
+- Initializes wallet state with amount=0 and initialized=true
+- Serializes the wallet state to account data
+
+Function "deposit_amount":
+- Validates wallet PDA matches expected address for the user
+- Deserializes current wallet state from account data
+- Increases wallet amount by specified value
+- Serializes updated wallet state back to account data
+- Contains arithmetic overflow vulnerability (no overflow check on addition)
+
+Function "withdraw_amount":
+- Validates wallet PDA matches expected address for the user
+- Deserializes current wallet state from account data
+- Decreases wallet amount by specified value
+- Contains critical vulnerability: no underflow check (subtraction can result in negative balance)
+- Contains critical vulnerability: no authorization check (anyone can withdraw from any wallet)
+- Serializes updated wallet state back to account data
+
+Function "transfer_amount":
+- Validates both source and destination wallet PDAs match expected addresses
+- Deserializes both source and destination wallet states
+- Transfers amount from source to destination wallet
+- Contains critical vulnerability: no underflow check on source wallet subtraction
+- Contains critical vulnerability: no authorization check (anyone can transfer from any wallet to any wallet)
+- Contains arithmetic overflow vulnerability on destination wallet addition
+- Serializes both updated wallet states back to account data

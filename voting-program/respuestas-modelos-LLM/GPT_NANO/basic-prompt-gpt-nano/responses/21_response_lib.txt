@@ -1,0 +1,100 @@
+Function "vault_program_id":
+- Returns a fixed public key representing the vault program ID.
+
+Function "MyError":
+- Defines custom error variants for time limit exceeded and arithmetic error.
+- Implements conversion from "MyError" to "ProgramError".
+
+Function "AccountType":
+- Defines account type variants for Vote and User.
+
+Function "from" implementation for "MyError":
+- Converts "MyError" variants into corresponding "ProgramError::Custom" errors.
+
+Function "Vote_Record" (struct):
+- Represents a vote record with account type, proposal ID, and vote amount.
+
+Function "User_Account" (struct):
+- Represents a user account with account type, user ID, and governance points.
+
+Function "Admin_Account" (struct):
+- Represents an admin account with admin ID and last update timestamp.
+
+Function "Proposal" (struct):
+- Represents a proposal with user ID, title, description, votes, status, and timing info.
+
+Function "action_as_str":
+- Converts action code (u8) into a string description for logging.
+
+Function "send_create_vault_transaction":
+- Sends an instruction to create a vault via invoke_signed.
+- Constructs instruction data with variant, ID, and bump.
+- Sets accounts required by the vault program.
+- Handles signing with seeds.
+
+Function "send_instr_to_vault_transaction":
+- Sends an instruction to deposit or withdraw to/from vault.
+- Constructs instruction data with variant, amount, and ID.
+- Sets accounts for user signer, user account, and vault.
+- Handles signing with seeds.
+
+Function "process_instruction":
+- Entry point for processing instructions.
+- Unpacks instruction data into enum.
+- Calls specific function based on instruction variant.
+
+Function "create_admin":
+- Creates an admin account with rent exemption.
+- Checks signatures and account ownership.
+- Uses PDA for admin account.
+- Serializes admin data into account.
+
+Function "update_admin":
+- Updates the admin account with new admin ID.
+- Checks owner, signature, and PDA.
+- Reads, modifies, and serializes admin data.
+
+Function "create_account":
+- Creates a user account with initial governance points.
+- Checks signatures and account state.
+- Uses PDA for user account.
+- Serializes user data.
+
+Function "open_proposal":
+- Creates a proposal account with timing and content.
+- Checks signatures, owner, and account initialization.
+- Uses PDA based on proposal title.
+- Records start and end times based on clock.
+- Serializes proposal.
+
+Function "vote_process":
+- Processes a vote on a proposal.
+- Checks signatures, owner, and account state.
+- Uses PDA for vote record.
+- Checks proposal timing.
+- Updates votes count based on vote answer.
+- Creates vote record account.
+- Serializes vote record, proposal, and user account.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user.
+- Checks signatures and owner.
+- Uses PDA for admin and user accounts.
+- Updates governance points with safe arithmetic.
+- Serializes updated user data.
+
+Function "execute_instruction":
+- Executes specific instructions like create vault, deposit, or withdraw.
+- Checks signers, owner, and account correctness.
+- Verifies vault program ID and instruction sysvar.
+- Loads previous instruction to prevent reentrancy.
+- Calls specific "send" function based on instruction variant.
+- Handles errors for invalid instructions.
+
+Function "make_decision":
+- Makes a decision on a proposal based on votes.
+- Checks owner, signer, and PDA.
+- Loads proposal and checks timing.
+- Determines outcome based on votes.
+- Marks proposal as executed.
+- Serializes proposal state.

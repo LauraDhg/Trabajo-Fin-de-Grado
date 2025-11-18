@@ -1,0 +1,90 @@
+Function "send_create_vault_transaction":
+- Constructs and sends a create vault instruction to another program.
+- Uses invoke_signed to perform cross-program invocation with signed seeds.
+- Builds instruction data with variant, id_pubkey, and vault_bump.
+- Checks the vault program account and data consistency.
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends deposit or withdraw instructions to another program.
+- Uses invoke_signed for cross-program invocation with signed seeds.
+- Builds instruction data with variant, amount, and id_pubkey.
+- Checks account ownership; ensures caller is signer.
+
+Function "process_instruction":
+- Entry point for contract execution, dispatches based on instruction type.
+- Unpacks instruction data and calls corresponding functions.
+- Handles initial instruction parsing and dispatch.
+
+Function "create_admin":
+- Initializes admin account via PDA, setting admin_id and last_update.
+- Checks signature and account ownership.
+- Calculates rent exemption and creates account with invoke_signed.
+- Serializes Admin_Account data into the account.
+
+Function "update_admin":
+- Updates admin account with new admin_id.
+- Checks owner authority and signer.
+- Verifies PDA correctness and current admin privileges.
+- Updates last_update with current timestamp.
+- Serializes updated Admin_Account data.
+
+Function "create_account":
+- Creates user account with governance points using PDA.
+- Checks signature and account pre-existence.
+- Creates account with invoke_signed.
+- Initializes User_Account with default governance points.
+
+Function "open_proposal":
+- Creates a proposal account with title and description at PDA.
+- Uses system_instruction to create and serialize Proposal.
+- Checks account ownership and signer.
+- Sets proposal timing based on Clock sysvar.
+
+Function "vote_process":
+- Registers a vote by creating a Vote_Record account.
+- Checks ownership, signer, and prior existence.
+- Loads and updates Proposal votes based on vote_answer.
+- Checks proposal timing.
+- Serializes Vote_Record, Proposal, and User_Account.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points to a user account.
+- Verifies owner and signer, checks PDA.
+- Ensures admin privileges.
+- Adds or subtracts amount based on instruction.
+- Serializes updated User_Account.
+
+Function "execute_instruction":
+- Executes various instructions (create vault, deposit, withdraw).
+- Checks owner and signer.
+- Validates account PDA correctness.
+- Dispatches to send_create_vault_transaction or send_instr_to_vault_transaction.
+- Validates previous instructions and program ID.
+
+Function "make_decision":
+- Completes voting process for a proposal.
+- Checks owner and signer.
+- Validates PDA.
+- Loads proposal and admin accounts.
+- Checks admin privileges.
+- Checks if proposal period is over.
+- Declares proposal outcome based on votes.
+- Updates and serializes proposal as executed.
+
+Potential Risks and Vulnerabilities:
+- Use of unwrap() on hardcoded pubkey creation can panic if format is invalid.
+- No explicit access control beyond PDA checks; potential administrator privilege issues.
+- Reliance on rent-exemption initialization; accounts with insufficient lamports may cause errors.
+- Signature checks are only performed on specific accounts, potential for throwing unauthorized transactions if sequences are off.
+- No explicit checks for overflow or underflow in u64 arithmetic for votes and governance points.
+- Cross-program invocations assume the target program's interface does not change; potential incompatibility.
+- No validation to prevent double voting or vote replay attacks—vote record accounts are created anew each vote.
+- No timeout or limit on updating admin; potential for governance lockouts or malicious changes.
+- String inputs (title, description) are passed directly; no length validation or sanitization.
+- No explicit defensive programming for potential data corruption or deserialization failures beyond expect.
+- No checks on the chronological consistency of timestamps or proposal timing logic.
+- The "vote_process" creates Vote_Record accounts anew each vote, which could lead to storage bloat or replay if not managed properly.
+- Use of `unwrap()` in "vault_program_id()" can panic if the string format is invalid.
+- No audit logging beyond "msg!", which may be insufficient for sensitive operations.
+- No explicit limit on number of proposals or votes per user—potential for denial-of-service via resource exhaustion.
+- General absence of input sanitization for user-provided strings, which could lead to unexpected behavior or attacks if used off-chain.

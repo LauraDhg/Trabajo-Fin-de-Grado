@@ -1,0 +1,26 @@
+Function "process_instruction":
+- The program uses a match statement to process different instructions. It's good practice to ensure all possible instruction variants are handled, ideally with a default case that returns an explicit error to prevent unexpected behavior if an unknown instruction is passed.
+
+Function "initialize_wallet_account":
+- The program uses `Pubkey::find_program_address` to derive the PDA. This is good practice for ensuring the PDA is correctly derived.
+- The program checks if the provided `system_program` account is the correct one.
+- The program checks if the provided `wallet_account` matches the derived PDA.
+- The program creates the account using `invoke_signed`, which correctly seeds the signature with the "wallet" string and the user's public key, preventing anyone from creating a wallet at that address without the program's signature.
+- The program initializes the `Wallet` struct and serializes it into the newly created account.
+
+Function "deposit_amount":
+- The program checks that the `wallet_account` owner is the program itself, preventing unauthorized modification of the account.
+- The program uses `Pubkey::find_program_address` to derive the PDA and verifies that the provided `wallet_account` matches the derived PDA. This ensures that the correct wallet account is being used.
+- The program uses `checked_add` to prevent arithmetic overflows. If an overflow occurs, it returns a `MyError::ArithmeticError`, which is then converted to a `ProgramError`.
+
+Function "withdraw_amount":
+- The program checks that the `wallet_account` owner is the program itself, preventing unauthorized modification of the account.
+- The program uses `Pubkey::find_program_address` to derive the PDA and verifies that the provided `wallet_account` matches the derived PDA. This ensures that the correct wallet account is being used.
+- The program checks for sufficient funds before withdrawing.
+- The program uses `checked_sub` to prevent arithmetic overflows. If an overflow occurs, it returns a `MyError::ArithmeticError`, which is then converted to a `ProgramError`.
+
+Function "transfer_amount":
+- The program checks that both `src_wallet_account` and `dest_wallet_account` are owned by the program.
+- The program uses `Pubkey::find_program_address` to derive the PDAs for both source and destination wallets and verifies that the provided accounts match the derived PDAs.
+- The program checks for sufficient funds in the source wallet before transferring.
+- The program uses `checked_add` and `checked_sub` to prevent arithmetic overflows. If an overflow occurs, it returns a `MyError::ArithmeticError`, which is then converted to a `ProgramError`.

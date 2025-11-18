@@ -1,0 +1,115 @@
+```
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for the vault program.
+
+Function "process_instruction":
+- Unpacks the instruction data into an `InstructionFormat` enum.
+- Matches on the enum variant to call the appropriate handler function.
+- Dispatches to different functions based on the instruction type.
+
+Function "create_admin":
+- Creates an admin account.
+- Checks if the admin payer is a signer.
+- Checks if the admin account is already initialized.
+- Derives the admin account's PDA.
+- Checks if the provided admin account matches the derived PDA.
+- Checks if the clock sysvar account is valid.
+- Creates an `Admin_Account` struct.
+- Calculates rent and creates the account using `invoke_signed`.
+- Serializes the `Admin_Account` into the created account.
+
+Function "update_admin":
+- Updates the admin account.
+- Checks the admin account owner.
+- Checks if the admin payer is a signer.
+- Deserializes the admin account data.
+- Derives the admin account's PDA.
+- Checks if the provided admin account matches the derived PDA.
+- Checks if the clock sysvar account is valid.
+- Updates the admin ID and last update timestamp.
+- Serializes the updated `Admin_Account` into the account.
+
+Function "create_account":
+- Creates a user account.
+- Checks if the user payer is a signer.
+- Checks if the user account is already initialized.
+- Derives the user account's PDA.
+- Checks if the provided user account matches the derived PDA.
+- Creates a `User_Account` struct with initial governance points.
+- Calculates rent and creates the account using `invoke_signed`.
+- Serializes the `User_Account` into the created account.
+
+Function "open_proposal":
+- Creates a proposal account.
+- Checks the user account owner.
+- Checks if the user payer is a signer.
+- Checks if the proposal account is already initialized.
+- Derives the proposal account's PDA.
+- Checks if the provided proposal account matches the derived PDA.
+- Checks if the clock sysvar account is valid.
+- Sets the start and end times for the proposal.
+- Creates a `Proposal` struct.
+- Calculates rent and creates the account using `invoke_signed`.
+- Serializes the `Proposal` into the created account.
+
+Function "vote_process":
+- Processes a user's vote on a proposal.
+- Checks the user and proposal account owners.
+- Checks if the user payer is a signer.
+- Checks if the vote record account is already initialized.
+- Derives the vote record account's PDA.
+- Checks if the provided vote record account matches the derived PDA.
+- Deserializes the proposal and user account data.
+- Creates a `Vote_Record` struct.
+- Checks if the clock sysvar account is valid.
+- Checks if the voting period is still open.
+- Updates the yes or no vote count on the proposal based on the user's vote.
+- Calculates rent and creates the vote record account using `invoke_signed`.
+- Serializes the `Vote_Record`, `Proposal`, and `User_Account` into their respective accounts.
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from a user account.
+- Checks the admin and user account owners.
+- Checks if the admin payer is a signer.
+- Derives the admin account's PDA.
+- Checks if the provided admin account matches the derived PDA.
+- Deserializes the user account data.
+- Adds or subtracts the specified amount of governance points.
+- Serializes the updated `User_Account` into the account.
+
+Function "execute_instruction":
+- Executes a specific instruction related to a vault.
+- Checks the user account owner.
+- Checks if the user payer is a signer.
+- Checks if the user account has lamports.
+- Performs different checks based on the `variant_instr` value.
+- Checks if the vault program ID and instruction sysvar ID are correct.
+- Loads the current instruction index from the instruction sysvar.
+- If the current index is greater than 0, it loads the previous instruction and checks if its program ID matches the vault program ID.
+- Calls either `send_create_vault_transaction` or `send_instr_to_vault_transaction` based on the instruction variant.
+
+Function "make_decision":
+- Makes a decision on a proposal based on the vote results.
+- Checks the admin and proposal account owners.
+- Checks if the admin payer is a signer.
+- Derives the admin account's PDA.
+- Checks if the provided admin account matches the derived PDA.
+- Deserializes the proposal data.
+- Checks if the clock sysvar account is valid.
+- Checks if the voting period has ended.
+- Determines if the proposal is approved or denied based on the yes and no vote counts.
+- Sets the `executed` flag on the proposal.
+- Serializes the updated `Proposal` into the account.
+
+Function "send_create_vault_transaction":
+- Creates and sends a transaction to the vault program to create a vault.
+- Constructs the instruction data with the instruction variant, ID pubkey, and vault bump.
+- Creates the instruction with the vault program ID, accounts, and data.
+- Uses `invoke_signed` to send the transaction with the vault seeds.
+
+Function "send_instr_to_vault_transaction":
+- Creates and sends a transaction to the vault program to deposit or withdraw from a vault.
+- Constructs the instruction data with the instruction variant, amount, and ID pubkey.
+- Creates the instruction with the vault program ID, accounts, and data.
+- Uses `invoke_signed` to send the transaction with the vault seeds.
+```

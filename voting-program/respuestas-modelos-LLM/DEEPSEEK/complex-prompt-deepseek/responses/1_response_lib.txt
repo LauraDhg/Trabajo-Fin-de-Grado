@@ -1,0 +1,64 @@
+Function "vault_program_id":
+- Hardcoded program ID which may be incorrect if the vault program is redeployed
+- Uses unwrap() which can panic if the string is invalid
+
+Function "send_create_vault_transaction":
+- Creates a CPI instruction with hardcected vault program ID
+- Does not validate that the vault_program account matches the hardcoded program ID
+- Uses seeds that may not match the expected vault account derivation
+
+Function "send_instr_to_vault_transaction":
+- Creates CPI instruction without system program for deposit/withdraw operations
+- Missing necessary account validations for vault operations
+- Uses seeds that may not match the expected vault account derivation
+
+Function "process_instruction":
+- Entry point that dispatches to various functions without additional validation
+- Relies on individual function implementations for security
+
+Function "create_admin":
+- Checks lamports > 0 for account initialization but should use Rent::is_exempt
+- Uses invoke_signed with PDA seeds for account creation
+- Properly validates PDA derivation and signer
+
+Function "update_admin":
+- Validates admin ownership and signer
+- Properly checks PDA derivation
+- Updates timestamp on admin change
+
+Function "create_account":
+- Gives free governance points (10) to every new user without validation
+- Uses invoke_signed with proper PDA derivation
+- Checks account initialization status
+
+Function "open_proposal":
+- Fixed 1-hour proposal duration (3600 seconds) which may not be appropriate for all use cases
+- Uses proposal title as part of PDA seeds which could cause collisions with similar titles
+- Properly validates user account and signer
+
+Function "vote_process":
+- Allows users to vote multiple times by creating new vote records each time
+- Does not check if user has already voted on this proposal
+- Properly validates proposal time limits
+- Uses checked arithmetic to prevent overflow
+
+Function "manage_governance_points":
+- Admin can arbitrarily add/remove governance points without constraints
+- No validation on amount parameter (could be zero or excessive)
+- Properly validates admin privileges
+
+Function "execute_instruction":
+- Checks previous instruction from instruction sysvar but logic is incomplete
+- Different validation paths for different instruction types but inconsistent
+- Calls external vault program without proper validation of the program account
+- Uses hardcoded vault program ID instead of validating the passed vault_program account
+
+Function "make_decision":
+- Properly validates admin privileges and proposal ownership
+- Checks proposal time limits before execution
+- Updates proposal execution status
+- Simple majority voting logic
+
+Function "action_as_str":
+- Helper function with no security implications
+- Returns static strings for instruction types

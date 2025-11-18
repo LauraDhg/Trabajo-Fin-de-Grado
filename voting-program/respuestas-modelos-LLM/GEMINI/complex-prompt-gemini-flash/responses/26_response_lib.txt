@@ -1,0 +1,57 @@
+Function "vault_program_id":
+- Hardcoded program ID. This makes the program less flexible and harder to upgrade.
+
+Function "process_instruction":
+- Dispatches instructions to different handlers based on `InstructionFormat`. No inherent vulnerabilities, but the security depends on the individual handlers.
+
+Function "create_admin":
+- Checks for signer, account initialization, and PDA validity.
+- Creates an admin account with the payer's pubkey as the admin ID.
+- Uses `invoke_signed` to create the account, mitigating the risk of unauthorized account creation.
+
+Function "update_admin":
+- Checks for account ownership, signer, and PDA validity.
+- Verifies that the transaction is signed by the current admin.
+- Updates the admin ID to a new pubkey.
+- Relies on the clock sysvar for timestamping.
+
+Function "create_account":
+- Checks for signer and account initialization.
+- Creates a user account with initial governance points.
+- Uses `invoke_signed` to create the account.
+
+Function "open_proposal":
+- Checks for signer and account initialization.
+- Derives proposal PDA using the proposal title.
+- Sets the proposal end time to 1 hour after the start time.
+- Uses `invoke_signed` to create the proposal account.
+
+Function "vote_process":
+- Checks for account ownership, signer, and account initialization.
+- Derives vote record PDA.
+- Checks if the proposal is still open based on the clock sysvar.
+- Updates the yes or no votes based on the voter's governance points.
+- Uses `checked_add` for arithmetic operations to prevent overflows.
+- Uses `invoke_signed` to create the vote record account.
+
+Function "manage_governance_points":
+- Checks for account ownership and signer.
+- Verifies that the transaction is signed by an admin.
+- Adds or subtracts governance points from a user account.
+- Uses `checked_add` for addition to prevent overflows.
+- Subtraction is performed without checks, which may cause underflows.
+
+Function "execute_instruction":
+- Checks for account ownership and signer.
+- Performs different actions based on the `variant_instr`.
+- Uses `load_current_index` and `load_instruction_at` to verify the previous instruction, which might be intended as a confirmation mechanism.
+- Calls external vault program functions using CPI.
+- The initial checks with the admin PDA inside the match statement seem flawed because they are checking if the user account is equal to the admin PDA. 
+- The logic to check admin privileges inside the match statement is flawed because it is deserializing the `user_account_dao` as an `Admin_Account` regardless of the `variant_instr`. This will probably cause a runtime error.
+- The first check `if user_account_dao.key != &admin_pda` should be an else if. The user_account_dao can be the admin_pda or the user_pda, and both checks can´t be true at the same time.
+
+Function "make_decision":
+- Checks for account ownership and signer.
+- Verifies that the transaction is signed by an admin.
+- Checks if the proposal is still active.
+- Sets the proposal's `executed` flag to `true`.

@@ -1,0 +1,32 @@
+Function "process_instruction":
+- The function uses a match statement to determine which instruction to execute based on the `instruction_data`. This is a standard practice.
+
+Function "initialize_wallet_account":
+- Checks if the provided `system_program` account is the actual System Program.
+- Checks if the `user_account` is a signer.
+- Derives a Program Derived Address (PDA) for the wallet using `Pubkey::find_program_address`. This is a good practice for secure account derivation.
+- Creates the wallet account using `invoke_signed` with the derived PDA as a signer. This prevents unauthorized account creation.
+- Serializes the `Wallet` struct into the newly created account.
+- The `wallet_len.try_into().unwrap()` could potentially lead to an issue if `wallet_len` is a very large number, because it converts the `usize` type to `u32` type.
+
+Function "deposit_amount":
+- Checks if the `wallet_account`'s owner is the program itself.
+- Checks if the `user_account` is a signer.
+- Deserializes the `Wallet` struct from the account data.
+- Adds the deposit amount to the wallet's amount using `checked_add` to prevent overflows.
+- Serializes the updated `Wallet` struct back into the account data.
+
+Function "withdraw_amount":
+- Checks if the `wallet_account`'s owner is the program itself.
+- Checks if the `user_account` is a signer.
+- Deserializes the `Wallet` struct from the account data.
+- Subtracts the withdrawal amount from the wallet's amount using the `-` operator without overflow/underflow protection.
+- Serializes the updated `Wallet` struct back into the account data.
+
+Function "transfer_amount":
+- Checks if both the source and destination `wallet_account` owners are the program itself.
+- Checks if the `user_account` is a signer.
+- Deserializes both source and destination `Wallet` structs from their respective account data.
+- Adds the transfer amount to the destination wallet's amount using `checked_add` to prevent overflows.
+- Subtracts the transfer amount from the source wallet's amount using the `-` operator without overflow/underflow protection.
+- Serializes the updated `Wallet` structs back into their respective account data.

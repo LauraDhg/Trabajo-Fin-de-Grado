@@ -1,0 +1,29 @@
+Function "process_instruction":
+- No direct vulnerabilities found in this dispatch function
+- Relies on proper validation in the individual instruction handlers
+
+Function "initialize_wallet_account":
+- Uses `try_to_vec()` which can panic if serialization fails unexpectedly
+- Uses `unwrap()` on `wallet_len.try_into()` which can panic if conversion fails
+- PDA derivation uses `user_account.key` but doesn't verify the provided wallet_account matches the expected PDA
+- Checks if account has lamports > 0 but doesn't verify account is uninitialized via data state
+- No explicit check that wallet_account is actually a PDA owned by the program
+
+Function "deposit_amount":
+- No overflow protection on amount addition (uses checked_add which is good)
+- No validation that the user_account actually owns/controls the wallet being deposited to
+- Missing validation that the deposited amount corresponds to an actual token transfer
+
+Function "withdraw_amount":
+- Uses unchecked subtraction (`-=`) which can cause integer underflow
+- No validation that withdrawal amount doesn't exceed wallet balance
+- No validation that the user_account actually owns/controls the wallet being withdrawn from
+- Missing transfer of funds/lamports out of the wallet account
+
+Function "transfer_amount":
+- Uses unchecked subtraction (`-=`) on source wallet which can cause integer underflow
+- No validation that transfer amount doesn't exceed source wallet balance
+- No validation that user_account owns/controls the source wallet
+- Missing cross-program invocation to actually transfer funds between accounts
+- No validation that destination wallet belongs to destination user
+- Missing re-entrancy protection when updating both wallet states

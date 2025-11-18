@@ -1,0 +1,65 @@
+Function "vault_program_id":
+- Hardcoded program ID may cause issues if the vault program ID changes or is incorrect
+- No validation that the returned Pubkey is actually a valid program on-chain
+
+Function "action_as_str":
+- No security vulnerabilities identified in this helper function
+
+Function "send_create_vault_transaction":
+- Uses hardcoded seeds ("vault") for PDA derivation which might conflict with other programs
+- No validation that vault_program is actually the expected program
+- Missing validation that all account infos are correct for the target program
+
+Function "send_instr_to_vault_transaction":
+- Missing system_program account in invoke_signed call for deposit/withdraw operations
+- No validation that vault_program is actually the expected program
+- Uses hardcoded seeds ("vault") for PDA derivation
+
+Function "process_instruction":
+- No security vulnerabilities identified in this entrypoint router
+
+Function "create_admin":
+- Missing validation that system_program is actually the system program
+- Missing validation that clock_sysvar is actually the clock sysvar
+- Uses create_program_address without fallback for find_program_address which could cause address collisions
+
+Function "update_admin":
+- Missing access control - any signer can update admin without checking if they are the current admin
+- Missing validation that clock_sysvar is actually the clock sysvar
+- No authorization check to ensure the caller is the current admin
+
+Function "create_account":
+- Missing validation that system_program is actually the system program
+- Hardcodes initial governance points (10) without configurable mechanism
+- Uses create_program_address without fallback for find_program_address
+
+Function "open_proposal":
+- Missing validation that system_program is actually the system program
+- Missing validation that clock_sysvar is actually the clock sysvar
+- Hardcoded proposal duration (1 hour) without configurable mechanism
+- Uses create_program_address without fallback for find_program_address
+
+Function "vote_process":
+- Missing validation that system_program is actually the system program
+- Missing validation that clock_sysvar is actually the clock sysvar
+- Allows multiple votes from same user if they create multiple accounts
+- No prevention of double voting through proper vote record checking
+- Uses create_program_address without fallback for find_program_address
+
+Function "manage_governance_points":
+- Missing access control - any signer can manage points if they pass admin account
+- No validation that the caller is actually the admin from the admin account
+- Allows arbitrary point manipulation without restrictions or validation
+
+Function "execute_instruction":
+- Missing validation that system_program is actually the system program
+- Missing validation that ix_sysvar is actually the instructions sysvar
+- Instruction sysvar usage is deprecated and insecure (load_instruction_at)
+- Relies on previous instruction check which can be bypassed by malicious actors
+- Inconsistent user_bump usage for different instruction types
+
+Function "make_decision":
+- Missing validation that clock_sysvar is actually the clock sysvar
+- No actual decision execution logic - only marks proposal as executed
+- Missing access control to ensure only authorized admins can execute decisions
+- Uses create_program_address without fallback for find_program_address

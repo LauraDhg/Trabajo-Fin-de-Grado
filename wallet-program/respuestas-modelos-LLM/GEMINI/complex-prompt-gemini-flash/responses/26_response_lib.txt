@@ -1,0 +1,35 @@
+Function "process_instruction":
+- Dispatches instructions based on `InstructionFormat`.
+- Could benefit from a default case or explicit error handling for unknown instructions.
+
+Function "initialize_wallet_account":
+- Checks if the provided system program account is the correct system program.
+- Derives the PDA using `find_program_address` and validates that the provided `wallet_account` matches.
+- Checks if the wallet account has already been initialized with lamports.
+- Creates a new account using `invoke_signed` with a derived PDA as the signer seeds.
+- Serializes the wallet data.
+
+Function "deposit_amount":
+- Checks that the `wallet_account` owner is the program itself.
+- Derives the PDA and validates that the provided `wallet_account` matches.
+- Deserializes the wallet data.
+- Validates that the wallet is initialized.
+- Adds the deposit amount to the wallet's amount.
+- Serializes the updated wallet data.
+
+Function "withdraw_amount":
+- Checks that the `wallet_account` owner is the program itself.
+- Derives the PDA and validates that the provided `wallet_account` matches.
+- Deserializes the wallet data.
+- Validates that the wallet is initialized.
+- Subtracts the withdrawal amount from the wallet's amount. This operation is susceptible to underflow.
+- Serializes the updated wallet data.
+
+Function "transfer_amount":
+- Checks that both the source and destination `wallet_account` owners are the program itself.
+- Derives the PDAs for both source and destination wallets and validates that the provided accounts match.
+- Deserializes both source and destination wallet data.
+- Validates that both wallets are initialized.
+- Adds the transfer amount to the destination wallet's amount. This operation is susceptible to overflow.
+- Subtracts the transfer amount from the source wallet's amount. This operation is susceptible to underflow.
+- Serializes the updated wallet data for both wallets.

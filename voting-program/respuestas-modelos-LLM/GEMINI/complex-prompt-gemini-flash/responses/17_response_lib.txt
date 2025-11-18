@@ -1,0 +1,67 @@
+Function "vault_program_id":
+- Hardcoded program ID, which is not flexible and makes the program difficult to redeploy.
+
+Function "process_instruction":
+- This function serves as the main entry point and uses a match statement to dispatch instructions. There is no default case to handle unknown instructions, but this is acceptable since the InstructionFormat::unpack() function will return an error if the instruction is invalid.
+
+Function "create_admin":
+- Checks if the admin account has already been initialized, preventing accidental re-initialization.
+- Derives a program address (PDA) for the admin account, ensuring that the account is controlled by the program.
+- Creates the admin account using invoke_signed, transferring rent-exempt lamports to it.
+- Serializes the admin account data to the newly created account.
+-  Relies on clock sysvar without validating that clock_sysvar.key == &CLOCK_SYSVAR_ID.
+-  Unsafe unwrap when converting account_len to u32
+
+Function "update_admin":
+- Checks if the admin account's owner is the program itself.
+- Derives a program address (PDA) for the admin account, ensuring that the correct account is being updated.
+- Updates the admin ID and last update timestamp.
+- Relies on clock sysvar without validating that clock_sysvar.key == &CLOCK_SYSVAR_ID.
+
+Function "create_account":
+- Checks if the account has already been initialized.
+- Derives a program address (PDA) for the user account based on the user's public key.
+- Creates the user account using invoke_signed, transferring rent-exempt lamports to it.
+- Initializes the user account with a default amount of governance points (10).
+-  Unsafe unwrap when converting account_len to u32
+
+Function "open_proposal":
+- Checks if the user account's owner is the program itself.
+- Derives a program address (PDA) for the proposal account based on the proposal title.
+- Checks if the associated user account is of the correct type.
+- Sets a fixed proposal duration of 1 hour.
+-  Unsafe unwrap when converting proposal_len to u32
+-  Relies on clock sysvar without validating that clock_sysvar.key == &CLOCK_SYSVAR_ID.
+
+Function "vote_process":
+- Checks if the user and proposal accounts' owners are the program itself.
+- Derives a program address (PDA) for the vote record account based on the user and proposal public keys.
+- Checks if the associated user account is of the correct type.
+- Checks if the proposal is still open based on the current time.
+- Increments the yes_votes or no_votes count based on the user's vote.
+- Arithmetic overflows/underflows are handled using checked_add and checked_sub.
+- The user's entire governance points are used as their voting weight.
+-  Unsafe unwrap when converting vote_len to u32
+-  Relies on clock sysvar without validating that clock_sysvar.key == &CLOCK_SYSVAR_ID.
+
+Function "manage_governance_points":
+- Checks if the admin and user accounts' owners are the program itself.
+- Derives a program address (PDA) for the admin account, ensuring that only the admin can modify governance points.
+- Adds or subtracts governance points from the user's account.
+- Arithmetic overflows/underflows are handled using checked_add and checked_sub.
+
+Function "execute_instruction":
+- Checks if the user account's owner is the program itself.
+- Has a switch statement based on the instruction variant that does not do anything except checking PDA derivation.
+- Checks if the previous instruction was related to the vault program.
+- Calls external programs (vault_program) using CPI (Cross-Program Invocation).
+- Depending on the variant_instr, calls send_create_vault_transaction or send_instr_to_vault_transaction.
+- The check against the previous instruction being from the vault program could be vulnerable to manipulation depending on how instructions are batched/submitted. A malicious user could potentially craft a sequence of instructions to bypass this check.
+- The different branches of the first match statement does not do anything besides checking program address derivations based on who is the user/admin of the program. The program flow continues to the CPI instruction anyway.
+
+Function "make_decision":
+- Checks if the admin and proposal accounts' owners are the program itself.
+- Derives a program address (PDA) for the admin account, ensuring that only the admin can execute the decision.
+- Checks if the proposal is still active based on the current time.
+- Determines whether the proposal is approved based on the vote count.
+-  Relies on clock sysvar without validating that clock_sysvar.key == &CLOCK_SYSVAR_ID.

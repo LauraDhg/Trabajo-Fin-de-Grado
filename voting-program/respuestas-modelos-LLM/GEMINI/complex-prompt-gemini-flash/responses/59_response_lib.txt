@@ -1,0 +1,70 @@
+Function "vault_program_id":
+- Hardcoded program ID. It makes the program less flexible and harder to upgrade since any change to the Vault program ID requires a redeployment of this program.
+
+Function "process_instruction":
+- The function serves as the main entry point for processing instructions. It unpacks the instruction data and calls the corresponding handler function.
+
+Function "create_admin":
+- The function creates an admin account.
+- It checks if the admin payer is a signer.
+- It checks if the admin account has already been initialized.
+- It derives the admin PDA and checks if the provided account matches the derived PDA.
+- It creates the admin account using `invoke_signed` with the "admin" seed.
+
+Function "update_admin":
+- The function updates the admin account with a new admin Pubkey.
+- It checks if the admin payer is a signer.
+- It checks if the admin account belongs to the program.
+- It derives the admin PDA and checks if the provided account matches the derived PDA.
+- There's no check to ensure the `admin_payer` is the current admin before updating. This allows anyone to change the admin.
+
+Function "create_account":
+- The function creates a user account.
+- It checks if the user payer is a signer.
+- It checks if the user account has already been initialized.
+- It derives the user PDA and checks if the provided account matches the derived PDA.
+- It creates the user account using `invoke_signed` with the "userAccount" seed.
+- It initializes the user account with 10 governance points.
+
+Function "open_proposal":
+- The function creates a proposal account.
+- It checks if the user payer is a signer.
+- It checks if the proposal account has already been initialized.
+- It derives the proposal PDA and checks if the provided account matches the derived PDA.
+- It creates the proposal account using `invoke_signed` with the "proposal" seed.
+- The end time is set to one hour after the start time.
+
+Function "vote_process":
+- The function processes a vote on a proposal.
+- It checks if the user payer is a signer.
+- It checks if the vote record account has already been initialized.
+- It derives the vote PDA and checks if the provided account matches the derived PDA.
+- It checks if the proposal is still open.
+- It updates the proposal's yes or no votes based on the user's vote and governance points.
+- It creates a vote record account using `invoke_signed` with the "vote" seed.
+- The user's governance points are used as the vote weight. The program does not check if the user has enough governance points, nor it prevents double voting.
+
+Function "manage_governance_points":
+- The function manages governance points for a user.
+- It checks if the admin payer is a signer.
+- It derives the admin PDA and checks if the provided account matches the derived PDA.
+- It adds or subtracts governance points from the user's account based on the instruction.
+- It does not check for underflow when subtracting points.
+
+Function "execute_instruction":
+- The function executes a vault instruction.
+- It checks if the user payer is a signer.
+- It checks if the user account belongs to the DAO program.
+- It performs different actions based on the `variant_instr`.
+- It loads the previous instruction and checks if it was a Vault program confirmation.
+- It calls different functions to send transactions to the Vault program based on the instruction type.
+- The checks inside match arms (0,1,2) for the correct PDA accounts appears to be redundant.
+- There is a vulnerability: `user_account_dao` is checked against `admin_pda` and `user_pda` alternatively depending on the `variant_instr`. If an attacker could control the `variant_instr` parameter, they could potentially bypass checks.
+
+Function "make_decision":
+- The function makes a decision on a proposal.
+- It checks if the admin payer is a signer.
+- It derives the admin PDA and checks if the provided account matches the derived PDA.
+- It checks if the proposal is still active.
+- It determines if the proposal is approved or denied based on the yes and no votes.
+- It sets the proposal's `executed` field to true.

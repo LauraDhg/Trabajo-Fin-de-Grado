@@ -1,0 +1,76 @@
+Function "vault_program_id":
+- Returns a hardcoded Pubkey for the vault program
+- Uses from_str and unwrap which may panic if the string is invalid
+
+Function "action_as_str":
+- Converts a u8 action code to a string description
+- Returns "Create" for 0, "Deposit" for 1, "Withdraw" for 2, "Unknown" for other values
+
+Function "send_create_vault_transaction":
+- Constructs and sends a cross-program instruction to create a vault
+- Uses invoke_signed with program-derived address seeds
+- Creates instruction data with variant, pubkey, and bump
+- Handles account metadata for vault program interaction
+
+Function "send_instr_to_vault_transaction":
+- Constructs and sends cross-program instructions for vault operations
+- Handles deposit and withdraw operations
+- Uses invoke_signed with program-derived address seeds
+- Creates instruction data with variant, amount, and pubkey
+
+Function "process_instruction":
+- Main entry point that unpacks and routes instructions
+- Matches against InstructionFormat enum variants
+- Calls appropriate handler functions based on instruction type
+
+Function "create_admin":
+- Creates an admin account with program-derived address
+- Validates signer and account ownership
+- Checks for account initialization status
+- Uses system_instruction::create_account with invoke_signed
+- Stores admin ID and timestamp in account data
+
+Function "update_admin":
+- Updates the admin account with a new admin pubkey
+- Validates signer and account ownership
+- Verifies program-derived address
+- Updates timestamp and admin ID in account data
+
+Function "create_account":
+- Creates a user account with program-derived address
+- Validates signer and account initialization status
+- Initializes user account with governance points
+- Uses system_instruction::create_account with invoke_signed
+
+Function "open_proposal":
+- Creates a proposal account with program-derived address
+- Validates user account ownership and signer
+- Sets proposal start and end times (1 hour duration)
+- Stores proposal data including title, description, and voting counts
+
+Function "vote_process":
+- Processes user votes on proposals
+- Validates account ownership and signer
+- Checks proposal voting period is active
+- Updates vote counts with user's governance points
+- Creates vote record account with program-derived address
+
+Function "manage_governance_points":
+- Adds or subtracts governance points from user accounts
+- Validates admin privileges through account ownership
+- Performs arithmetic operations with overflow checks
+- Updates user account data with new point values
+
+Function "execute_instruction":
+- Executes cross-program instructions to vault program
+- Validates account types based on instruction variant
+- Checks previous instruction was from vault program
+- Routes to appropriate transaction sending functions
+- Handles create, deposit, and withdraw operations
+
+Function "make_decision":
+- Finalizes proposal voting and determines outcome
+- Validates admin privileges and proposal ownership
+- Checks voting period has ended
+- Compares yes/no votes and marks proposal as executed
+- Updates proposal account data with execution status
