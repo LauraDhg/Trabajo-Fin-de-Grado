@@ -6,7 +6,7 @@ import os
 import google.generativeai as genai
 from pathlib import Path
 
-genai.configure(api_key="AIzaSyABDkGHC1vyOcRg-2irG6VIQE79Sps7ljE")
+genai.configure(api_key="api-key")
 model = genai.GenerativeModel('gemini-2.0-flash')
 
 folder_wallet = Path("../wallet-program/programs/vulnerable-programs-dataset/programs-AI")
